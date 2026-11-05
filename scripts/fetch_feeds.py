@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build data/live.json from public RSS and Atom feeds. Standard library only."""
-import email.utils, json, os, re, sys, urllib.request
+import email.utils, io, json, os, re, sys, urllib.request
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -244,6 +244,43 @@ def markets(path):
     print(len(out), "markets")
 
 
+def in_poly(x, y, ring):
+    hit = False
+    for i in range(len(ring)):
+        a, b = ring[i], ring[i - 1]
+        if (a[1] > y) != (b[1] > y) and x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]:
+            hit = not hit
+    return hit
+
+
+def hotspots(path):
+    """Turn NASA's heat detection image for yesterday into map points."""
+    from PIL import Image
+    day = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+    W, H = 1760, 2240
+    pts = {}
+    for layer in ("VIIRS_NOAA20_Thermal_Anomalies_375m_All", "VIIRS_SNPP_Thermal_Anomalies_375m_All"):
+        url = f"https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS={layer}&CRS=EPSG:4326&BBOX=4,86,32,108&WIDTH={W}&HEIGHT={H}&FORMAT=image/png&TRANSPARENT=true&TIME={day}"
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
+                img = Image.open(io.BytesIO(r.read())).convert("RGBA")
+        except Exception as e:
+            print("skipped hotspots", layer, e, file=sys.stderr)
+            continue
+        px = img.load()
+        for y in range(H):
+            for x in range(W):
+                if px[x, y][3] > 40:
+                    pts[(round((32 - y * 28 / H) * 20) / 20, round((86 + x * 22 / W) * 20) / 20)] = 1
+    text = open("lib/myanmar.js", encoding="utf-8").read()
+    geo = json.loads(text[text.index("{"):text.rindex("}") + 1])
+    polys = geo["coordinates"] if geo["type"] == "MultiPolygon" else [geo["coordinates"]]
+    rows = [[a, b, 1 if any(in_poly(b, a, p[0]) for p in polys) else 0] for a, b in sorted(pts)]
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"date": day, "points": rows}, f, separators=(",", ":"))
+    print("hotspots", day, len(rows), "areas,", sum(r[2] for r in rows), "in Myanmar")
+
+
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -276,6 +313,10 @@ def main(path="data/live.json"):
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
+    try:
+        hotspots("data/hotspots.json")
+    except Exception as e:
+        print("skipped hotspots:", e, file=sys.stderr)
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 

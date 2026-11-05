@@ -23,6 +23,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - run: pip install pillow
       - run: python scripts/fetch_feeds.py data/live.json
       - run: |
           mkdir -p _site

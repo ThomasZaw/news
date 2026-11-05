@@ -319,7 +319,7 @@ function renderQuakes(){
 }
 
 /* Safety */
-var AQ=null,RV=null,HM=null;
+var AQ=null,RV=null,HM=null,HS=null;
 function places(){return store('pd-places')||['Yangon','Hpa-An','Kawthaung']}
 function aqiWord(v){return v<=50?'Good':v<=100?'Moderate':v<=150?'Unhealthy for some':v<=200?'Unhealthy':'Very unhealthy'}
 function curCity(){return CITIES.find(function(x){return x[0]===city})||CITIES[0]}
@@ -336,8 +336,8 @@ function renderSafety(){
   if(AQ){var v=AQ.current.us_aqi;row('Air quality','Index '+v+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³',aqiWord(v),v>150?2:v>100?1:0)}else row('Air quality','Loading','Checking',0);
   if(RV&&RV.daily&&RV.daily.river_discharge){var d=RV.daily.river_discharge,n=d.length,i=7,now=d[i],pk=Math.max.apply(null,d.slice(i)),tr2=pk>now*1.15?'Rising':d[Math.min(n-1,i+3)]<now*.85?'Falling':'Steady';row('River level','Flood model estimate near '+city+': '+Math.round(now)+' m³/s now, peak '+Math.round(pk)+' m³/s this week',tr2,tr2==='Rising'?1:0)}else row('River level','No river data for this place','Unknown',0);
   s2.append(ag);b.append(s2);
-  var s3=el('div','week'),m=el('div');m.id='hot-holder';s3.append(el('h3','sec','Fire hotspots'),m,el('p','small-note','NASA satellite heat detections from yesterday, shown as small red or orange points when you zoom in. Some are farm burning or factories, and thin cloud can hide fires.'));b.append(s3);
-  if(window.L){if(!HM){var e=el('div','qmap');m.append(e);HM=L.map(e,{minZoom:4,maxZoom:9,scrollWheelZoom:false}).setView([20,96.5],5);var G='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/',dy=new Date(Date.now()-864e5).toISOString().slice(0,10);L.imageOverlay('lib/myanmar.jpg',[[4,86],[32,108]]).addTo(HM);L.tileLayer(G+'BlueMarble_ShadedRelief_Bathymetry/default//GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',{maxNativeZoom:8,maxZoom:9,attribution:'NASA GIBS · Leaflet'}).addTo(HM);L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'VIIRS_NOAA20_Thermal_Anomalies_375m_All',format:'image/png',transparent:true,version:'1.3.0',time:dy,crs:L.CRS.EPSG3857}).addTo(HM);L.geoJSON({type:'Feature',geometry:MM_GEO},{style:{color:'#FFD24A',weight:1.6,fill:false},interactive:false}).addTo(HM)}else{m.append(keep)}setTimeout(function(){HM.invalidateSize()},0)}
+  var s3=el('div','week'),m=el('div');m.id='hot-holder';s3.append(el('h3','sec','Fire hotspots'),m,el('p','hot-sum',HS?(HS.points.filter(function(p){return p[2]}).length+' heat areas in Myanmar on '+HS.date+' (UTC), '+HS.points.length+' including nearby countries'):'Loading the latest NASA heat detections'),el('p','small-note','Each dot marks an area of about 5 km with at least one satellite heat detection. Some are farm burning or factories, and cloud can hide fires, so no dot does not prove there is no fire.'));b.append(s3);
+  if(window.L){if(!HM){var e=el('div','qmap');m.append(e);HM=L.map(e,{minZoom:4,maxZoom:9,scrollWheelZoom:false}).setView([20,96.5],5);var G='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/',dy=new Date(Date.now()-864e5).toISOString().slice(0,10);L.imageOverlay('lib/myanmar.jpg',[[4,86],[32,108]]).addTo(HM);L.tileLayer(G+'BlueMarble_ShadedRelief_Bathymetry/default//GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',{maxNativeZoom:8,maxZoom:9,attribution:'NASA GIBS · Leaflet'}).addTo(HM);L.geoJSON({type:'Feature',geometry:MM_GEO},{style:{color:'#FFD24A',weight:1.6,fill:false},interactive:false}).addTo(HM)}else{m.append(keep)}if(HS&&!HM._dots){HM._dots=1;HS.points.forEach(function(p){L.circleMarker([p[0],p[1]],{radius:p[2]?5:3.5,color:'#fff',weight:p[2]?1:.5,fillColor:p[2]?'#FF5A1F':'#FFB347',fillOpacity:.95}).addTo(HM)})}setTimeout(function(){HM.invalidateSize()},0)}
 }
 function renderPrivacy(){var b=$('privacy-box');if(!b||b.firstChild)return;var h=el('h2',null,'Privacy');b.append(h);[
  ['Your location','It stays on your device and is only used to measure earthquake distance.'],
@@ -433,7 +433,7 @@ function pullMarkets(){return get('data/markets.json').then(function(j){MK=j;if(
 function get(p){return fetch(p+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
 function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderHome();renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
 
-pullQuakes(true);setInterval(pullQuakes,6e4);loadAir();loadRiver();setInterval(loadAir,18e5);
+pullQuakes(true);setInterval(pullQuakes,6e4);get('data/hotspots.json').then(function(j){HS=j;if(view==='safety')renderSafety()}).catch(function(){});loadAir();loadRiver();setInterval(loadAir,18e5);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
 function netState(){$('offline').hidden=navigator.onLine}addEventListener('online',netState);addEventListener('offline',netState);netState();
 get('data/enso.json').then(function(d){ENSO=d;renderHome();if(view==='enso')renderEnso(d)}).catch(function(){});
