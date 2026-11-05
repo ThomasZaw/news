@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build data/live.json from public RSS and Atom feeds. Standard library only."""
-import email.utils, io, json, os, re, sys, urllib.request
+import csv, email.utils, io, json, os, re, sys, urllib.request
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -253,9 +253,35 @@ def in_poly(x, y, ring):
     return hit
 
 
+def firms(path, polys):
+    key = os.environ.get("FIRMS_KEY")
+    if not key:
+        return False
+    seen = {}
+    for src in ("VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT", "VIIRS_SNPP_NRT"):
+        try:
+            text = get(f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{src}/86,4,108,32/1")
+            for r in csv.DictReader(io.StringIO(text)):
+                a, b = round(float(r["latitude"]), 3), round(float(r["longitude"]), 3)
+                seen[(a, b, r["acq_time"])] = [a, b, 1 if any(in_poly(b, a, p[0]) for p in polys) else 0, r["confidence"], float(r["frp"] or 0), r["acq_date"], r["acq_time"].zfill(4), r["satellite"], r["daynight"]]
+        except Exception as e:
+            print("skipped FIRMS", src, type(e).__name__, file=sys.stderr)
+    if not seen:
+        return False
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"date": max(v[5] for v in seen.values()), "detail": True, "points": list(seen.values())}, f, separators=(",", ":"))
+    print("FIRMS", len(seen), "detections,", sum(v[2] for v in seen.values()), "in Myanmar")
+    return True
+
+
 def hotspots(path):
-    """Turn NASA's heat detection image for yesterday into map points."""
+    """Use FIRMS detail when a key is set, otherwise NASA's heat image for yesterday."""
     from PIL import Image
+    text = open("lib/myanmar.js", encoding="utf-8").read()
+    geo = json.loads(text[text.index("{"):text.rindex("}") + 1])
+    polys = geo["coordinates"] if geo["type"] == "MultiPolygon" else [geo["coordinates"]]
+    if firms(path, polys):
+        return
     day = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     W, H = 1760, 2240
     pts = {}
@@ -272,9 +298,6 @@ def hotspots(path):
             for x in range(W):
                 if px[x, y][3] > 40:
                     pts[(round((32 - y * 28 / H) * 20) / 20, round((86 + x * 22 / W) * 20) / 20)] = 1
-    text = open("lib/myanmar.js", encoding="utf-8").read()
-    geo = json.loads(text[text.index("{"):text.rindex("}") + 1])
-    polys = geo["coordinates"] if geo["type"] == "MultiPolygon" else [geo["coordinates"]]
     rows = [[a, b, 1 if any(in_poly(b, a, p[0]) for p in polys) else 0] for a, b in sorted(pts)]
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"date": day, "points": rows}, f, separators=(",", ":"))
@@ -313,6 +336,12 @@ def main(path="data/live.json"):
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
+    for y in ("s2cloudless-2024_3857", "s2cloudless-2023_3857", "s2cloudless-2022_3857"):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(f"https://tiles.maps.eox.at/wmts/1.0.0/{y}/default/g/7/55/94.jpg", headers=UA), timeout=20) as r:
+                print("eox", y, r.status, r.headers.get("content-type"))
+        except Exception as e:
+            print("eox", y, "FAILED", e)
     try:
         hotspots("data/hotspots.json")
     except Exception as e:

@@ -25,6 +25,8 @@ jobs:
           python-version: "3.12"
       - run: pip install pillow
       - run: python scripts/fetch_feeds.py data/live.json
+        env:
+          FIRMS_KEY: ${{ secrets.FIRMS_KEY }}
       - run: |
           mkdir -p _site
           cp -r index.html app.js sw.js manifest.webmanifest icon-180.png icon-512.png data lib _site/
