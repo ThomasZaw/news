@@ -324,6 +324,32 @@ def fallback_edition(items, path="data/edition.json"):
     print("Used automatic headlines")
 
 
+def dmh(path):
+    """Read the newest official warning of each type from Myanmar's weather department."""
+    out, now = [], datetime.now(timezone.utc) + timedelta(hours=6, minutes=30)
+    for slug, kind in (("cyclone-warning", "Cyclone"), ("strong-wind-warning", "Strong wind"), ("heavy-rainfall-warning", "Heavy rainfall"), ("untimely-rainfall-warning", "Untimely rainfall"), ("tsunami-warning", "Tsunami")):
+        try:
+            html = get("https://www.moezala.gov.mm/en/" + slug)
+            html = html[html.find("main-content"):]
+            text = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", html)))
+            m = re.search(r"([A-Z][A-Za-z ,.()/0-9-]{3,90}?) (?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d\d/\d\d/\d{4}) - (\d\d:\d\d)(.*?)Read More", text)
+            link = re.search(r"href=[\"'](/en/warning/\d+)", html)
+            if not m:
+                print("DMH no entry", slug)
+                continue
+            when = datetime.strptime(m.group(2) + " " + m.group(3), "%m/%d/%Y %H:%M")
+            title = m.group(1).strip()[-80:]
+            body = m.group(4).strip()[:200]
+            quiet = re.search(r"(?i)nothing|no warning|not issued", title + " " + body)
+            active = not quiet and now.replace(tzinfo=None) - when <= timedelta(hours=48)
+            out.append({"kind": kind, "title": title, "body": body, "issued": when.strftime("%Y-%m-%d %H:%M"), "active": bool(active), "url": "https://www.moezala.gov.mm" + (link.group(1) if link else "/en/" + slug)})
+        except Exception as e:
+            print("skipped DMH", slug, e, file=sys.stderr)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"checked": now.strftime("%Y-%m-%d %H:%M"), "items": out}, f, ensure_ascii=False, indent=1)
+    print("DMH", [(i["kind"], i["issued"], i["active"]) for i in out])
+
+
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -354,19 +380,22 @@ def main(path="data/live.json"):
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
     fallback_edition(items)
+    dmh("data/dmh.json")
+    for name, url in {"him": "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=Himawari_AHI_Band13_Clean_Infrared&CRS=EPSG:3857&BBOX=10000000,1000000,12000000,3500000&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true"}.items():
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=25) as r:
+                b = r.read()
+                print("PROBE", name, r.status, r.headers.get("content-type"), len(b))
+        except Exception as e:
+            print("PROBE", name, "FAILED", e)
     try:
-        h = get("https://www.moezala.gov.mm/en")
-        for m in re.finditer(r"(?i)radar", h):
-            print("PROBE r", re.sub(r"\s+", " ", h[max(0, m.start()-120):m.start()+200]))
-            break
-        print("PROBE imgs", [x for x in re.findall(r"""<img[^>]+src=["']([^"']+)""", h) if re.search(r"(?i)radar|sat|flood|ffg", x)][:10])
-        for u in ("cyclone-warning", "strong-wind-warning", "heavy-rainfall-warning", "untimely-rainfall-warning"):
-            t = get("https://www.moezala.gov.mm/en/" + u)
-            b = t[t.find("main-content"):]
-            print("PROBE", u, re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", b))[300:800])
-            print("PROBE links", re.findall(r"""href=["'](/en/[a-z-]*/?[0-9]+)["']""", b)[:6])
+        j = json.loads(get("https://api.rainviewer.com/public/weather-maps.json"))
+        p = j["radar"]["past"][-1]["path"]
+        for z, x, y in ((6, 46, 29), (5, 23, 14)):
+            with urllib.request.urlopen(urllib.request.Request(f"{j['host']}{p}/256/{z}/{x}/{y}/2/1_1.png", headers=UA), timeout=20) as r:
+                print("PROBE rv", z, r.status, len(r.read()))
     except Exception as e:
-        print("PROBE FAILED", e)
+        print("PROBE rv FAILED", e)
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
