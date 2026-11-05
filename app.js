@@ -228,6 +228,55 @@ function renderBreaking(){
   t.append(el('b',null,'🚨 Breaking'),l,el('small',null,a.source+' · '+ago(a.published)+' ago'));c.onclick=function(){seen.push(a.title);store('pd-seen',seen.slice(-40));renderBreaking()};row.append(t,c);b.append(row);
 }
 
+/* Earthquakes */
+var QK=[],QK_T=0,QK_SRC='',GEO=store('pd-geo'),USGS='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/';
+function km(a,b,c,d){var r=Math.PI/180,x=Math.sin((c-a)*r/2),y=Math.sin((d-b)*r/2),h=x*x+Math.cos(a*r)*Math.cos(c*r)*y*y;return Math.round(12742*Math.asin(Math.sqrt(h)))}
+function place(){if(GEO)return {name:'your location',lat:GEO.lat,lon:GEO.lon};var c=CITIES.find(function(x){return x[0]===city})||CITIES[0];return {name:c[0],lat:c[1],lon:c[2]}}
+function qRow(f){var c=f.geometry.coordinates,p=f.properties,o=place();return {id:f.id,mag:p.mag,where:p.place||'Unknown place',time:p.time,url:p.url,lon:c[0],lat:c[1],depth:c[2],dist:km(o.lat,o.lon,c[1],c[0])}}
+function inRegion(q){return q.lat>=9&&q.lat<=29&&q.lon>=91&&q.lon<=102}
+function qAgo(t){var m=Math.max(0,Math.round((Date.now()-t)/6e4));return m<60?m+' min ago':m<1440?plural(Math.round(m/60),'hour'):plural(Math.round(m/1440),'day')}
+function plural(n,w){return n+' '+w+(n===1?'':'s')+' ago'}
+function qSet(feats,src){var seen={};QK.forEach(function(q){seen[q.id]=q});feats.forEach(function(f){if(f.properties&&f.properties.mag!=null){var q=qRow(f);seen[q.id]=q}});
+  var cut=Date.now()-7*864e5;QK=Object.keys(seen).map(function(k){return seen[k]}).filter(function(q){return q.time>=cut&&q.lat>=4&&q.lat<=32&&q.lon>=86&&q.lon<=108}).sort(function(a,b){return b.time-a.time});QK_T=Date.now();QK_SRC=src;
+  QK.forEach(function(q){var o=place();q.dist=km(o.lat,o.lon,q.lat,q.lon)});qAlert();renderQuakes();renderHome()}
+function pullQuakes(first){
+  return fetch(USGS+'2.5_day.geojson').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){qSet(j.features,'Live from USGS');if(first)return fetch(USGS+'4.5_week.geojson').then(function(r){return r.json()}).then(function(k){qSet(k.features,'Live from USGS')})})
+  .catch(function(){return get('data/quakes.json').then(function(j){qSet(j.features,'Saved copy, may be up to 15 minutes old')}).catch(function(){renderQuakes()})});
+}
+function qAlert(){
+  var seen=store('pd-qseen')||[],lim=Date.now()-6*36e5,o=place();
+  var q=QK.filter(function(x){return x.time>=lim&&seen.indexOf(x.id)<0&&((x.dist<=300&&x.mag>=4)||(inRegion(x)&&x.mag>=4.5))})[0];
+  var b=$('qalert');clear(b);b.hidden=!q;if(!q)return;
+  var row=el('div','breaking-row'),t=el('div'),l=el('a',null,'Magnitude '+q.mag.toFixed(1)+': '+q.where),c=el('button',null,'Dismiss');c.type='button';l.href='#quakes';
+  t.append(el('b',null,'⚠️ Earthquake reported'),l,el('small',null,q.dist+' km from '+o.name+' · '+qAgo(q.time)));
+  c.onclick=function(){seen.push(q.id);store('pd-qseen',seen.slice(-60));qAlert()};row.append(t,c);b.append(row);
+  if(window.__qLast!==q.id){window.__qLast=q.id;beep();try{if('Notification' in window&&Notification.permission==='granted')new Notification('Earthquake: magnitude '+q.mag.toFixed(1),{body:q.where+', '+q.dist+' km from '+o.name})}catch(e){}}
+}
+function beep(){if(!store('pd-qsound'))return;try{var A=window.AudioContext||window.webkitAudioContext,c=new A();[0,.35,.7].forEach(function(s){var n=c.createOscillator(),g=c.createGain();n.frequency.value=880;g.gain.value=.15;n.connect(g);g.connect(c.destination);n.start(c.currentTime+s);n.stop(c.currentTime+s+.22)})}catch(e){}}
+function renderQuakes(){
+  var b=$('quakes');if(!b||view!=='quakes')return;clear(b);
+  var h=el('h2',null,'Earthquakes ');h.className='q-title';h.append(mm('span','ငလျင်'));b.append(h);
+  var reg=QK.filter(inRegion),top=reg[0],o=place(),s=el('div','enso-state');
+  if(top){s.append(el('div','enso-big','M '+top.mag.toFixed(1)),el('p','enso-phase',top.where),el('p',null,qAgo(top.time)+' · '+top.dist+' km from '+o.name))}
+  else s.append(el('p','enso-phase',QK_T?'No earthquakes reported in or near Myanmar in the last 7 days':'Checking USGS'));b.append(s);
+  var X=function(l){return (l-86)*30},Y=function(l){return (32-l)*30},svg='<svg class="map qmap" viewBox="0 0 660 840" role="img" aria-label="Satellite map of Myanmar and nearby countries with recent earthquakes"><image href="lib/myanmar.jpg" width="660" height="840"/><path class="mm-line" d="'+MM_PATH+'"/>';
+  QK.slice().reverse().forEach(function(q,i,all){var r=Math.max(9,(q.mag-2.5)*11),last=q===top;svg+=(last?'<circle class="ring" cx="'+X(q.lon)+'" cy="'+Y(q.lat)+'" r="'+r+'" fill="#E0252B"/>':'')+'<circle cx="'+X(q.lon)+'" cy="'+Y(q.lat)+'" r="'+r+'" fill="#E0252B" fill-opacity="'+(last?1:.65)+'" stroke="#fff" stroke-width="2"/>'});
+  [['Mandalay',96.08,21.97],['Yangon',96.2,16.87]].forEach(function(c){svg+='<circle cx="'+X(c[1])+'" cy="'+Y(c[2])+'" r="5" fill="#fff"/><text x="'+(X(c[1])+11)+'" y="'+(Y(c[2])+8)+'" style="font-size:24px">'+c[0]+'</text>'});
+  if(GEO&&GEO.lat>=4&&GEO.lat<=32&&GEO.lon>=86&&GEO.lon<=108)svg+='<circle cx="'+X(GEO.lon)+'" cy="'+Y(GEO.lat)+'" r="9" fill="#FFD24A" stroke="#fff" stroke-width="3"/>';
+  var pair=el('div','q-pair'),m=el('div');m.innerHTML=svg+'</svg>';
+  var side=el('div'),ul=el('ul','hl');side.append(el('h3',null,'Last 7 days'));
+  if(!QK.length)ul.append(el('li',null,'No earthquakes on the list right now.'));
+  QK.slice(0,12).forEach(function(q){var li=el('li','q-row'),g=el('b',q.mag>=5?'q-mag hi':'q-mag',q.mag.toFixed(1)),c=el('div'),a=el('a',null,q.where);a.href=safe(q.url);a.target='_blank';a.rel='noopener';c.append(a,el('small',null,qAgo(q.time)+' · '+q.dist+' km away'));li.append(g,c);ul.append(li)});
+  side.append(ul);pair.append(m,side);b.append(pair);
+  var act=el('div','q-act'),g1=el('button','btn',GEO?'Location saved':'Use my location'),g2=el('button','btn','Turn on notifications'),g3=el('button','btn',store('pd-qsound')?'Sound on':'Turn on sound');[g1,g2,g3].forEach(function(x){x.type='button'});
+  g1.onclick=function(){if(!navigator.geolocation){g1.textContent='Location not available';return}navigator.geolocation.getCurrentPosition(function(p){GEO={lat:+p.coords.latitude.toFixed(2),lon:+p.coords.longitude.toFixed(2)};store('pd-geo',GEO);qSet([],QK_SRC)},function(){g1.textContent='Location was blocked'})};
+  g2.onclick=function(){if(!('Notification' in window)){g2.textContent='Add to Home Screen first';return}Notification.requestPermission().then(function(r){g2.textContent=r==='granted'?'Notifications on':'Notifications blocked'})};
+  g3.onclick=function(){var v=!store('pd-qsound');store('pd-qsound',v);if(v)beep();g3.textContent=v?'Sound on':'Turn on sound'};
+  act.append(g1,g2,g3);b.append(act);
+  b.append(el('p','small-note','Alerts show for magnitude 4.5+ in or near Myanmar, or 4.0+ within 300 km of '+o.name+'. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
+  b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
+}
+
 /* Daily edition */
 function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',Date.now()-new Date(i.published)<36e5?'fresh':null),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source));li.append(t,c);ul.append(li)});return ul}
 var N=$('news'),liveBox=el('section','live');liveBox.id='live';
@@ -274,9 +323,9 @@ function renderLive(){
   if(!rows.length){liveBox.append(el('p','empty','No headlines from the last two days in this topic.'));return}
   liveBox.append(feedList(rows));
 }
-var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['enso','El Niño','အယ်လ်နီညို'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['all','News','သတင်း'],['learn','Learn','လေ့လာရန်']];
+var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['enso','El Niño','အယ်လ်နီညို'],['quakes','Earthquakes','ငလျင်'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['all','News','သတင်း'],['learn','Learn','လေ့လာရန်']];
 (function(){var n=$('nav');NAV.forEach(function(x){var a=el('a');a.href='#'+x[0];a.dataset.key=x[0];a.append(x[1],mm('span',x[2]));n.append(a)})})();
-var VIEWS=['home','weather','enso','calendar','reminders','learn'],NEWS=['all','myanmar','world','politics','business','stocks','tech'];
+var VIEWS=['home','weather','enso','quakes','calendar','reminders','learn'],NEWS=['all','myanmar','world','politics','business','stocks','tech'];
 function route(jump){
   var k=location.hash.slice(1);if(VIEWS.indexOf(k)<0&&NEWS.indexOf(k)<0)k='home';
   var v=NEWS.indexOf(k)>=0?'news':k;view=v;if(v==='news')key=k;
@@ -287,7 +336,7 @@ function route(jump){
   redraw();
   if(jump===true)scrollTo(0,0);
 }
-function redraw(){if(view==='weather'&&WX)renderWx();if(view==='enso')renderEnso(ENSO)}
+function redraw(){if(view==='quakes')renderQuakes();if(view==='weather'&&WX)renderWx();if(view==='enso')renderEnso(ENSO)}
 function card(cls,href,title,m){var c=el(href?'a':'section','card '+cls);if(href)c.href=href;var t=el('div','card-t');t.append(title);if(m)t.append(mm('span',m));if(href)t.append(el('i',null,'→'));c.append(t);return c}
 function renderHome(){
   var g=$('home');if(!g||view!=='home')return;clear(g);
@@ -299,6 +348,7 @@ function renderHome(){
   var en=card('','#enso','El Niño','အယ်လ်နီညို');
   if(ENSO&&ENSO.weeks&&ENSO.weeks.length){var L=ENSO.weeks[ENSO.weeks.length-1],P=ensoPhase(L.n34);en.append(el('div','big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p','line',P[0]))}else en.append(el('p','line muted','Loading.'));
   g.append(en);
+  var qc=card('','#quakes','Earthquakes','ငလျင်'),qr=QK.filter(inRegion)[0];qc.append(el('div','big',qr?'M '+qr.mag.toFixed(1):'None'),el('p','line muted',qr?qAgo(qr.time)+' · '+qr.where:QK_T?'None near Myanmar in 7 days':'Checking'));g.append(qc);
   var m=md(TODAY),d=card('','#calendar','Burmese date','ပြက္ခဒိန်');d.append(mm('div',mmLine(m)),el('p','line muted','ME '+m.my+' · '+m.ToMString('&M &P &ff')));g.append(d);
   var ns=loadNotes().sort(function(x,y){return (x.date+x.time).localeCompare(y.date+y.time)}),dc=ns.filter(due).length,rc=card('','#reminders','Reminders','မှတ်စု');
   rc.append(el('div','big',dc?dc+' due':ns.length?String(ns.length):'None'),el('p','line muted',ns.length?ns[0].text:'Tap to add one'));g.append(rc);
@@ -311,8 +361,10 @@ function pullMarkets(){return get('data/markets.json').then(function(j){MK=j;if(
 function get(p){return fetch(p+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
 function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderHome();renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
 
+pullQuakes(true);setInterval(pullQuakes,6e4);
 get('data/enso.json').then(function(d){ENSO=d;renderHome();if(view==='enso')renderEnso(d)}).catch(function(){});
 renderDateline();renderDay();renderNotes();route();loadWx();
 setInterval(loadWx,9e5);setInterval(drawNotes,3e4);
 get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();pullMarkets();checkVersion();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);setInterval(pullMarkets,3e5);setInterval(checkVersion,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){checkVersion();pullMarkets();pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
+addEventListener('load',function(){scrollTo(0,0)});
 })();

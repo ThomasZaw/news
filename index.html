@@ -373,6 +373,22 @@ a.card:hover{outline:1px solid var(--gold);border:0}
 .map text{font-family:var(--body);fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.65);stroke-width:5px;stroke-linejoin:round}
 .map .strong{font-weight:700}.map .soft{font-weight:500;letter-spacing:.08em;opacity:.8}
 .map .ring{fill-opacity:1}
+
+.grid{grid-template-columns:repeat(12,minmax(0,1fr))}
+.card,.card.w3{grid-column:span 3}.card.w6,.card.wide{grid-column:span 12}
+@media (max-width:1050px){.card,.card.w3{grid-column:span 6}}
+@media (max-width:560px){.card,.card.w3{grid-column:span 12}}
+.q-title{margin:0;font:600 1.15rem/1.3 var(--display)}.q-title .mm{color:var(--gold);font-weight:400}
+.q-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;align-items:start}
+.q-pair h3{margin:0 0 6px;font:600 1.05rem/1.4 var(--body)}
+.qmap{max-height:80vh;width:100%}
+.mm-line{fill:none;stroke:#FFD24A;stroke-width:2.2;stroke-linejoin:round}
+.q-row{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:center}
+.q-mag{font:600 1.3rem/1 var(--display)}.q-mag.hi{color:var(--vermilion)}
+.q-act{display:flex;flex-wrap:wrap;gap:8px}
+@media (max-width:640px){.q-pair{grid-template-columns:minmax(0,1fr)}}
+
+@media (max-width:759px) and (orientation:portrait){#qalert{position:fixed;left:0;right:0;bottom:0;z-index:30;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}}
 </style>
 </head>
 <body>
@@ -389,12 +405,14 @@ a.card:hover{outline:1px solid var(--gold);border:0}
   <div class="size size-bottom" role="group" aria-label="Text size"><button class="btn" id="size-down2" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up2" type="button" aria-label="Larger text">A+</button></div>
 </aside>
 <div class="main">
+  <div class="breaking" id="qalert" hidden></div>
   <div class="breaking" id="breaking" hidden></div>
   <div class="pane">
     <main>
       <section class="view" id="v-home" aria-label="Home"><div class="band" aria-hidden="true"></div><div class="topdate" id="dateline"></div><div class="grid" id="home"></div></section>
       <section class="view" id="v-weather" aria-label="Weather" hidden><div class="wx-hero" id="wx"></div></section>
       <section class="view" id="v-enso" aria-label="El Niño" hidden><div class="enso" id="enso"></div></section>
+      <section class="view" id="v-quakes" aria-label="Earthquakes" hidden><div class="enso" id="quakes"></div></section>
       <section class="view" id="v-calendar" aria-label="Burmese calendar" hidden><div class="day-box" id="daybox"></div></section>
       <section class="view" id="v-reminders" aria-label="Reminders" hidden><div class="notes" id="notes"></div></section>
       <section class="view" id="v-news" aria-label="News" hidden>
@@ -408,6 +426,7 @@ a.card:hover{outline:1px solid var(--gold);border:0}
   </div>
 </div>
 </div>
+<script src="lib/myanmar.js?v=__V__"></script>
 <script src="lib/ceMmDateTime.js?v=__V__"></script>
 <script src="app.js?v=__V__"></script>
 </body>

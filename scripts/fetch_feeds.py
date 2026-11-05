@@ -108,13 +108,16 @@ def quakes():
     except Exception as e:
         print("skipped USGS:", e, file=sys.stderr)
         return []
+    nearby = [q for q in data.get("features", []) if 4 <= q["geometry"]["coordinates"][1] <= 32 and 86 <= q["geometry"]["coordinates"][0] <= 108]
+    with open("data/quakes.json", "w", encoding="utf-8") as f:
+        json.dump({"features": nearby}, f, separators=(",", ":"))
     out = []
     for q in data.get("features", []):
         lon, lat = q["geometry"]["coordinates"][:2]
         p = q["properties"]
         if 9 <= lat <= 29 and 91 <= lon <= 102 and p.get("mag"):
             d = datetime.fromtimestamp(p["time"] / 1000, timezone.utc)
-            out.append({"title": f"Magnitude {p['mag']:.1f} earthquake: {p['place']}", "url": p["url"], "source": "USGS", "topic": "weather", "published": d.isoformat(timespec="seconds"), "level": "red" if p["mag"] >= 6 else None})
+            out.append({"title": f"Magnitude {p['mag']:.1f} earthquake: {p['place']}", "url": p["url"], "source": "USGS", "topic": "weather", "published": d.isoformat(timespec="seconds"), "level": "red" if p["mag"] >= 5 else None})
     return out
 
 
