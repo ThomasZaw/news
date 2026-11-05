@@ -210,6 +210,10 @@ export default {
       const status = await sendOne(env, key, sub, { title: "Parabaik Daily", body: "Test alert. Notifications are working.", click: SITE });
       return new Response(String(status), { status: status < 300 ? 200 : 502, headers: cors });
     }
+    if (path === "/obs") {
+      const r = await fetch("https://aviationweather.gov/api/data/metar?ids=VYYY,VYMD,VYNT,VYMM,VYHH,VYSW,VYMK,VYKT,VYPT,VYMY&format=json&hours=3", { headers: { "User-Agent": "ParabaikDaily/1.0" }, cf: { cacheTtl: 240, cacheEverything: true } });
+      return new Response(r.ok ? await r.text() : "[]", { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "max-age=120" } });
+    }
     if (path === "/health") return new Response("Parabaik alert checker is running", { headers: cors });
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405, headers: cors });
     return fetch(ORIGIN + path + url.search, { method: request.method, headers: { "User-Agent": "ParabaikDaily/1.0" } });

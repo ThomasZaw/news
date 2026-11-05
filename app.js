@@ -124,8 +124,8 @@ function hhmm(s){return s.slice(11,16)}
 function url(c){return 'https://api.open-meteo.com/v1/forecast?latitude='+c[1]+'&longitude='+c[2]+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,is_day&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,wind_gusts_10m_max,precipitation_sum,apparent_temperature_max,sunrise,sunset&timezone=Asia%2FYangon&forecast_days=7'}
 function loadWx(){
   var c=CITIES.find(function(x){return x[0]===city})||CITIES[0];
-  return fetch(url(c)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){WX=j;wxSource='Live from Open-Meteo, updated '+new Date(Date.now()+6.5*36e5).toISOString().slice(11,16);renderWx()}).catch(function(){
-    return get('data/weather.json').then(function(a){if(!a.cities[city])throw 0;WX=a.cities[city];wxSource='Saved '+ago(a.updated)+' ago';renderWx()}).catch(function(){if(!WX)renderWx()})});
+  return fetch(url(c)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){WX=j;applyObs();wxSource='Live from Open-Meteo, updated '+new Date(Date.now()+6.5*36e5).toISOString().slice(11,16);renderWx()}).catch(function(){
+    return get('data/weather.json').then(function(a){if(!a.cities[city])throw 0;WX=a.cities[city];applyObs();wxSource='Saved '+ago(a.updated)+' ago';renderWx()}).catch(function(){if(!WX)renderWx()})});
 }
 function wxAlerts(){
   if(!WX)return [];var H=WX.hourly,D=WX.daily,c=WX.current,i=nowIdx(WX);
@@ -134,7 +134,7 @@ function wxAlerts(){
   var cyclone=LIVE?LIVE.items.filter(function(q){return q.source==='GDACS'&&/cyclone|storm/i.test(q.title)})[0]:null;
   var gust=Math.max(c.wind_gusts_10m||0,(D.wind_gusts_10m_max||[0])[0]||0),mm0=(D.precipitation_sum||[0])[0]||0,feel=Math.max(c.apparent_temperature||0,(D.apparent_temperature_max||[0])[0]||0);
   return [
-   {i:'⛈',en:'Storm',mm:'မုန်တိုင်း',l:cyclone?2:thunder?1:0,msg:cyclone?cyclone.title:thunder?'Thunderstorms possible in the next 24 hours':'No storm in the forecast'},
+   {i:'⛈',en:'Storm',mm:'မုန်တိုင်း',l:cyclone||(c._obs&&c._obs.ts)?2:thunder?1:0,msg:cyclone?cyclone.title:c._obs&&c._obs.ts?'Thunderstorm reported at '+c._obs.name+', '+c._obs.mins+' min ago':thunder?'Thunderstorms possible in the next 24 hours':'No storm in the forecast'},
    {i:'🌧',en:'Heavy rain',mm:'မိုးသည်းထန်',l:lvl(mm0,50,100),msg:Math.round(mm0)+' mm of rain forecast today'},
    {i:'💨',en:'Strong wind',mm:'လေပြင်း',l:lvl(gust,50,75),msg:'Gusts up to '+Math.round(gust)+' km/h today'},
    {i:'🌡',en:'Extreme heat',mm:'အပူလွန်ကဲ',l:lvl(feel,41,46),msg:'Feels like up to '+Math.round(feel)+'° today'}].concat(AQ?[{en:'Air quality',mm:'လေထုအရည်အသွေး',l:lvl(AQ.current.us_aqi,101,151),word:aqiWord(AQ.current.us_aqi),msg:'Index '+AQ.current.us_aqi+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³'}]:[]);
@@ -145,7 +145,7 @@ function renderWx(){
   var top=el('div','wx-top'),h=el('h2',null,'Weather');h.append(' ',mm('span','ရာသီဥတု'));
   var s=el('select','field');s.id='city';s.setAttribute('aria-label','Choose a city');
   CITIES.forEach(function(c){var o=el('option',null,c[0]+'  '+c[3]);o.value=c[0];o.selected=c[0]===city;s.append(o)});
-  s.onchange=function(){city=s.value;store('pd-city',city);loadWx();loadAir();loadRiver()};top.append(h,s);b.append(top);
+  s.onchange=function(){city=s.value;store('pd-city',city);loadWx();loadObs();loadAir();loadRiver()};top.append(h,s);b.append(top);
   if(!WX){renderHome();b.append(el('p',null,'Weather is loading. If it does not appear, check your internet connection.'));return}
   var c=WX.current,k=code(c.weather_code,c.is_day),i=nowIdx(WX),H=WX.hourly,D=WX.daily;
   var now=el('div','wx-now'),main=el('div','wx-main'),cond=el('div','wx-cond'),tx=el('div');
@@ -154,7 +154,8 @@ function renderWx(){
   [['Feels like',Math.round(c.apparent_temperature)+'°'],['Chance of rain',(H.precipitation_probability[i]||0)+'%'],['Wind',Math.round(c.wind_speed_10m)+' km/h'],['Humidity',c.relative_humidity_2m+'%']].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   if(D.sunrise)[['Sunrise',D.sunrise[0].slice(11,16)],['Sunset',D.sunset[0].slice(11,16)]].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   now.append(main,st);b.append(now);
-  var pl=el('div','places'),saved=places();saved.forEach(function(n){var q=el('button','chip',n);q.type='button';if(n===city)q.setAttribute('aria-pressed','true');q.onclick=function(){city=n;store('pd-city',city);loadWx();loadAir();loadRiver()};pl.append(q)});
+  b.append(el('p','small-note',c._obs?'Live report from '+c._obs.name+', '+c._obs.mins+' min ago. Rain can differ across the city.':'Forecast estimate. No recent airport report for this area, so local rain may be missed.'));
+  var pl=el('div','places'),saved=places();saved.forEach(function(n){var q=el('button','chip',n);q.type='button';if(n===city)q.setAttribute('aria-pressed','true');q.onclick=function(){city=n;store('pd-city',city);loadWx();loadObs();loadAir();loadRiver()};pl.append(q)});
   if(saved.indexOf(city)<0){var sv=el('button','chip add','Save this city');sv.type='button';sv.onclick=function(){store('pd-places',saved.concat(city));renderWx()};pl.append(sv)}b.append(pl);
   var ah=el('h3','sec',"Today's alerts");ah.append(mm('span','သတိပေးချက်'));
   var asec=el('div','week');asec.append(ah);var ag=el('div','alerts'),lv=fireLevel(H,i),F=FIRE[lv],fl=lv>=3?2:lv>=1?1:0;
@@ -167,7 +168,7 @@ function renderWx(){
   wr.append(row);w.append(wr);b.append(w);
   var det=el('details','enso-more'),sm=el('summary',null,'View full details'),ch=el('div','chart');ch.id='chart';det.append(sm,ch);
   var ln=el('div','ext'),cc=CITIES.find(function(x){return x[0]===city})||CITIES[0];
-  [['Live wind and storm map (Windy)','https://www.windy.com/?'+cc[1]+','+cc[2]+',7'],['Myanmar weather department','https://www.moezala.gov.mm/en'],['Global disaster alerts (GDACS)','https://www.gdacs.org/']].forEach(function(r){var a=el('a',null,r[0]+' ↗');a.href=r[1];a.target='_blank';a.rel='noopener';ln.append(a)});det.append(ln);
+  [['Live rain and storm map (Windy)','https://www.windy.com/-Weather-radar-radar?radar,'+cc[1]+','+cc[2]+',8'],['Myanmar weather department','https://www.moezala.gov.mm/en'],['Global disaster alerts (GDACS)','https://www.gdacs.org/']].forEach(function(r){var a=el('a',null,r[0]+' ↗');a.href=r[1];a.target='_blank';a.rel='noopener';ln.append(a)});det.append(ln);
   det.append(el('p','small-note','Alerts are estimates from the forecast and storm feeds, not official warnings. Fire danger uses the Chandler Burning Index from temperature and humidity.'));
   det.addEventListener('toggle',function(){if(det.open)drawChart(ch,H,i)});b.append(det);
   var wn=el('div','wn');wn.id='wn';b.append(wn);renderWeatherNews();
@@ -315,6 +316,13 @@ function renderQuakes(){
   b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
 }
 
+/* Live airport reports */
+var OBS=[],OMAP={Yangon:['VYYY','Yangon Airport'],Bago:['VYYY','Yangon Airport'],Pathein:['VYPT','Pathein Airport'],Mandalay:['VYMD','Mandalay Airport'],Naypyitaw:['VYNT','Naypyitaw Airport'],Taunggyi:['VYHH','Heho Airport'],Sittwe:['VYSW','Sittwe Airport'],Myitkyina:['VYMK','Myitkyina Airport'],Kawthaung:['VYKT','Kawthaung Airport'],Monywa:['VYMY','Monywa Airport'],Mawlamyine:['VYMM','Mawlamyine Airport'],'Hpa-An':['VYMM','Mawlamyine Airport']};
+function curObs(){var s=OMAP[city];if(!s)return null;var r=OBS.filter(function(o){return o.icaoId===s[0]}).sort(function(a,b){return (b.obsTime||0)-(a.obsTime||0)})[0];if(!r||!r.obsTime)return null;var mins=Math.round((Date.now()-r.obsTime*1000)/6e4);if(mins>120)return null;var x=r.wxString||'';return {name:s[1],mins:mins,wx:x,ts:/TS/.test(x),rain:/RA|SH|DZ/.test(x),heavy:/\+RA|\+TS/.test(x)}}
+function obsCode(o){return !o?null:o.ts?95:o.heavy?65:o.rain?63:null}
+function applyObs(){if(!WX)return;var o=curObs(),c=obsCode(o);if(WX.current._model==null)WX.current._model=WX.current.weather_code;WX.current.weather_code=c==null?WX.current._model:c;WX.current._obs=o}
+function loadObs(){var u=location.hostname==='parabaikdaily.com'?'/obs':PUSH_API+'/obs';return fetch(u+'?t='+Math.floor(Date.now()/12e4)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){OBS=Array.isArray(j)?j:[];applyObs();if(view==='weather')renderWx();renderHome()}).catch(function(){})}
+
 /* Safety */
 var AQ=null,RV=null,HM=null,HS=null;
 function places(){return store('pd-places')||['Yangon','Hpa-An','Kawthaung']}
@@ -443,7 +451,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(
 function netState(){$('offline').hidden=navigator.onLine}addEventListener('online',netState);addEventListener('offline',netState);netState();
 get('data/enso.json').then(function(d){ENSO=d;renderHome();if(view==='enso')renderEnso(d)}).catch(function(){});
 renderDateline();renderDay();renderNotes();route();loadWx();
-setInterval(loadWx,9e5);setInterval(drawNotes,3e4);
-get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();pullMarkets();checkVersion();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);setInterval(pullMarkets,3e5);setInterval(checkVersion,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){checkVersion();pullMarkets();pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
+setInterval(loadWx,3e5);loadObs();setInterval(loadObs,3e5);setInterval(drawNotes,3e4);
+get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();pullMarkets();checkVersion();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);setInterval(pullMarkets,3e5);setInterval(checkVersion,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){loadObs();checkVersion();pullMarkets();pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
 addEventListener('load',function(){scrollTo(0,0)});
 })();

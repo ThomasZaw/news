@@ -354,6 +354,11 @@ def main(path="data/live.json"):
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
     fallback_edition(items)
+    try:
+        print("METAR", get("https://aviationweather.gov/api/data/metar?ids=VYYY,VYMD,VYNT,VYMM,VYHH,VYSW,VYMK,VYKT,VYPT,VYMY&format=raw&hours=2")[:900].replace("\n", " | "))
+    except Exception as e:
+        print("METAR failed", e)
+    print("OM", get("https://api.open-meteo.com/v1/forecast?latitude=16.87&longitude=96.2&current=weather_code,precipitation,temperature_2m&timezone=Asia%2FYangon")[-130:])
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
