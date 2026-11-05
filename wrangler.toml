@@ -1,0 +1,17 @@
+name = "parabaik-alerts"
+main = "worker/src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+VAPID_PUBLIC = "BOUkTsuubE4ts37xqV5YzU9XZGjZHLdD13Lo9PotcyyD1jAWWbjAZvzhJmwOhESHkiYQTVAGeCwdsHqu84C1xXU"
+
+[[kv_namespaces]]
+binding = "SEEN"
+id = "b97bb564947e407189b034918d0db8e5"
+
+[observability]
+enabled = true
