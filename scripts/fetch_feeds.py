@@ -354,6 +354,19 @@ def main(path="data/live.json"):
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
     fallback_edition(items)
+    for name, url in {"dmh": "https://www.moezala.gov.mm/en", "dmh2": "https://www.moezala.gov.mm/en/bay-bengal-condition", "rv": "https://api.rainviewer.com/public/weather-maps.json"}.items():
+        try:
+            t = get(url)
+            print("PROBE", name, len(t), re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", t))[:500])
+        except Exception as e:
+            print("PROBE", name, "FAILED", e)
+    try:
+        x = get("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities")
+        print("PROBE layers", sorted(set(re.findall(r"Himawari[A-Za-z0-9_]*", x)))[:30])
+        i = x.find("Himawari_AHI_Band13_Clean_Infrared")
+        print("PROBE tpl", re.findall(r"template=.[^'\"]*Himawari_AHI_Band13[^'\"]*", x)[:2], re.findall(r"<Default>[^<]*</Default>", x[i:i+4000])[:2], re.findall(r"<Value>[^<]*</Value>", x[i:i+4000])[:1])
+    except Exception as e:
+        print("PROBE layers FAILED", e)
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
