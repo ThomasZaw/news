@@ -250,11 +250,19 @@ label{display:grid;gap:4px;font-size:.92rem;color:var(--muted)}
 .enso-state{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:center}
 .enso-big{font:600 clamp(2.3rem,7vw,3.6rem)/1 var(--display)}
 .enso-state p{margin:6px 0 0}
-.map{display:block;width:100%;height:auto;border:1px solid var(--line);background:var(--panel)}
+.map{display:block;width:100%;height:auto;background:var(--panel)}
 .map .land{fill:var(--line)}
 .map text{fill:var(--chalk);font:500 12px var(--mono)}
 .map .box{stroke:var(--chalk);stroke-width:1}
 .map .pin{fill:var(--jade);stroke:var(--ground);stroke-width:2}
+.map .big-l{fill:var(--chalk);font:700 19px var(--body)}
+@media (prefers-reduced-motion:no-preference){.map .ring{transform-box:fill-box;transform-origin:center;animation:ring 2.6s ease-out infinite}@keyframes ring{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.9);opacity:0}}}
+.map .ring{opacity:.2}
+.enso-state{display:block}.enso-phase{font-size:1.3rem;font-weight:600}.enso-state .mm{color:var(--gold)}
+.enso-note{margin:0;font-size:1.08rem}
+.enso-more{border-top:1px solid var(--line);padding-top:12px;display:block}
+.enso-more summary{min-height:44px;display:flex;align-items:center;font-weight:600;cursor:pointer}
+.enso-more[open]>*+*{margin-top:12px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.88rem;color:var(--muted)}
 .legend i{display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:-2px;border:1px solid var(--line)}
 .trend svg{display:block;width:100%}
