@@ -318,9 +318,9 @@ function renderQuakes(){
 
 /* Live airport reports */
 var OBS=[],OMAP={Yangon:['VYYY','Yangon Airport'],Bago:['VYYY','Yangon Airport'],Pathein:['VYPT','Pathein Airport'],Mandalay:['VYMD','Mandalay Airport'],Naypyitaw:['VYNT','Naypyitaw Airport'],Taunggyi:['VYHH','Heho Airport'],Sittwe:['VYSW','Sittwe Airport'],Myitkyina:['VYMK','Myitkyina Airport'],Kawthaung:['VYKT','Kawthaung Airport'],Monywa:['VYMY','Monywa Airport'],Mawlamyine:['VYMM','Mawlamyine Airport'],'Hpa-An':['VYMM','Mawlamyine Airport']};
-function curObs(){var s=OMAP[city];if(!s)return null;var r=OBS.filter(function(o){return o.icaoId===s[0]}).sort(function(a,b){return (b.obsTime||0)-(a.obsTime||0)})[0];if(!r||!r.obsTime)return null;var mins=Math.round((Date.now()-r.obsTime*1000)/6e4);if(mins>120)return null;var x=r.wxString||'';return {name:s[1],mins:mins,wx:x,ts:/TS/.test(x),rain:/RA|SH|DZ/.test(x),heavy:/\+RA|\+TS/.test(x)}}
+function curObs(){var s=OMAP[city];if(!s)return null;var r=OBS.filter(function(o){return o.icaoId===s[0]}).sort(function(a,b){return (b.obsTime||0)-(a.obsTime||0)})[0];if(!r||!r.obsTime)return null;var mins=Math.round((Date.now()-r.obsTime*1000)/6e4);if(mins>120)return null;var x=r.wxString||'';return {name:s[1],mins:mins,wx:x,temp:r.temp,ts:/TS/.test(x),rain:/RA|SH|DZ/.test(x),heavy:/\+RA|\+TS/.test(x)}}
 function obsCode(o){return !o?null:o.ts?95:o.heavy?65:o.rain?63:null}
-function applyObs(){if(!WX)return;var o=curObs(),c=obsCode(o);if(WX.current._model==null)WX.current._model=WX.current.weather_code;WX.current.weather_code=c==null?WX.current._model:c;WX.current._obs=o}
+function applyObs(){if(!WX)return;var o=curObs(),c=obsCode(o);if(WX.current._model==null){WX.current._model=WX.current.weather_code;WX.current._mt=WX.current.temperature_2m}WX.current.weather_code=c==null?WX.current._model:c;WX.current.temperature_2m=o&&o.temp!=null?o.temp:WX.current._mt;WX.current._obs=o}
 function loadObs(){var u=location.hostname==='parabaikdaily.com'?'/obs':PUSH_API+'/obs';return fetch(u+'?t='+Math.floor(Date.now()/12e4)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){OBS=Array.isArray(j)?j:[];applyObs();if(view==='weather')renderWx();renderHome()}).catch(function(){})}
 
 /* Safety */
