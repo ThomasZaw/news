@@ -390,6 +390,32 @@ a.card:hover{outline:1px solid var(--gold);border:0}
 @media (max-width:640px){.q-pair{grid-template-columns:minmax(0,1fr)}}
 
 @media (max-width:759px) and (orientation:portrait){#qalert{position:fixed;left:0;right:0;bottom:0;z-index:30;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}}
+
+/* Gold-leaf lotus band */
+.band{height:40px;-webkit-mask:none;mask:none;background:#2A0A07 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='40' viewBox='0 0 72 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFF0B0'/%3E%3Cstop offset='.42' stop-color='%23E2B04A'/%3E%3Cstop offset='.78' stop-color='%23A9741F'/%3E%3Cstop offset='1' stop-color='%236F4712'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%238A5B18'/%3E%3Cstop offset='.5' stop-color='%23FFE9A3'/%3E%3Cstop offset='1' stop-color='%238A5B18'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='72' height='40' fill='%232A0A07'/%3E%3Crect width='72' height='2.5' fill='url(%23h)'/%3E%3Cpath d='M36 31C20 28 15 15 36 4C57 15 52 28 36 31Z' fill='url(%23g)' stroke='%234A2A0A' stroke-width='.8'/%3E%3Cpath d='M36 26C27 24 25 16 36 9C47 16 45 24 36 26Z' fill='%237A1E12' stroke='%23F1CC74' stroke-width='1'/%3E%3Cpath d='M36 22C33 20 33 16 36 13C39 16 39 20 36 22Z' fill='url(%23g)'/%3E%3Cpath d='M0 31C-16 28 -21 15 0 4C21 15 16 28 0 31Z' fill='url(%23g)' stroke='%234A2A0A' stroke-width='.8'/%3E%3Cpath d='M72 31C56 28 51 15 72 4C93 15 88 28 72 31Z' fill='url(%23g)' stroke='%234A2A0A' stroke-width='.8'/%3E%3Crect y='32' width='72' height='1.5' fill='url(%23h)'/%3E%3Cg fill='url(%23g)'%3E%3Ccircle cx='6' cy='36.6' r='2'/%3E%3Ccircle cx='18' cy='36.6' r='2'/%3E%3Ccircle cx='30' cy='36.6' r='2'/%3E%3Ccircle cx='42' cy='36.6' r='2'/%3E%3Ccircle cx='54' cy='36.6' r='2'/%3E%3Ccircle cx='66' cy='36.6' r='2'/%3E%3C/g%3E%3C/svg%3E") repeat-x left top/72px 40px;box-shadow:0 2px 6px rgba(0,0,0,.28)}
+/* Sky card */
+.sky{position:relative;overflow:hidden;min-height:clamp(300px,36vw,390px);padding:0;background:#1F6FC4;color:#fff;display:block;isolation:isolate}
+.sky:not(.live-sky){padding:18px;background:var(--panel);color:var(--chalk)}
+a.sky:hover{outline:0}
+.sky-bg{position:absolute;inset:0;z-index:-1;overflow:hidden}
+.clouds{position:absolute;inset:0 auto auto 0;width:200%;height:78%;display:flex;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 76%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 76%,transparent 100%)}
+.clouds canvas{width:50%;height:100%;display:block}
+.clouds.c2{opacity:.72;top:8%}
+.sun{position:absolute;width:300px;height:300px;margin:-150px;border-radius:50%;background:radial-gradient(circle,#FFFEF4 0 10%,#FFF3C4 14%,rgba(255,236,170,.55) 22%,rgba(255,232,160,.2) 42%,rgba(255,232,160,0) 70%)}
+.moon{position:absolute;right:16%;top:18%;width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 36% 34%,#FBF6E4,#CFC7AE 72%);box-shadow:0 0 34px 8px rgba(226,226,200,.3)}
+.stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff}
+.rain{position:absolute;inset:-40% 0 0;background-image:repeating-linear-gradient(104deg,rgba(255,255,255,0) 0 9px,rgba(225,235,245,.26) 9px 10px,rgba(255,255,255,0) 10px 23px);background-size:120px 120px}
+.hz-wrap{position:absolute;left:0;right:0;bottom:0;height:38%}
+.hz{position:absolute;left:0;bottom:0;width:100%;height:100%}
+.sky-fg{position:relative;display:grid;gap:8px;padding:20px 22px 24px;max-width:640px;text-shadow:0 1px 3px rgba(0,0,0,.55),0 0 22px rgba(0,0,0,.28)}
+.sky-fg .card-t{color:#fff}.sky-fg .card-t .mm{color:#FFE7A8}
+.sky-main{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px}
+.sky-main .t{font:600 clamp(4rem,10vw,5.8rem)/1 var(--display);letter-spacing:-.03em}
+.sky-main .c{font-size:1.28rem;font-weight:600}.sky-main .c .mm{display:block;font-weight:500;color:#FFE7A8}
+.sky-info{margin:0;font-weight:500}
+.glass{justify-self:start;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-top:4px;padding:8px 13px;background:rgba(10,16,24,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-left:4px solid var(--fire);font-weight:700;text-shadow:none}
+.glass .mm{font-weight:500;color:#FFE7A8}
+@media (prefers-reduced-motion:no-preference){.clouds{animation:drift2 340s linear infinite}.clouds.c2{animation-duration:210s}@keyframes drift2{to{transform:translateX(-50%)}}.rain{animation:fall .55s linear infinite}@keyframes fall{to{background-position:-28px 120px}}}
 </style>
 </head>
 <body>
@@ -408,12 +434,13 @@ a.card:hover{outline:1px solid var(--gold);border:0}
 <div class="main">
   <div class="breaking" id="qalert" hidden></div>
   <div class="breaking" id="breaking" hidden></div>
+  <div class="band" id="band" aria-hidden="true"></div>
   <div class="pane">
     <main>
-      <section class="view" id="v-home" aria-label="Home"><div class="band" aria-hidden="true"></div><div class="topdate" id="dateline"></div><div class="grid" id="home"></div></section>
+      <section class="view" id="v-home" aria-label="Home"><div class="topdate" id="dateline"></div><div class="grid" id="hgrid"></div></section>
       <section class="view" id="v-weather" aria-label="Weather" hidden><div class="wx-hero" id="wx"></div></section>
-      <section class="view" id="v-enso" aria-label="El Niño" hidden><div class="enso" id="enso"></div></section>
-      <section class="view" id="v-quakes" aria-label="Earthquakes" hidden><div class="enso" id="quakes"></div></section>
+      <section class="view" id="v-enso" aria-label="El Niño" hidden><div class="enso" id="enso-box"></div></section>
+      <section class="view" id="v-quakes" aria-label="Earthquakes" hidden><div class="enso" id="quake-box"></div></section>
       <section class="view" id="v-calendar" aria-label="Burmese calendar" hidden><div class="day-box" id="daybox"></div></section>
       <section class="view" id="v-reminders" aria-label="Reminders" hidden><div class="notes" id="notes"></div></section>
       <section class="view" id="v-news" aria-label="News" hidden>

@@ -192,7 +192,7 @@ var RT;addEventListener('resize',function(){clearTimeout(RT);RT=setTimeout(funct
 function ensoColor(v){return v>=2?'#B3202A':v>=1?'#D8532B':v>=.5?'#E8A04A':v<=-1?'#2B6CB0':v<=-.5?'#6FA8DC':'#8E8A82'}
 function ensoPhase(v){return v>=2?['Very strong El Niño','အလွန်ပြင်းထန်သော အယ်လ်နီညို']:v>=1.5?['Strong El Niño','ပြင်းထန်သော အယ်လ်နီညို']:v>=.5?['El Niño','အယ်လ်နီညို']:v<=-.5?['La Niña','လာနီညာ']:['Neutral','ပုံမှန်']}
 function renderEnso(d){
-  var b=$('enso');clear(b);var h=el('div','enso-head'),t=el('h2',null,'El Niño tracker');h.append(t,mm('span','အယ်လ်နီညို'));b.append(h);
+  var b=$('enso-box');clear(b);var h=el('div','enso-head'),t=el('h2',null,'El Niño tracker');h.append(t,mm('span','အယ်လ်နီညို'));b.append(h);
   if(!d||!d.weeks||!d.weeks.length){b.append(el('p',null,'El Niño data is loading. It updates every week from NOAA.'));return}
   var L=d.weeks[d.weeks.length-1],P=ensoPhase(L.n34),s=el('div','enso-state');
   var sign=function(v){return (v>0?'+':'')+v.toFixed(1)+'°C'};
@@ -262,7 +262,7 @@ function enablePush(){
   return Notification.requestPermission().then(function(p){if(p!=='granted')throw new Error('Notifications blocked');return pushSub()}).then(function(s){return post('/subscribe',s)}).then(function(){store('pd-push',1)})}
 function testPush(){return pushSub().then(function(s){return post('/test',s)})}
 function renderQuakes(){
-  var b=$('quakes');if(!b||view!=='quakes')return;clear(b);
+  var b=$('quake-box');if(!b||view!=='quakes')return;clear(b);
   var h=el('h2',null,'Earthquakes ');h.className='q-title';h.append(mm('span','ငလျင်'));b.append(h);
   var reg=QK.filter(inRegion),top=reg[0],o=place(),s=el('div','enso-state');
   if(top){s.append(el('div','enso-big','M '+top.mag.toFixed(1)),el('p','enso-phase',top.where),el('p',null,qAgo(top.time)+' · '+top.dist+' km from '+o.name))}
@@ -284,6 +284,50 @@ function renderQuakes(){
   act.append(g1,g2,g3,g4);b.append(act);
   b.append(el('p','small-note','Alerts show for magnitude 4.5+ in or near Myanmar, or 4.0+ within 300 km of '+o.name+'. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
   b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
+}
+
+/* Realistic sky card */
+function seeded(n){return function(){n=(n*16807)%2147483647;return n/2147483647}}
+function skyColors(c,h,day){
+  var dawn=h>=5&&h<7,dusk=h>=17&&h<19;
+  if(c>=95)return ['#1B2230','#39424F','#6A6F73'];
+  if(c>=51)return day?['#465565','#74838F','#AEB6B7']:['#141B26','#27313F','#46505A'];
+  if(c===3||c===45||c===48)return day?['#74899C','#AAB7C1','#DAD8CF']:['#171F2C','#2C3644','#4A515A'];
+  if(!day)return ['#050B1C','#10203F','#2B3B62'];
+  if(dawn)return ['#3A6EA8','#E9A77C','#FFD9A0'];
+  if(dusk)return ['#29497F','#C9694F','#FFB765'];
+  return ['#1F6FC4','#6FB4E8','#FBE7C3'];
+}
+function cloudCanvas(cover,seed,dark,day){
+  var W=1400,H=360,c=document.createElement('canvas');c.width=W;c.height=H;var x=c.getContext('2d'),r=seeded(seed);
+  var base=dark?[120,128,136]:day?[255,255,255]:[150,160,180],shade=dark?[62,70,80]:day?[176,190,205]:[70,80,100];
+  function puff(px,py,rad,col,al){[px-W,px,px+W].forEach(function(q){var g=x.createRadialGradient(q,py,0,q,py,rad);g.addColorStop(0,'rgba('+col+','+al+')');g.addColorStop(.6,'rgba('+col+','+al*.45+')');g.addColorStop(1,'rgba('+col+',0)');x.fillStyle=g;x.fillRect(q-rad,py-rad,rad*2,rad*2)})}
+  for(var n=0;n<cover;n++){var cx=r()*W,cy=40+r()*170,w=120+r()*230,h=28+r()*42;
+    for(var i=0;i<46;i++){var a=r()*6.28,d=Math.sqrt(r()),px=cx+Math.cos(a)*d*w,py=cy+Math.sin(a)*d*h,s=22+r()*42*(1-d*.5);puff(px,py+s*.34,s*1.05,shade,.16);puff(px,py,s,base,.2)}}
+  return c;
+}
+function stupa(x,b,s){var w=46*s,h=118*s;return 'M'+(x-w*1.5)+' '+b+'V'+(b-10*s)+'H'+(x-w*1.25)+'V'+(b-20*s)+'H'+(x-w)+'V'+(b-30*s)+'H'+(x-w*.78)+'C'+(x-w*.62)+' '+(b-58*s)+' '+(x-w*.22)+' '+(b-74*s)+' '+(x-w*.12)+' '+(b-h*.82)+'L'+(x-1.5*s)+' '+(b-h*1.32)+'H'+(x+1.5*s)+'L'+(x+w*.12)+' '+(b-h*.82)+'C'+(x+w*.22)+' '+(b-74*s)+' '+(x+w*.62)+' '+(b-58*s)+' '+(x+w*.78)+' '+(b-30*s)+'H'+(x+w)+'V'+(b-20*s)+'H'+(x+w*1.25)+'V'+(b-10*s)+'H'+(x+w*1.5)+'V'+b+'Z'}
+function palm(x,b,s){var p='M'+x+' '+b+'Q'+(x+5*s)+' '+(b-40*s)+' '+(x+2*s)+' '+(b-78*s)+'L'+(x+6*s)+' '+(b-78*s)+'Q'+(x+10*s)+' '+(b-40*s)+' '+(x+6*s)+' '+b+'Z';[-34,-22,-10,12,24,36].forEach(function(o){var e=x+4*s+o*s,y=b-78*s+Math.abs(o)*.55*s;p+='M'+(x+4*s)+' '+(b-80*s)+'Q'+(x+4*s+o*.55*s)+' '+(b-92*s)+' '+e+' '+y+'Q'+(x+4*s+o*.45*s)+' '+(b-84*s)+' '+(x+4*s)+' '+(b-77*s)+'Z'});return p}
+function horizon(far,near){var f='',n='';[[150,.62],[290,.8],[470,.55],[710,.72],[880,.58],[1090,.78]].forEach(function(p){f+=stupa(p[0],160,p[1])});[[60,.7],[1010,.62]].forEach(function(p){n+=palm(p[0],170,p[1])});n+=stupa(610,170,1.08)+stupa(835,170,.66)+stupa(300,170,.74)+palm(450,170,.82)+palm(1140,170,.9)+palm(205,170,.56);
+  return '<svg class="hz" viewBox="0 0 1200 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><path fill="'+far+'" d="'+f+'M0 170V150Q300 138 600 148T1200 144V170Z"/><path fill="'+near+'" d="'+n+'M0 170V160Q300 152 620 160T1200 156V170Z"/></svg>'}
+function drawSky(b){
+  clear(b);
+  if(!WX){b.classList.remove('live-sky');b.append(el('p','line','Weather is loading.'));return}
+  b.classList.add('live-sky');
+  var w=WX.current,hr=parseInt(w.time.slice(11,13),10),day=!!w.is_day,c=w.weather_code,k=code(c,w.is_day),i=nowIdx(WX),F=FIRE[fireLevel(WX.hourly,i)],C=skyColors(c,hr,day);
+  var s=el('div','sky-bg');s.style.background='linear-gradient(180deg,'+C[0]+' 0%,'+C[1]+' 62%,'+C[2]+' 100%)';
+  var clearSky=c===0,part=c>=1&&c<=2,wet=c>=51;
+  if(day&&(clearSky||part)){var sun=el('i','sun');sun.style.left=Math.max(8,Math.min(92,(hr-6)/12*100))+'%';sun.style.top=(22+Math.abs(hr-12)*5)+'%';s.append(sun)}
+  if(!day&&(clearSky||part)){var r=seeded(7),st=el('div','stars');for(var q=0;q<70;q++){var t=el('i');t.style.cssText='left:'+r()*100+'%;top:'+r()*62+'%;opacity:'+(.3+r()*.7);st.append(t)}s.append(st);var m=el('i','moon');s.append(m)}
+  var cover=clearSky?1:part?6:c===3?20:wet?24:14,dark=wet||c>=95;
+  [[cover,11,'c1'],[Math.ceil(cover*.7),29,'c2']].forEach(function(l){var tr=el('div','clouds '+l[2]);tr.append(cloudCanvas(l[0],l[1],dark,day));var cv2=document.createElement('canvas');cv2.width=1400;cv2.height=360;cv2.getContext('2d').drawImage(tr.firstChild,0,0);tr.append(cv2);s.append(tr)});
+  if(wet)s.append(el('div','rain'));
+  var far=day?'rgba(46,60,72,.5)':'rgba(10,16,30,.7)',near=day?'#141B1F':'#05080F',h=el('div');h.className='hz-wrap';h.innerHTML=horizon(far,near);s.append(h);b.append(s);
+  var top=el('div','card-t');top.append(city+' now');top.append(mm('span','ရာသီဥတု'));
+  var main=el('div','sky-main'),tx=el('div','c');tx.append(k[1],mm('span',k[2]));main.append(el('span','t',Math.round(w.temperature_2m)+'°'),tx);
+  var fire=el('div','glass');fire.style.setProperty('--fire',F[3]);fire.append('🔥 Fire danger: '+F[1],mm('span',F[2]));
+  var info=el('p','sky-info','Feels like '+Math.round(w.apparent_temperature)+'°  ·  Rain '+(WX.hourly.precipitation_probability[i]||0)+'%  ·  Wind '+Math.round(w.wind_speed_10m)+' km/h');
+  var fg=el('div','sky-fg');fg.append(top,main,info,fire);b.append(fg);
 }
 
 /* Daily edition */
@@ -338,7 +382,7 @@ var VIEWS=['home','weather','enso','quakes','calendar','reminders','learn'],NEWS
 function route(jump){
   var k=location.hash.slice(1);if(VIEWS.indexOf(k)<0&&NEWS.indexOf(k)<0)k='home';
   var v=NEWS.indexOf(k)>=0?'news':k;view=v;if(v==='news')key=k;
-  VIEWS.concat('news').forEach(function(x){$('v-'+x).hidden=x!==v});
+  VIEWS.concat('news').forEach(function(x){$('v-'+x).hidden=x!==v});$('band').hidden=v!=='home';
   Array.prototype.forEach.call($('nav').querySelectorAll('a'),function(a){var on=a.dataset.key===(v==='news'?'all':k);if(on){a.setAttribute('aria-current','page');var nv=$('nav');if(nv.scrollWidth>nv.clientWidth)nv.scrollLeft=a.offsetLeft-40}else a.removeAttribute('aria-current')});
   if(E&&v==='news')renderNews();
   if(v==='home')renderHome();
@@ -348,12 +392,11 @@ function route(jump){
 function redraw(){if(view==='quakes')renderQuakes();if(view==='weather'&&WX)renderWx();if(view==='enso')renderEnso(ENSO)}
 function card(cls,href,title,m){var c=el(href?'a':'section','card '+cls);if(href)c.href=href;var t=el('div','card-t');t.append(title);if(m)t.append(mm('span',m));if(href)t.append(el('i',null,'→'));c.append(t);return c}
 function renderHome(){
-  var g=$('home');if(!g||view!=='home')return;clear(g);
-  var c=card('w6','#weather','Weather · '+city,'ရာသီဥတု');
-  if(WX){var w=WX.current,k=code(w.weather_code,w.is_day),i=nowIdx(WX),F=FIRE[fireLevel(WX.hourly,i)],r=el('div','h-wx'),tx=el('div','c');tx.append(k[1],mm('span',k[2]));r.append(el('span','e',k[0]),el('span','t',Math.round(w.temperature_2m)+'°'),tx);
-    var f=el('div','h-fire');f.style.setProperty('--fire',F[3]);f.append('🔥 Fire danger: '+F[1],mm('span',F[2]));
-    c.append(r,el('p','line muted','Feels like '+Math.round(w.apparent_temperature)+'° · Rain '+(WX.hourly.precipitation_probability[i]||0)+'% · Wind '+Math.round(w.wind_speed_10m)+' km/h'),f)}else c.append(el('p','line muted','Weather is loading.'));
-  g.append(c);
+  var g=$('hgrid');if(!g||view!=='home')return;
+  var slot=$('home-sky');if(!slot){slot=el('a','sky card w6');slot.id='home-sky';slot.href='#weather';g.prepend(slot)}
+  while(g.children.length>1)g.removeChild(g.lastChild);
+  var skey=WX?city+WX.current.time+WX.current.weather_code+Math.round(WX.current.temperature_2m):'wait';
+  if(slot.dataset.key!==skey){slot.dataset.key=skey;drawSky(slot)}
   var en=card('','#enso','El Niño','အယ်လ်နီညို');
   if(ENSO&&ENSO.weeks&&ENSO.weeks.length){var L=ENSO.weeks[ENSO.weeks.length-1],P=ensoPhase(L.n34);en.append(el('div','big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p','line',P[0]))}else en.append(el('p','line muted','Loading.'));
   g.append(en);
