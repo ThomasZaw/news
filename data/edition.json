@@ -14,6 +14,43 @@
  },
  "sections": [
   {
+   "id": "weather",
+   "en": "Weather",
+   "mm": "ရာသီဥတု",
+   "items": [
+    {
+     "title": "Bay of Bengal is mostly calm",
+     "body": "Myanmar's weather department says skies are partly cloudy to cloudy over the Andaman Sea and South Bay, with a few clouds elsewhere.",
+     "sources": [
+      {
+       "name": "DMH Myanmar",
+       "url": "https://www.moezala.gov.mm/en/bay-bulletin/94"
+      }
+     ]
+    },
+    {
+     "title": "Cyclone Murasu struck India, not Myanmar",
+     "body": "It reached Andhra Pradesh on Nov 3 and had weakened to a depression by Nov 4.",
+     "sources": [
+      {
+       "name": "Vajiram & Ravi",
+       "url": "https://vajiramandravi.com/current-affairs/cyclone-murasu-2026/"
+      }
+     ]
+    },
+    {
+     "title": "Electrical faults are a leading cause of fires",
+     "body": "Fire Services figures for early 2026 showed 191 fires, 74 of them electrical, with Yangon recording the most.",
+     "sources": [
+      {
+       "name": "Global New Light of Myanmar",
+       "url": "https://www.gnlm.com.mm/191-fire-incidents-logged-nationwide-in-early-2026-leaving-12-dead/"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "myanmar",
    "en": "Myanmar",
    "mm": "မြန်မာ",
@@ -692,9 +729,13 @@
   "text": "By effort and heedfulness, discipline and self-mastery, let the wise one make for himself an island which no flood can overwhelm.",
   "source": "Dhammapada, verse 25, translated by Acharya Buddharakkhita"
  },
- "weather": {
-  "now": "34°/26°",
-  "rain": "70%",
-  "tomorrow": "33°/25°"
+ "history": {
+  "label": "This month in history",
+  "title": "Mrauk-U was founded in 1430",
+  "body": "King Min Saw Mon founded the city on 16 November 1430. It became the capital of a powerful Arakanese kingdom.",
+  "source": {
+   "name": "Wikipedia",
+   "url": "https://en.wikipedia.org/wiki/Timeline_of_Burmese_history"
+  }
  }
 }

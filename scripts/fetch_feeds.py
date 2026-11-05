@@ -8,6 +8,10 @@ from html import unescape
 
 G = "https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US:en&q="
 FEEDS = {
+    "weather": [("Google News", G + "Myanmar+weather+OR+storm+OR+flood+OR+cyclone+when:3d"),
+                ("Google News", G + "Bay+of+Bengal+cyclone+when:3d"),
+                ("Google News", G + "Myanmar+fire+breaks+out+when:3d"),
+                ("GDACS", "https://www.gdacs.org/xml/rss.xml")],
     "myanmar": [("The Irrawaddy", "https://www.irrawaddy.com/feed"), ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
                 ("Mizzima", "https://eng.mizzima.com/feed"), ("Google News", G + "Myanmar+when:2d")],
     "world": [("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml"), ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
@@ -22,6 +26,15 @@ FEEDS = {
 }
 MAX_AGE = timedelta(hours=48)
 PER_TOPIC = 30
+UA = {"User-Agent": "ParabaikDaily/1.0 (personal news reader)"}
+REGION = re.compile(r"myanmar|burma|bay of bengal|andaman|bangladesh|thailand", re.I)
+CITIES = [("Yangon", 16.87, 96.20), ("Mandalay", 21.97, 96.08), ("Naypyitaw", 19.75, 96.12), ("Hpa-An", 16.89, 97.63),
+          ("Mawlamyine", 16.49, 97.63), ("Pathein", 16.78, 94.73), ("Bago", 17.34, 96.48), ("Taunggyi", 20.79, 97.04),
+          ("Sittwe", 20.15, 92.90), ("Myitkyina", 25.38, 97.40), ("Monywa", 22.11, 95.14), ("Kawthaung", 9.98, 98.55)]
+METEO = ("https://api.open-meteo.com/v1/forecast?current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,"
+         "weather_code,wind_speed_10m,wind_gusts_10m,is_day&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,"
+         "weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,"
+         "wind_gusts_10m_max&timezone=Asia%2FYangon&forecast_days=7")
 
 
 def local(tag):
@@ -72,11 +85,46 @@ def parse(raw, source, topic):
 def fetch(job):
     topic, source, url = job
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "ParabaikDaily/1.0 (personal news reader)"})
+        req = urllib.request.Request(url, headers=UA)
         with urllib.request.urlopen(req, timeout=25) as r:
-            return parse(r.read(), source, topic), None
+            rows = parse(r.read(), source, topic)
+        if source == "GDACS":
+            rows = [i for i in rows if REGION.search(i["title"])]
+        return rows, None
     except Exception as e:
         return [], f"{source} ({topic}): {e}"
+
+
+def quakes():
+    url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson"
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=25) as r:
+            data = json.load(r)
+    except Exception as e:
+        print("skipped USGS:", e, file=sys.stderr)
+        return []
+    out = []
+    for q in data.get("features", []):
+        lon, lat = q["geometry"]["coordinates"][:2]
+        p = q["properties"]
+        if 9 <= lat <= 29 and 91 <= lon <= 102 and p.get("mag"):
+            d = datetime.fromtimestamp(p["time"] / 1000, timezone.utc)
+            out.append({"title": f"Magnitude {p['mag']:.1f} earthquake: {p['place']}", "url": p["url"], "source": "USGS", "topic": "weather", "published": d.isoformat(timespec="seconds")})
+    return out
+
+
+def weather(path):
+    out = {}
+    for name, lat, lon in CITIES:
+        try:
+            with urllib.request.urlopen(urllib.request.Request(f"{METEO}&latitude={lat}&longitude={lon}", headers=UA), timeout=25) as r:
+                out[name] = json.load(r)
+        except Exception as e:
+            print("skipped weather", name, e, file=sys.stderr)
+    if out:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cities": out}, f, separators=(",", ":"))
+    print(len(out), "cities of weather")
 
 
 def main(path="data/live.json"):
@@ -88,7 +136,7 @@ def main(path="data/live.json"):
             print("skipped", err, file=sys.stderr)
     now = datetime.now(timezone.utc)
     seen, by_topic = set(), {t: [] for t in FEEDS}
-    rows = sorted((i for r, _ in results for i in r), key=lambda i: i["published"], reverse=True)
+    rows = sorted([i for r, _ in results for i in r] + quakes(), key=lambda i: i["published"], reverse=True)
     for i in rows:
         key = re.sub(r"[^a-z0-9]+", "", i["title"].lower())[:70]
         age = now - datetime.fromisoformat(i["published"])
@@ -101,6 +149,7 @@ def main(path="data/live.json"):
         sys.exit("No headlines fetched")
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "items": items}, f, ensure_ascii=False, indent=1)
+    weather("data/weather.json")
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 

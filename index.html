@@ -21,7 +21,7 @@
    each story is a node on a circuit trace. News column plus a reference rail on wide screens. */
 :root{
   --ground:#14100E; --panel:#1E1714; --line:#3B2E27; --chalk:#F1E9DB; --muted:#AD9E8E;
-  --gold:#DDAE45; --vermilion:#EC6248; --jade:#45CDB4; --up:#45CDB4; --down:#F07A62;
+  --gold:#DDAE45; --vermilion:#EC6248; --jade:#45CDB4; --up:#45CDB4; --down:#F07A62; --fire:#45CDB4;
   --display:"Unbounded","Noto Serif Myanmar",system-ui,sans-serif;
   --body:"Hanken Grotesk","Noto Serif Myanmar",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -30,15 +30,15 @@
 }
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
   --ground:#F2E7D1; --panel:#FAF3E4; --line:#D7C5A4; --chalk:#231712; --muted:#6A5849;
-  --gold:#8D6210; --vermilion:#B22F18; --jade:#08705F; --up:#08705F; --down:#B22F18; color-scheme:light}}
+  --gold:#8D6210; --vermilion:#B22F18; --jade:#08705F; --up:#08705F; --down:#B22F18; --fire:#08705F; color-scheme:light}}
 :root[data-theme="light"]{
   --ground:#F2E7D1; --panel:#FAF3E4; --line:#D7C5A4; --chalk:#231712; --muted:#6A5849;
-  --gold:#8D6210; --vermilion:#B22F18; --jade:#08705F; --up:#08705F; --down:#B22F18; color-scheme:light}
+  --gold:#8D6210; --vermilion:#B22F18; --jade:#08705F; --up:#08705F; --down:#B22F18; --fire:#08705F; color-scheme:light}
 *{box-sizing:border-box}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
 [hidden]{display:none!important}
-body{background:var(--ground);color:var(--chalk);font:400 16px/1.55 var(--body);-webkit-text-size-adjust:100%}
+body{background:var(--ground);color:var(--chalk);font:400 1.125rem/1.6 var(--body);-webkit-text-size-adjust:100%}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ground)}
 a{color:inherit}
 :focus-visible{outline:2px solid var(--jade);outline-offset:2px}
@@ -153,6 +153,90 @@ a{color:inherit}
   .stupa{width:58px}
 }
 @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+
+html{font-size:100%}html[data-size="1"]{font-size:115%}html[data-size="2"]{font-size:130%}
+button,input,select{font:inherit;color:inherit}
+.size{display:flex;gap:4px;margin-top:10px}
+.btn{min-height:44px;padding:0 14px;background:var(--panel);border:1px solid var(--line);cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--gold)}
+.btn.main{background:var(--gold);border-color:var(--gold);color:var(--ground)}
+.field{min-height:44px;padding:0 10px;background:var(--panel);border:1px solid var(--line);min-width:0;width:100%}
+label{display:grid;gap:4px;font-size:.92rem;color:var(--muted)}
+.wx-hero{padding-block:8px 28px;display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+.wx-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.wx-top h2,.day-box h2,.notes h2{margin:0;display:flex;gap:10px;align-items:baseline;font:600 1.15rem/1.3 var(--display)}
+.wx-top h2 .mm,.day-box h2 .mm,.notes h2 .mm{color:var(--gold);font-weight:400}
+.wx-top select{width:auto}
+.wx-now{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:24px;align-items:center}
+.wx-main{display:flex;align-items:center;gap:16px;min-width:0}
+.wx-emoji{font-size:clamp(4rem,14vw,6.5rem);line-height:1}
+@media (prefers-reduced-motion:no-preference){.wx-emoji{animation:drift 6s ease-in-out infinite}@keyframes drift{50%{transform:translateY(-6px)}}}
+.wx-temp{font:600 clamp(3.4rem,11vw,5.4rem)/1 var(--display);letter-spacing:-.03em}
+.wx-cond{font-size:1.25rem;font-weight:600}
+.wx-cond .mm{display:block;color:var(--gold);font-weight:400;font-size:1.15rem}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.stats div{background:var(--ground);padding:10px 12px}
+.stats b{display:block;font-weight:400;font-size:.9rem;color:var(--muted)}
+.stats span{font-size:1.3rem;font-weight:600}
+.stats .mm{font-size:.85rem;color:var(--gold);margin-left:6px;font-weight:400}
+.fire{border:2px solid var(--fire);padding:14px 16px;display:grid;gap:8px}
+.fire-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:1.3rem;font-weight:700}
+.fire-title .mm{font-weight:600;color:var(--fire)}
+.meter{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+.meter i{height:12px;background:var(--line)}
+.meter i.on{background:var(--fire)}
+.fire p{margin:0}.fire small{color:var(--muted);font-size:.86rem}
+.warn{margin:0;padding:10px 12px;background:var(--panel);border:1px solid var(--line);font-weight:600}
+.chart h3,.week h3,.wn h3{margin:0 0 6px;font:600 1rem/1.4 var(--body)}
+.readout{font-family:var(--mono);font-size:.95rem;min-height:1.6em}
+.chart svg{display:block;width:100%;touch-action:pan-y}
+.chart text{fill:var(--muted);font:400 13px var(--mono)}
+.chart text.k{fill:var(--chalk);font-weight:500}
+.chart .gl{stroke:var(--line);stroke-width:1}
+.chart .l{stroke:var(--gold);stroke-width:2.5;fill:none}
+.chart .a{fill:var(--gold);opacity:.13}
+.chart .b{fill:var(--jade)}
+.chart .x{stroke:var(--chalk);stroke-width:1;opacity:.6}
+.chart .d{fill:var(--gold);stroke:var(--ground);stroke-width:2}
+.week-row{display:grid;grid-template-columns:repeat(7,minmax(84px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);min-width:610px}
+.week-scroll{overflow-x:auto}
+.week-row div{background:var(--ground);padding:10px 6px;text-align:center}
+.week-row b{display:block;font-weight:600;font-size:.95rem}
+.week-row em{display:block;font-style:normal;font-size:1.8rem;line-height:1.4}
+.week-row span{display:block;font-family:var(--mono);font-size:.9rem}
+.week-row small{display:block;color:var(--muted);font-size:.8rem}
+.today-box{border-block:1px solid var(--line);background:var(--panel)}
+.today-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:40px;padding-block:26px}
+.day-box,.notes{min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-content:start}
+.big-date{font-size:clamp(1.5rem,5vw,2.1rem);line-height:1.5;font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px 18px;margin:0}
+.facts dt{font-size:.86rem;color:var(--muted)}.facts dd{margin:0;font-weight:600}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cal-nav strong{text-align:center;min-width:0}
+.cal-nav strong .mm{display:block;color:var(--gold);font-weight:400;font-size:.92rem}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.cal>span{text-align:center;font-size:.8rem;color:var(--muted)}
+.cal button{min-height:58px;padding:4px 1px;background:var(--ground);border:1px solid transparent;cursor:pointer;display:grid;align-content:center;justify-items:center;line-height:1.2}
+.cal button b{font-size:1.05rem}.cal button small{font:400 .72rem/1.3 var(--mm);color:var(--muted)}
+.cal button.hol b{color:var(--vermilion)}
+.cal button.now{border-color:var(--gold)}
+.cal button[aria-pressed="true"]{background:var(--line)}
+.cal button.note small::after{content:" •";color:var(--jade)}
+.cal-detail{margin:0;padding:12px;background:var(--ground);border:1px solid var(--line)}
+.cal-detail .mm{display:block;color:var(--gold)}
+.note-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.note-form .w{grid-column:1/-1}
+.nlist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.nlist li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--ground);border:1px solid var(--line)}
+.nlist li.due{border-color:var(--vermilion)}
+.nlist div{min-width:0;overflow-wrap:anywhere}.nlist small{display:block;color:var(--muted)}
+.note-alert{margin:0;padding:12px 14px;background:var(--vermilion);color:var(--ground);font-weight:700}
+.small-note{font-size:.84rem;color:var(--muted);margin:0}
+.hist{padding:16px 18px;border:1px solid var(--line)}
+.hist h3{margin:4px 0;font:600 1.1rem/1.35 var(--body)}.hist p{margin:0 0 6px}
+.age-out{margin:0;display:grid;gap:4px}
+.wn .feed li{grid-template-columns:62px minmax(0,1fr)}
+@media (max-width:760px){.wx-now,.today-grid{grid-template-columns:minmax(0,1fr)}.today-grid{gap:30px}}
 </style>
 </head>
 <body>
@@ -161,6 +245,7 @@ a{color:inherit}
   <div class="mast-text">
     <div class="brand"><h1>Parabaik Daily</h1><span class="mm" lang="my">ပုရပိုက်</span></div>
     <div class="dateline" id="dateline"></div>
+    <div class="size" role="group" aria-label="Text size"><button class="btn" id="size-down" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up" type="button" aria-label="Larger text">A+</button></div>
   </div>
   <svg class="stupa" viewBox="0 0 120 150" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
     <path d="M60 4v20M54 12h12M56 18h8"/>
@@ -171,6 +256,8 @@ a{color:inherit}
   </svg>
 </header>
 
+<section class="wrap wx-hero" id="wx" aria-label="Weather"></section>
+<section class="today-box" aria-label="Burmese calendar and notes"><div class="wrap today-grid"><div class="day-box" id="daybox"></div><div class="notes" id="notes"></div></div></section>
 <section class="wrap lead" id="lead" aria-label="Top story"></section>
 <div class="tape-box"><div class="wrap"><div class="tape" id="tape" tabindex="0" aria-label="Key market numbers"></div></div></div>
 <nav class="tabs-box" aria-label="Sections"><div class="wrap"><div class="tabs" id="tabs"></div></div></nav>
@@ -180,86 +267,7 @@ a{color:inherit}
   <aside class="rail" id="rail"></aside>
 </div>
 <footer class="wrap foot"><p id="foot"></p></footer>
-<script>
-(function(){
-  var E=null,LIVE=null,key='all',TOPICS=[];
-  function el(t,c,x){var n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n}
-  function safe(u){return /^https?:\/\//.test(u||'')?u:'#'}
-  function srcs(a){var p=el('div','src');p.append('Source: ');a.forEach(function(s,i){if(i)p.append(', ');var l=el('a',null,s.name);l.href=safe(s.url);l.target='_blank';l.rel='noopener';p.append(l)});return p}
-  function dir(v){return v>0?'up':v<0?'down':'flat'}
-  function pct(v){if(!v)return 'unchanged';return (v>0?'▲ +':'▼ −')+Math.abs(v).toFixed(2).replace(/0$/,'')+'%'}
-  function ago(iso){var m=Math.max(0,Math.round((Date.now()-new Date(iso))/6e4));return m<1?'now':m<60?m+'m':m<1440?Math.round(m/60)+'h':Math.round(m/1440)+'d'}
-  function mmn(n){return String(n).replace(/\d/g,function(x){return '၀၁၂၃၄၅၆၇၈၉'[x]})}
-  function clear(n){while(n.firstChild)n.removeChild(n.firstChild)}
-  var wdE=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],wdM=['တနင်္ဂနွေ','တနင်္လာ','အင်္ဂါ','ဗုဒ္ဓဟူး','ကြာသပတေး','သောကြာ','စနေ'],moM=['ဇန်နဝါရီ','ဖေဖော်ဝါရီ','မတ်','ဧပြီ','မေ','ဇွန်','ဇူလိုင်','သြဂုတ်','စက်တင်ဘာ','အောက်တိုဘာ','နိုဝင်ဘာ','ဒီဇင်ဘာ'],post=['Garuda','Tiger','Lion','Elephant','Rat','Guinea pig','Naga'];
-  var N=document.getElementById('news'),TB=document.getElementById('tabs'),liveBox=el('section','live');liveBox.id='live';
-
-  function renderEdition(){
-    var p=E.date.split('-').map(Number),d=new Date(Date.UTC(p[0],p[1]-1,p[2])),w=d.getUTCDay(),me=p[0]-(p[1]>4||(p[1]===4&&p[2]>=17)?638:639);
-    var dl=document.getElementById('dateline');clear(dl);
-    var mm=el('span','mm',wdM[w]+'နေ့၊ '+mmn(p[0])+' ခုနှစ်၊ '+moM[p[1]-1]+'လ '+mmn(p[2])+' ရက်');mm.lang='my';
-    dl.append(mm,el('span',null,wdE[w]+' · ME '+me+' · '+post[w]+' post'),el('span',null,'Edition updated '+E.updated));
-    var y=new Date(Date.now()+6.5*3600e3),age=Math.floor((Date.UTC(y.getUTCFullYear(),y.getUTCMonth(),y.getUTCDate())-d.getTime())/864e5);
-    if(age>=2)dl.append(el('span','stale','This edition is '+age+' days old'));
-    var L=document.getElementById('lead');clear(L);
-    var ls=srcs(E.lead.sources);ls.style.marginTop='8px';
-    L.append(el('span','flag',E.lead.flag),el('h2',null,E.lead.title),el('p',null,E.lead.body),ls);
-    var T=document.getElementById('tape');clear(T);
-    E.tape.forEach(function(t){var n=el('div','tick');n.append(el('b',null,t.label),el('span',null,t.value),el('i',dir(t.change),pct(t.change)));T.append(n)});
-    TOPICS=[{id:'all',en:'All'}].concat(E.sections);clear(TB);
-    TOPICS.forEach(function(t){var a=el('a',null,t.en);a.href='#'+t.id;a.dataset.key=t.id;TB.append(a)});
-    var R=document.getElementById('rail');clear(R);
-    function head(en,m){var h=el('h2',null,en),s=el('span','mm',m);s.lang='my';h.append(' ',s);return h}
-    var wb=el('section');wb.append(head('Three words','စကားလုံး'));
-    E.words.forEach(function(v){var n=el('div','word'),t=el('div');t.append(el('span','term',v.term),el('span','pos',v.pos));var s=el('span','mm',v.mm);s.lang='my';n.append(t,s,el('p',null,v.meaning),el('p','ex',v.example));wb.append(n)});
-    var qb=el('section');qb.append(head('Quote','အဆိုအမိန့်'));
-    var q=el('blockquote','quote');q.append(el('p',null,E.quote.text),el('footer',null,E.quote.source));qb.append(q);
-    var xb=el('section','span');xb.append(head('Yangon','ရန်ကုန်'));
-    var x=el('div','wx');[['Today',E.weather.now],['Rain',E.weather.rain],['Tomorrow',E.weather.tomorrow]].forEach(function(r){var c=el('div');c.append(el('b',null,r[0]),el('span',null,r[1]));x.append(c)});xb.append(x);
-    R.append(wb,qb,xb);
-    document.getElementById('foot').textContent='Stories, words and the quote refresh every morning before 7:00 AM Myanmar time. The live feed checks public news feeds about every 30 minutes. Conflict reports can be hard to verify independently, so check the source for detail.';
-  }
-  function renderNews(){
-    clear(N);
-    E.sections.forEach(function(s){
-      if(key!=='all'&&key!==s.id)return;
-      var sec=el('section'),h=el('div','sec-head'),m=el('span','mm',s.mm);m.lang='my';h.append(el('h2',null,s.en),m);sec.append(h);
-      if(s.table&&key==='stocks'){
-        var wr=el('div','mkt-wrap');wr.tabIndex=0;var tb=el('table','mkt');
-        tb.innerHTML='<thead><tr><th scope="col">Market</th><th scope="col">Level</th><th scope="col">Change</th><th scope="col">As of</th></tr></thead>';
-        var b=el('tbody');E.markets.forEach(function(r){var tr=el('tr');tr.append(el('td',null,r.name),el('td',null,r.value),el('td',dir(r.change),pct(r.change)),el('td','w',r.when));b.append(tr)});
-        tb.append(b);wr.append(tb);sec.append(wr,el('p','note',E.marketNote));
-      }
-      var ul=el('ul','items'),list=key==='all'?s.items.slice(0,3):s.items;
-      list.forEach(function(i){var li=el('li','item');li.append(el('h3',null,i.title),el('p',null,i.body),srcs(i.sources));ul.append(li)});
-      sec.append(ul);
-      if(key==='all'){var a=el('a','more','All '+s.en+' news');a.href='#'+s.id;sec.append(a)}
-      N.append(sec);
-    });
-    if(key==='all')N.prepend(liveBox);else N.append(liveBox);
-    renderLive();
-  }
-  function renderLive(){
-    clear(liveBox);
-    var h=el('div','live-head'),m=el('span','mm','တိုက်ရိုက်');m.lang='my';
-    var a0=LIVE?ago(LIVE.updated):'',state=!LIVE?'Loading':a0==='now'?'Updated just now':'Updated '+a0+' ago';
-    h.append(el('i','dot'),el('h2',null,'Live feed'),m,el('span','live-state',state));liveBox.append(h);
-    if(!LIVE){liveBox.append(el('p','empty','Live headlines appear here once the feed loads.'));return}
-    var rows=LIVE.items.filter(function(i){return key==='all'||i.topic===key}).slice(0,key==='all'?12:30);
-    if(!rows.length){liveBox.append(el('p','empty','No headlines from the last two days in this topic.'));return}
-    var ul=el('ul','feed');
-    rows.forEach(function(i){var li=el('li',Date.now()-new Date(i.published)<36e5?'fresh':null),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source));li.append(t,c);ul.append(li)});
-    liveBox.append(ul);
-  }
-  function route(){
-    var k=location.hash.slice(1);key=TOPICS.some(function(t){return t.id===k})?k:'all';
-    Array.prototype.forEach.call(TB.children,function(a){var on=a.dataset.key===key;a.setAttribute('aria-current',on?'true':'false');if(on&&location.hash)a.scrollIntoView({block:'nearest',inline:'center'})});
-    renderNews();
-  }
-  function get(path){return fetch(path+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
-  function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderLive()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
-  get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();addEventListener('hashchange',route);setInterval(pullLive,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden)pullLive()})}).catch(function(){document.getElementById('news').append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
-})();
-</script>
+<script src="lib/ceMmDateTime.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

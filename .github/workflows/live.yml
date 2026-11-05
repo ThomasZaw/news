@@ -26,7 +26,7 @@ jobs:
       - run: python scripts/fetch_feeds.py data/live.json
       - run: |
           mkdir -p _site
-          cp -r index.html manifest.webmanifest icon-180.png icon-512.png data _site/
+          cp -r index.html app.js manifest.webmanifest icon-180.png icon-512.png data lib _site/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
