@@ -441,9 +441,8 @@ function renderHome(){
   if(WX){var w=WX.current,k=code(w.weather_code,w.is_day),i=nowIdx(WX),F=FIRE[fireLevel(WX.hourly,i)],row=el('div','h-row'),r=el('div','h-wx'),tx=el('div','c'),st=el('div','h-stats');
     tx.append(k[1],mm('span',k[2]));r.append(el('span','e',k[0]),el('span','t',Math.round(w.temperature_2m)+'°'),tx);
     [['Feels like',Math.round(w.apparent_temperature)+'°'],['Rain',(WX.hourly.precipitation_probability[i]||0)+'%'],['Wind',(w._obs&&w._obs.wind!=null?w._obs.wind:Math.round(w.wind_speed_10m))+' km/h']].forEach(function(x){var d=el('div');d.append(el('b',null,x[0]),el('span',null,x[1]));st.append(d)});row.append(r,st);c.append(row);
-    var f=el('div','h-fire');f.style.setProperty('--fire',F[3]);f.append('Fire danger: '+F[1],mm('span',F[2]));c.append(f);
-    dmhActive().forEach(function(x){var q=el('div','h-fire');q.style.setProperty('--fire','var(--red)');q.append('Official: '+x.kind+' warning');c.append(q)});
-    wxAlerts().filter(function(x){return x.l>0}).forEach(function(x){var q=el('div','h-fire');q.style.setProperty('--fire',x.l>1?'var(--red)':'var(--amber)');q.append(x.en+': '+LV[x.l]);c.append(q)})
+    dmhActive().forEach(function(x){c.append(el('div','h-off','Official warning: '+x.kind))});
+    var sg=el('div','h-status');[{en:'Fire danger',word:F[1],col:FIRE.indexOf(F)?F[3]:'var(--jade)'}].concat(wxAlerts()).forEach(function(x){var d=el('div','h-st'),v=el('span');v.style.setProperty('--st',x.col||['var(--jade)','var(--amber)','var(--red)'][x.l]);v.textContent=x.word||LV[x.l];d.append(el('b',null,x.en),v);sg.append(d)});c.append(sg)
   }else c.append(el('p','line muted','Weather is loading.'));
   g.append(c);
   var en=card('','#enso','El Niño','အယ်လ်နီညို');
