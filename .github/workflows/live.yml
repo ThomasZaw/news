@@ -1,7 +1,7 @@
 name: Live feed
 on:
   schedule:
-    - cron: "7,37 * * * *"
+    - cron: "7,22,37,52 * * * *"
   push:
     branches: [main]
   workflow_dispatch:
@@ -37,6 +37,9 @@ jobs:
       - run: |
           mkdir -p _site
           cp -r index.html app.js manifest.webmanifest icon-180.png icon-512.png data lib _site/
+          V="$(git rev-parse --short HEAD)"
+          sed -i "s/__V__/$V/g" _site/index.html
+          printf '{"v":"%s"}' "$V" > _site/data/version.json
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

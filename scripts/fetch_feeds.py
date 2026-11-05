@@ -216,6 +216,27 @@ def weather(path):
     print(len(out), "cities of weather")
 
 
+def markets(path):
+    names = {"Dow Jones": "^DJI", "S&P 500": "^GSPC", "Nasdaq": "^IXIC", "Russell 2000": "^RUT", "Nikkei 225": "^N225", "Kospi": "^KS11", "Hang Seng": "^HSI", "ASX 200": "^AXJO", "Brent crude": "BZ=F", "WTI crude": "CL=F", "Gold": "GC=F", "Bitcoin": "BTC-USD"}
+    money = {"Brent crude", "WTI crude", "Gold", "Bitcoin"}
+    out = {}
+    for name, sym in names.items():
+        try:
+            url = "https://query1.finance.yahoo.com/v8/finance/chart/" + urllib.parse.quote(sym) + "?range=1d&interval=5m"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                m = json.load(r)["chart"]["result"][0]["meta"]
+            price, prev = m["regularMarketPrice"], m.get("chartPreviousClose") or m.get("previousClose")
+            when = datetime.fromtimestamp(m["regularMarketTime"], timezone.utc) + timedelta(hours=6, minutes=30)
+            out[name] = {"value": ("$" if name in money else "") + f"{price:,.2f}", "change": round((price / prev - 1) * 100, 2), "when": when.strftime("%b %-d, %H:%M Yangon")}
+        except Exception as e:
+            print("skipped market", name, e, file=sys.stderr)
+    if out:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "items": out}, f, indent=1)
+    print(len(out), "markets")
+
+
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -247,6 +268,7 @@ def main(path="data/live.json"):
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
     weather("data/weather.json")
     enso("data/enso.json")
+    markets("data/markets.json")
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 

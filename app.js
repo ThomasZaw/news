@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-var E=null,LIVE=null,ENSO=null,key='all',view='home',TOPICS=[];
+var E=null,LIVE=null,ENSO=null,MK=null,key='all',view='home',TOPICS=[];
 function el(t,c,x){var n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n}
 function mm(t,x){var n=el(t||'span','mm',x);n.lang='my';return n}
 function $(i){return document.getElementById(i)}
@@ -180,12 +180,12 @@ function drawChart(box,H,i){
 }
 function renderWeatherNews(){
   var b=$('wn');if(!b||!E)return;clear(b);
-  var s=E.sections.find(function(x){return x.id==='weather'});
-  var h=el('h3',null,'Weather and fire news ');h.append(mm('span','သတင်း'));b.append(h);
-  if(s){var u=el('ul','items');s.items.slice(0,3).forEach(function(i){var li=el('li','item');li.append(el('h3',null,i.title),el('p',null,i.body),srcs(i.sources));u.append(li)});b.append(u)}
-  var rows=LIVE?LIVE.items.filter(function(i){return i.topic==='weather'}).slice(0,8):[];
-  if(rows.length){var f=feedList(rows);b.append(el('h3',null,'Live updates'),f)}
+  var s=E.sections.find(function(x){return x.id==='weather'}),h=el('h3',null,'Weather and fire news ');h.append(mm('span','သတင်း'));b.append(h);
+  var ul=el('ul','hl');if(s)s.items.slice(0,3).forEach(function(i){ul.append(hlRow(i.title,i.sources[0].url,i.sources[0].name))});
+  if(LIVE)LIVE.items.filter(function(i){return i.topic==='weather'}).slice(0,5).forEach(function(i){ul.append(hlRow(i.title,i.url,ago(i.published)+' ago · '+i.source))});
+  b.append(ul);
 }
+function hlRow(t,u,s){var li=el('li'),a=el('a',null,t);a.href=safe(u);a.target='_blank';a.rel='noopener';li.append(a,el('small',null,s));return li}
 var RT;addEventListener('resize',function(){clearTimeout(RT);RT=setTimeout(function(){var c=$('chart');if(c&&WX)drawChart(c,WX.hourly,nowIdx(WX))},200)});
 
 /* El Nino */
@@ -197,12 +197,16 @@ function renderEnso(d){
   var L=d.weeks[d.weeks.length-1],P=ensoPhase(L.n34),s=el('div','enso-state');
   var sign=function(v){return (v>0?'+':'')+v.toFixed(1)+'°C'};
   s.append(el('div','enso-big',sign(L.n34)),el('p','enso-phase',P[0]),mm('p',P[1]));b.append(s);
-  var k=720/260,x=function(lon){return 360+((lon+360)%360-170)*k},y=function(lat){return 130-(lat-5)*k};
   var R=[['Central Pacific',L.n4,-175,0],['Central-east Pacific',L.n34,-145,0],['Eastern Pacific',L.n3,-120,0],['Near Peru and Ecuador',L.n12,-85,-5]];
-  var warm=L.n34>=.5,cold=L.n34<=-.5,spot=R.slice().sort(function(p,q){return warm?q[1]-p[1]:p[1]-q[1]})[0],my=[x(96),y(21)],sx=x(spot[2]),sy=y(spot[3]),dot=Math.min(44,18+Math.abs(spot[1])*5);
-  var mark=(warm||cold)?'<circle class="ring" cx="'+sx+'" cy="'+sy+'" r="'+dot+'" fill="'+(warm?'#E0252B':'#2B6CB0')+'"/><circle cx="'+sx+'" cy="'+sy+'" r="'+dot+'" fill="'+(warm?'#E0252B':'#2B6CB0')+'" stroke="#fff" stroke-width="3"/>':'';
-  var label=(warm||cold)?'<text class="big-l" x="'+(sx-dot-12)+'" y="'+(sy-8)+'" text-anchor="end">'+(warm?'Warmest water':'Coldest water')+'</text><text class="big-l" x="'+(sx-dot-12)+'" y="'+(sy+16)+'" text-anchor="end">'+sign(spot[1])+'</text>':'<text class="big-l" x="400" y="130" text-anchor="middle">No El Niño or La Niña now</text>';
-  var w=el('div');w.innerHTML='<svg class="map" viewBox="0 0 720 260" role="img" aria-label="'+((warm||cold)?'Map with a dot on the Pacific near '+spot[0]+', where the sea is '+sign(spot[1])+' compared with normal, and Myanmar to the west':'Map of the Pacific and Myanmar')+'"><path class="land" d="'+LAND_PATH+'"/>'+mark+label+'<circle class="pin" cx="'+my[0]+'" cy="'+my[1]+'" r="6"/><text class="big-l" x="'+my[0]+'" y="'+(my[1]-13)+'" text-anchor="middle">Myanmar</text></svg>';b.append(w);
+  var x=function(lon){return ((lon+360)%360-80)*6},y=function(lat){return (45-lat)*6};
+  var warm=L.n34>=.5,cold=L.n34<=-.5,spot=R.slice().sort(function(p,q){return warm?q[1]-p[1]:p[1]-q[1]})[0],sx=x(spot[2]),sy=y(spot[3]),dot=Math.min(62,30+Math.abs(spot[1])*6);
+  var wide=(b.clientWidth||700)>=560,fs=wide?26:44,col=warm?'#E0252B':'#2B6CB0';
+  function T(px,py,s,an,sz,c){return '<text x="'+px+'" y="'+py+'" text-anchor="'+an+'" style="font-size:'+(sz||fs)+'px"'+(c?' class="'+c+'"':'')+'>'+s+'</text>'}
+  var svg='<svg class="map" viewBox="0 0 1260 480" role="img" aria-label="Satellite map of Asia and the Pacific Ocean'+((warm||cold)?', with a dot near '+spot[0]+', where the sea is '+sign(spot[1])+' compared with normal':'')+'"><image href="lib/pacific.jpg" width="1260" height="480"/>';
+  if(wide)svg+=T(x(-160),y(22),'PACIFIC OCEAN','middle',24,'soft')+T(x(134),y(-24),'Australia','middle',24,'soft')+T(x(-100),y(41),'North America','middle',24,'soft');
+  if(warm||cold)svg+='<circle class="ring" cx="'+sx+'" cy="'+sy+'" r="'+dot+'" fill="'+col+'"/><circle cx="'+sx+'" cy="'+sy+'" r="'+dot+'" fill="'+col+'" stroke="#fff" stroke-width="4"/>'+T(sx-dot-14,sy-6,'El Niño','end',0,'strong')+T(sx-dot-14,sy+fs+2,(warm?'Warmest ':'Coldest ')+sign(spot[1]),'end',0,'strong');
+  svg+='<circle cx="'+x(96)+'" cy="'+y(21)+'" r="10" fill="#FFD24A" stroke="#fff" stroke-width="3"/>'+T(x(96)+18,y(21)+10,'Myanmar','start',0,'strong')+'</svg>';
+  var w=el('div');w.innerHTML=svg;b.append(w);
   var ef=el('p','enso-note',(warm?'The warmest water is '+spot[0].replace('Near','near').replace('Eastern','in the eastern').replace('Central','in the central')+'. ':'')+'Myanmar reports warn that El Niño can bring more heat, drought and fire risk here.');ef.append(srcs([{name:'Global New Light of Myanmar',url:'https://www.gnlm.com.mm/super-el-nino-in-late-2026-why-myanmar-must-prepare-now/'}]));b.append(ef);
   var tr3=el('div','trend'),W=Math.max(320,b.clientWidth||680),H=170,V=d.weeks.map(function(q){return q.n34}),lo=Math.floor(Math.min.apply(null,V.concat(-.5))),hi=Math.ceil(Math.max.apply(null,V.concat(.5))),X2=function(i){return 8+i*(W-52)/(V.length-1)},Y2=function(v){return 12+(hi-v)*(H-40)/(hi-lo)};
   var path=V.map(function(v,i){return (i?'L':'M')+X2(i).toFixed(1)+' '+Y2(v).toFixed(1)}).join(' '),e=V.length-1;
@@ -229,10 +233,9 @@ function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=e
 var N=$('news'),liveBox=el('section','live');liveBox.id='live';
 function renderEdition(){
   var y=ygn(),p=E.date.split('-').map(Number),age=Math.floor((Date.UTC(y[0],y[1]-1,y[2])-Date.UTC(p[0],p[1]-1,p[2]))/864e5),dl=$('dateline');
-  dl.append(el('span',age>=2?'stale':null,age>=2?'News edition is '+age+' days old':'News updated '+E.updated));
+  if(age>=2)dl.append(el('span','stale','News edition is '+age+' days old'));
   var L=$('lead');clear(L);var ls=srcs(E.lead.sources);ls.style.marginTop='8px';
   L.append(el('span','flag',E.lead.flag),el('h2',null,E.lead.title),el('p',null,E.lead.body),ls);
-  var T=$('tape');clear(T);E.tape.forEach(function(t){var n=el('div','tick');n.append(el('b',null,t.label),el('span',null,t.value),el('i',dir(t.change),pct(t.change)));T.append(n)});
   TOPICS=E.sections.filter(function(s){return s.id!=='weather'});
   var R=$('rail');clear(R);
   function head(en,m){var h=el('h2',null,en);h.append(' ',mm('span',m));return h}
@@ -242,7 +245,7 @@ function renderEdition(){
   R.append(wb,qb);
   if(E.history){var hb=el('section');hb.append(head('History','သမိုင်း'));var c=el('div','hist');c.append(el('span','src',E.history.label),el('h3',null,E.history.title),el('p',null,E.history.body),srcs([E.history.source]));hb.append(c);R.append(hb)}
   R.append(ageTool());
-  $('foot').textContent='The live weather comes from Open-Meteo. News and weather alerts check public feeds about every 30 minutes. Stories, words, the quote and history refresh every morning before 7:00 AM Myanmar time. Always follow official warnings from Myanmar\'s weather department and Fire Services. Burmese calendar by Yan Naing Aye (MIT licence).';
+  $('foot').textContent='The live weather comes from Open-Meteo. News, alerts and stock prices check public sources about every 15 minutes. Stories, words, the quote and history refresh every morning before 7:00 AM Myanmar time. Always follow official warnings from Myanmar\'s weather department and Fire Services. Burmese calendar by Yan Naing Aye (MIT licence).';
 }
 function ageTool(){
   var b=el('section','span'),h=el('h2',null,'Burmese birthday ');h.append(mm('span','မွေးနေ့'));
@@ -251,34 +254,34 @@ function ageTool(){
     o.append(el('strong',null,'Age '+age),mm('span','မွေးနေ့ '+tr(WDN[w])+'နေ့၊ '+POST[w][1]+'ဒေါင့်'),el('span',null,'Born on '+WDN[w]+', '+POST[w][0]+' corner'),mm('span',mmNum(m.my)+' ခုနှစ်၊ '+mmLine(m)),el('span',null,'Myanmar Era '+m.ToMString('&yyyy &M &P &ff')))}
   i.onchange=run;i.value=store('pd-birth')||'';run();b.append(h,l,o);return b;
 }
+function mergeMarkets(){var m=(MK&&MK.items)||{};return E.markets.map(function(r){var x=m[r.name];return x?{name:r.name,value:x.value,change:x.change,when:x.when}:r})}
 function renderNews(){
-  clear(N);
-  E.sections.forEach(function(s){
-    if(s.id==='weather'||(key!=='all'&&key!==s.id))return;
-    var sec=el('section'),h=el('div','sec-head');h.append(el('h2',null,s.en),mm('span',s.mm));sec.append(h);
-    if(s.table&&key==='stocks'){var wr=el('div','mkt-wrap');wr.tabIndex=0;var tb=el('table','mkt');tb.innerHTML='<thead><tr><th scope="col">Market</th><th scope="col">Level</th><th scope="col">Change</th><th scope="col">As of</th></tr></thead>';var b=el('tbody');E.markets.forEach(function(r){var tr2=el('tr');tr2.append(el('td',null,r.name),el('td',null,r.value),el('td',dir(r.change),pct(r.change)),el('td','w',r.when));b.append(tr2)});tb.append(b);wr.append(tb);sec.append(wr,el('p','note',E.marketNote))}
-    var ul=el('ul','items');(key==='all'?s.items.slice(0,3):s.items).forEach(function(i){var li=el('li','item');li.append(el('h3',null,i.title),el('p',null,i.body),srcs(i.sources));ul.append(li)});sec.append(ul);
-    if(key==='all'){var a=el('a','more','All '+s.en+' news');a.href='#'+s.id;sec.append(a)}
-    N.append(sec);
-  });
-  if(key==='all')N.prepend(liveBox);else N.append(liveBox);renderLive();
+  clear(N);var C=$('chips');clear(C);
+  [['all','All']].concat(TOPICS.map(function(t){return [t.id,t.en]})).forEach(function(t){var a=el('a',null,t[1]);a.href='#'+t[0];if(t[0]===key)a.setAttribute('aria-current','true');C.append(a)});
+  $('lead').hidden=key!=='all';
+  if(key==='all'){N.append(liveBox);renderLive();
+    TOPICS.forEach(function(s){var sec=el('section'),h=el('div','sec-head'),l=el('a',null,s.en);l.href='#'+s.id;var t=el('h2');t.append(l);h.append(t,mm('span',s.mm));var ul=el('ul','hl');s.items.slice(0,3).forEach(function(i){ul.append(hlRow(i.title,i.sources[0].url,i.sources[0].name))});sec.append(h,ul);N.append(sec)});return}
+  var s=E.sections.find(function(x){return x.id===key});if(!s)return;
+  var sec=el('section'),h=el('div','sec-head');h.append(el('h2',null,s.en),mm('span',s.mm));sec.append(h);
+  if(s.table){var wr=el('div','mkt-wrap');wr.tabIndex=0;var tb=el('table','mkt');tb.innerHTML='<thead><tr><th scope="col">Market</th><th scope="col">Level</th><th scope="col">Change</th><th scope="col">As of</th></tr></thead>';var b=el('tbody');mergeMarkets().forEach(function(r){var q=el('tr');q.append(el('td',null,r.name),el('td',null,r.value),el('td',dir(r.change),pct(r.change)),el('td','w',r.when));b.append(q)});tb.append(b);wr.append(tb);sec.append(wr,el('p','note',E.marketNote))}
+  var ul=el('ul','items');s.items.forEach(function(i){var li=el('li','item');li.append(el('h3',null,i.title),el('p',null,i.body),srcs(i.sources));ul.append(li)});sec.append(ul);N.append(sec,liveBox);renderLive();
 }
 function renderLive(){
   clear(liveBox);var h=el('div','live-head'),a0=LIVE?ago(LIVE.updated):'';
   h.append(el('i','dot'),el('h2',null,'Live feed'),mm('span','တိုက်ရိုက်'),el('span','live-state',!LIVE?'Loading':a0==='now'?'Updated just now':'Updated '+a0+' ago'));liveBox.append(h);
   if(!LIVE){liveBox.append(el('p','empty','Live headlines appear here once the feed loads.'));return}
-  var rows=LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'&&(key==='all'||i.topic===key)}).slice(0,key==='all'?12:30);
+  var rows=LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'&&(key==='all'||i.topic===key)}).slice(0,key==='all'?6:20);
   if(!rows.length){liveBox.append(el('p','empty','No headlines from the last two days in this topic.'));return}
   liveBox.append(feedList(rows));
 }
-var NAV=[['Today'],['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['enso','El Niño','အယ်လ်နီညို'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['News'],['all','All news','အားလုံး'],['myanmar','Myanmar','မြန်မာ'],['world','World','ကမ္ဘာ'],['politics','Politics','နိုင်ငံရေး'],['business','Business','စီးပွားရေး'],['stocks','Stocks','စတော့'],['tech','Tech & AI','နည်းပညာ'],['More'],['learn','Learn','လေ့လာရန်']];
-(function(){var n=$('nav');NAV.forEach(function(x){if(x.length===1){n.append(el('p',null,x[0]));return}var a=el('a');a.href='#'+x[0];a.dataset.key=x[0];a.append(x[1],mm('span',x[2]));n.append(a)})})();
+var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['enso','El Niño','အယ်လ်နီညို'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['all','News','သတင်း'],['learn','Learn','လေ့လာရန်']];
+(function(){var n=$('nav');NAV.forEach(function(x){var a=el('a');a.href='#'+x[0];a.dataset.key=x[0];a.append(x[1],mm('span',x[2]));n.append(a)})})();
 var VIEWS=['home','weather','enso','calendar','reminders','learn'],NEWS=['all','myanmar','world','politics','business','stocks','tech'];
 function route(jump){
   var k=location.hash.slice(1);if(VIEWS.indexOf(k)<0&&NEWS.indexOf(k)<0)k='home';
   var v=NEWS.indexOf(k)>=0?'news':k;view=v;if(v==='news')key=k;
   VIEWS.concat('news').forEach(function(x){$('v-'+x).hidden=x!==v});
-  Array.prototype.forEach.call($('nav').querySelectorAll('a'),function(a){var on=a.dataset.key===k;if(on){a.setAttribute('aria-current','page');var nv=$('nav');if(nv.scrollWidth>nv.clientWidth)nv.scrollLeft=a.offsetLeft-40}else a.removeAttribute('aria-current')});
+  Array.prototype.forEach.call($('nav').querySelectorAll('a'),function(a){var on=a.dataset.key===(v==='news'?'all':k);if(on){a.setAttribute('aria-current','page');var nv=$('nav');if(nv.scrollWidth>nv.clientWidth)nv.scrollLeft=a.offsetLeft-40}else a.removeAttribute('aria-current')});
   if(E&&v==='news')renderNews();
   if(v==='home')renderHome();
   redraw();
@@ -288,31 +291,28 @@ function redraw(){if(view==='weather'&&WX)renderWx();if(view==='enso')renderEnso
 function card(cls,href,title,m){var c=el(href?'a':'section','card '+cls);if(href)c.href=href;var t=el('div','card-t');t.append(title);if(m)t.append(mm('span',m));if(href)t.append(el('i',null,'→'));c.append(t);return c}
 function renderHome(){
   var g=$('home');if(!g||view!=='home')return;clear(g);
-  var c=card('w4','#weather','Weather · '+city,'ရာသီဥတု');
+  var c=card('w6','#weather','Weather · '+city,'ရာသီဥတု');
   if(WX){var w=WX.current,k=code(w.weather_code,w.is_day),i=nowIdx(WX),F=FIRE[fireLevel(WX.hourly,i)],r=el('div','h-wx'),tx=el('div','c');tx.append(k[1],mm('span',k[2]));r.append(el('span','e',k[0]),el('span','t',Math.round(w.temperature_2m)+'°'),tx);
     var f=el('div','h-fire');f.style.setProperty('--fire',F[3]);f.append('🔥 Fire danger: '+F[1],mm('span',F[2]));
-    c.append(r,f,el('p','line muted','Feels like '+Math.round(w.apparent_temperature)+'° · Rain '+(WX.hourly.precipitation_probability[i]||0)+'% · Wind '+Math.round(w.wind_speed_10m)+' km/h'))}else c.append(el('p','line muted','Weather is loading.'));
+    c.append(r,el('p','line muted','Feels like '+Math.round(w.apparent_temperature)+'° · Rain '+(WX.hourly.precipitation_probability[i]||0)+'% · Wind '+Math.round(w.wind_speed_10m)+' km/h'),f)}else c.append(el('p','line muted','Weather is loading.'));
   g.append(c);
   var en=card('','#enso','El Niño','အယ်လ်နီညို');
-  if(ENSO&&ENSO.weeks&&ENSO.weeks.length){var L=ENSO.weeks[ENSO.weeks.length-1],P=ensoPhase(L.n34);en.append(el('div','big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p','line',P[0]),el('p','line muted',ENSO.status?'NOAA: '+ENSO.status:'Pacific sea reading'))}else en.append(el('p','line muted','Loading the latest sea reading.'));
+  if(ENSO&&ENSO.weeks&&ENSO.weeks.length){var L=ENSO.weeks[ENSO.weeks.length-1],P=ensoPhase(L.n34);en.append(el('div','big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p','line',P[0]))}else en.append(el('p','line muted','Loading.'));
   g.append(en);
-  var m=md(TODAY),d=card('','#calendar','Burmese date','ပြက္ခဒိန်'),big=mm('div',tr(WDN[wd(TODAY)])+'နေ့');big.style.fontSize='1.3rem';big.style.fontWeight='600';
-  var l2=mm('div',mmNum(m.my)+' ခုနှစ်၊ '+mmLine(m));d.append(big,l2,el('p','line muted',m.ToMString('&M &P &ff')+' · ME '+m.my));g.append(d);
+  var m=md(TODAY),d=card('','#calendar','Burmese date','ပြက္ခဒိန်');d.append(mm('div',mmLine(m)),el('p','line muted','ME '+m.my+' · '+m.ToMString('&M &P &ff')));g.append(d);
   var ns=loadNotes().sort(function(x,y){return (x.date+x.time).localeCompare(y.date+y.time)}),dc=ns.filter(due).length,rc=card('','#reminders','Reminders','မှတ်စု');
-  rc.append(el('div','big',dc?dc+' due':ns.length?String(ns.length):'None'));rc.append(el('p','line muted',ns.length?ns[0].text:'Tap to add a reminder'));g.append(rc);
-  if(E){var w0=E.words[0],wc=card('','#learn','Word of the day','စကားလုံး'),t=el('div','big',w0.term);t.style.fontSize='1.4rem';wc.append(t,mm('div',w0.mm),el('p','line muted',w0.meaning));g.append(wc);
-    var nc=card('w6 wide',null,'Top news','သတင်း'),ul=el('ul','hl');
-    function row(t,u,s){var li=el('li'),a=el('a',null,t);a.href=u;a.target='_blank';a.rel='noopener';li.append(a,el('small',null,s));ul.append(li)}
-    var L0=E.lead.sources[0];row(E.lead.title,safe(L0.url),L0.name);
-    ['myanmar','world','business','tech'].forEach(function(id){var s=E.sections.find(function(x){return x.id===id}),i0=s&&s.items[0];if(i0)row(i0.title,safe(i0.sources[0].url),s.en+' · '+i0.sources[0].name)});
-    if(LIVE)LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'}).slice(0,3).forEach(function(i){row(i.title,safe(i.url),ago(i.published)+' ago · '+i.source)});
-    var more=el('a','more','All news');more.href='#all';more.style.marginLeft='0';nc.append(ul,more);g.append(nc)}
+  rc.append(el('div','big',dc?dc+' due':ns.length?String(ns.length):'None'),el('p','line muted',ns.length?ns[0].text:'Tap to add one'));g.append(rc);
+  if(E){var nc=card('w6 wide',null,'Top news','သတင်း'),ul=el('ul','hl'),L0=E.lead.sources[0];ul.append(hlRow(E.lead.title,L0.url,L0.name));
+    ['myanmar','world','tech'].forEach(function(id){var s=E.sections.find(function(x){return x.id===id}),i0=s&&s.items[0];if(i0)ul.append(hlRow(i0.title,i0.sources[0].url,s.en+' · '+i0.sources[0].name))});
+    var more=el('a','more','All news');more.href='#all';nc.append(ul,more);g.append(nc)}
 }
+function checkVersion(){get('data/version.json').then(function(j){var cur=document.documentElement.dataset.v;if(j.v&&cur!=='__V__'&&j.v!==cur&&store('pd-tried')!==j.v){store('pd-tried',j.v);location.reload()}}).catch(function(){})}
+function pullMarkets(){return get('data/markets.json').then(function(j){MK=j;if(view==='news'&&key==='stocks')renderNews()}).catch(function(){})}
 function get(p){return fetch(p+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
 function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderHome();renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
 
 get('data/enso.json').then(function(d){ENSO=d;renderHome();if(view==='enso')renderEnso(d)}).catch(function(){});
 renderDateline();renderDay();renderNotes();route();loadWx();
 setInterval(loadWx,9e5);setInterval(drawNotes,3e4);
-get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
+get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();pullMarkets();checkVersion();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);setInterval(pullMarkets,3e5);setInterval(checkVersion,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){checkVersion();pullMarkets();pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
 })();
