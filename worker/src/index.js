@@ -1,6 +1,8 @@
 // Parabaik Daily alert checker. Runs every minute and sends new alerts as web push notifications.
 // VAPID_PRIVATE is a Cloudflare secret. Never put its value in this repository.
-const SITE = "https://thomaszaw.github.io/news/";
+const SITE = "https://parabaikdaily.com/";
+const ORIGIN = "https://thomaszaw.github.io/news";
+const ALLOWED = ["https://parabaikdaily.com", "https://thomaszaw.github.io"];
 const USGS = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson";
 const WEEK = 604800;
 
@@ -111,7 +113,7 @@ async function getJson(url) {
 
 export async function run(env, now = Date.now()) {
   if (!env.VAPID_PRIVATE) return console.log("VAPID_PRIVATE is not set");
-  const [q, n] = await Promise.allSettled([getJson(USGS), getJson(SITE + "data/live.json?t=" + now)]);
+  const [q, n] = await Promise.allSettled([getJson(USGS), getJson(ORIGIN + "/data/live.json?t=" + now)]);
   const list = [];
   if (q.status === "fulfilled") list.push(...quakeAlerts(q.value, now));
   else console.log(String(q.reason));
@@ -129,8 +131,9 @@ export default {
     ctx.waitUntil(run(env));
   },
   async fetch(request, env) {
-    const cors = { "Access-Control-Allow-Origin": "https://thomaszaw.github.io", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
-    const path = new URL(request.url).pathname;
+    const from = request.headers.get("Origin");
+    const cors = { "Access-Control-Allow-Origin": ALLOWED.includes(from) ? from : ALLOWED[0], Vary: "Origin", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
+    const url = new URL(request.url), path = url.pathname;
     if (request.method === "OPTIONS") return new Response(null, { headers: cors });
     if (request.method === "POST" && (path === "/subscribe" || path === "/test")) {
       const sub = await request.json().catch(() => null);
@@ -143,6 +146,8 @@ export default {
       const status = await sendOne(env, key, sub, { title: "Parabaik Daily", body: "Test alert. Notifications are working.", click: SITE });
       return new Response(String(status), { status: status < 300 ? 200 : 502, headers: cors });
     }
-    return new Response("Parabaik alert checker is running", { headers: cors });
+    if (path === "/health") return new Response("Parabaik alert checker is running", { headers: cors });
+    if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405, headers: cors });
+    return fetch(ORIGIN + path + url.search, { method: request.method, headers: { "User-Agent": "ParabaikDaily/1.0" } });
   },
 };

@@ -253,7 +253,7 @@ function qAlert(){
   if(window.__qLast!==q.id){window.__qLast=q.id;beep();try{if('Notification' in window&&Notification.permission==='granted')new Notification('Earthquake: magnitude '+q.mag.toFixed(1),{body:q.where+', '+q.dist+' km from '+o.name})}catch(e){}}
 }
 function beep(){if(!store('pd-qsound'))return;try{var A=window.AudioContext||window.webkitAudioContext,c=new A();[0,.35,.7].forEach(function(s){var n=c.createOscillator(),g=c.createGain();n.frequency.value=880;g.gain.value=.15;n.connect(g);g.connect(c.destination);n.start(c.currentTime+s);n.stop(c.currentTime+s+.22)})}catch(e){}}
-var PUSH_API='https://parabaik-alerts.thomaszaw2019.workers.dev',PUSH_KEY='BOUkTsuubE4ts37xqV5YzU9XZGjZHLdD13Lo9PotcyyD1jAWWbjAZvzhJmwOhESHkiYQTVAGeCwdsHqu84C1xXU';
+var PUSH_API=location.hostname==='parabaikdaily.com'?'':'https://parabaik-alerts.thomaszaw2019.workers.dev',PUSH_KEY='BOUkTsuubE4ts37xqV5YzU9XZGjZHLdD13Lo9PotcyyD1jAWWbjAZvzhJmwOhESHkiYQTVAGeCwdsHqu84C1xXU';
 function pushSub(){var raw=atob(PUSH_KEY.replace(/-/g,'+').replace(/_/g,'/')),u=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)u[i]=raw.charCodeAt(i);
   return navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(r){return r.pushManager.getSubscription().then(function(s){return s||r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u})})})}
 function post(path,sub){return fetch(PUSH_API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sub)}).then(function(r){if(!r.ok)throw new Error('Try again later')})}
