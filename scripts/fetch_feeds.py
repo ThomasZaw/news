@@ -260,8 +260,7 @@ def firms(path, polys):
     seen = {}
     for src in ("VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT", "VIIRS_SNPP_NRT"):
         try:
-            text = get(f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{src}/86,4,108,32/1")
-            print("FIRMS reply", src, len(text), re.sub(r"[^A-Za-z_, .]", "", text[:70]))
+            text = get(f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{src}/86,4,108,32/2")
             for r in csv.DictReader(io.StringIO(text)):
                 a, b = round(float(r["latitude"]), 3), round(float(r["longitude"]), 3)
                 seen[(a, b, r["acq_time"])] = [a, b, 1 if any(in_poly(b, a, p[0]) for p in polys) else 0, r["confidence"], float(r["frp"] or 0), r["acq_date"], r["acq_time"].zfill(4), r["satellite"], r["daynight"]]
