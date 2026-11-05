@@ -280,7 +280,7 @@ function enablePush(){
   return Notification.requestPermission().then(function(p){if(p!=='granted')throw new Error('Notifications blocked');return pushSub()}).then(function(s){return post('/subscribe',s)}).then(function(){store('pd-push',1)})}
 function syncReminder(r){if(!store('pd-push'))return;var at=Date.parse(r.date+'T'+(r.time||'08:00')+':00+06:30');if(!(at>Date.now()))return;pushSub().then(function(s){return post('/reminder',{sub:s,id:r.id,at:at,text:r.text})}).catch(function(){})}
 function testPush(){return pushSub().then(function(s){return post('/test',s)})}
-var QM=null,QL=null,EOX='s2cloudless-2023_3857';
+var QM=null,QL=null,EOX='s2cloudless-2024_3857';
 function baseMap(m){var G='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/';L.imageOverlay('lib/myanmar.jpg',[[4,86],[32,108]]).addTo(m);L.tileLayer('https://tiles.maps.eox.at/wmts/1.0.0/'+EOX+'/default/g/{z}/{y}/{x}.jpg',{maxNativeZoom:14,maxZoom:15,attribution:'Sentinel-2 cloudless by EOX · NASA · Leaflet'}).addTo(m);L.tileLayer(G+'Reference_Labels_15m/default//GoogleMapsCompatible_Level13/{z}/{y}/{x}.png',{maxNativeZoom:13,maxZoom:15,opacity:.9}).addTo(m);L.geoJSON({type:'Feature',geometry:MM_GEO},{style:{color:'#FFD24A',weight:1.6,fill:false},interactive:false}).addTo(m)}
 function qMap(box,top){
   if(!window.L)return;

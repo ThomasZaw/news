@@ -336,12 +336,6 @@ def main(path="data/live.json"):
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
-    for y in ("s2cloudless-2024_3857", "s2cloudless-2023_3857", "s2cloudless-2022_3857"):
-        try:
-            with urllib.request.urlopen(urllib.request.Request(f"https://tiles.maps.eox.at/wmts/1.0.0/{y}/default/g/7/55/94.jpg", headers=UA), timeout=20) as r:
-                print("eox", y, r.status, r.headers.get("content-type"))
-        except Exception as e:
-            print("eox", y, "FAILED", e)
     try:
         hotspots("data/hotspots.json")
     except Exception as e:
