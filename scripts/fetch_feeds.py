@@ -261,6 +261,7 @@ def firms(path, polys):
     for src in ("VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT", "VIIRS_SNPP_NRT"):
         try:
             text = get(f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{src}/86,4,108,32/1")
+            print("FIRMS reply", src, len(text), re.sub(r"[^A-Za-z_, .]", "", text[:70]))
             for r in csv.DictReader(io.StringIO(text)):
                 a, b = round(float(r["latitude"]), 3), round(float(r["longitude"]), 3)
                 seen[(a, b, r["acq_time"])] = [a, b, 1 if any(in_poly(b, a, p[0]) for p in polys) else 0, r["confidence"], float(r["frp"] or 0), r["acq_date"], r["acq_time"].zfill(4), r["satellite"], r["daynight"]]
@@ -304,6 +305,26 @@ def hotspots(path):
     print("hotspots", day, len(rows), "areas,", sum(r[2] for r in rows), "in Myanmar")
 
 
+def fallback_edition(items, path="data/edition.json"):
+    """Keep the news fresh if the morning writer did not run."""
+    yangon = datetime.now(timezone.utc) + timedelta(hours=6, minutes=30)
+    with open(path, encoding="utf-8") as f:
+        ed = json.load(f)
+    if ed.get("date") == yangon.strftime("%Y-%m-%d") or yangon.hour < 8:
+        return
+    for sec in ed["sections"]:
+        rows = [i for i in items if i["topic"] == sec["id"]][:8]
+        if rows:
+            sec["items"] = [{"title": i["title"], "body": "", "sources": [{"name": i["source"], "url": i["url"]}]} for i in rows]
+    top = next((i for i in items if i["topic"] in ("myanmar", "world")), None)
+    if top:
+        ed["lead"] = {"flag": "Latest", "title": top["title"], "body": "", "sources": [{"name": top["source"], "url": top["url"]}]}
+    ed["date"], ed["updated"] = yangon.strftime("%Y-%m-%d"), yangon.strftime("%H:%M Yangon") + " (automatic headlines)"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(ed, f, ensure_ascii=False, indent=1)
+    print("Used automatic headlines")
+
+
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -333,6 +354,7 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
+    fallback_edition(items)
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
