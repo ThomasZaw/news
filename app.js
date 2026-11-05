@@ -253,6 +253,14 @@ function qAlert(){
   if(window.__qLast!==q.id){window.__qLast=q.id;beep();try{if('Notification' in window&&Notification.permission==='granted')new Notification('Earthquake: magnitude '+q.mag.toFixed(1),{body:q.where+', '+q.dist+' km from '+o.name})}catch(e){}}
 }
 function beep(){if(!store('pd-qsound'))return;try{var A=window.AudioContext||window.webkitAudioContext,c=new A();[0,.35,.7].forEach(function(s){var n=c.createOscillator(),g=c.createGain();n.frequency.value=880;g.gain.value=.15;n.connect(g);g.connect(c.destination);n.start(c.currentTime+s);n.stop(c.currentTime+s+.22)})}catch(e){}}
+var PUSH_API='https://parabaik-alerts.thomaszaw2019.workers.dev',PUSH_KEY='BOUkTsuubE4ts37xqV5YzU9XZGjZHLdD13Lo9PotcyyD1jAWWbjAZvzhJmwOhESHkiYQTVAGeCwdsHqu84C1xXU';
+function pushSub(){var raw=atob(PUSH_KEY.replace(/-/g,'+').replace(/_/g,'/')),u=new Uint8Array(raw.length);for(var i=0;i<raw.length;i++)u[i]=raw.charCodeAt(i);
+  return navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(r){return r.pushManager.getSubscription().then(function(s){return s||r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u})})})}
+function post(path,sub){return fetch(PUSH_API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sub)}).then(function(r){if(!r.ok)throw new Error('Try again later')})}
+function enablePush(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return Promise.reject(new Error(/iPad|iPhone|Macintosh/.test(navigator.userAgent)&&!navigator.standalone?'Add to Home Screen first':'Not supported here'));
+  return Notification.requestPermission().then(function(p){if(p!=='granted')throw new Error('Notifications blocked');return pushSub()}).then(function(s){return post('/subscribe',s)}).then(function(){store('pd-push',1)})}
+function testPush(){return pushSub().then(function(s){return post('/test',s)})}
 function renderQuakes(){
   var b=$('quakes');if(!b||view!=='quakes')return;clear(b);
   var h=el('h2',null,'Earthquakes ');h.className='q-title';h.append(mm('span','ငလျင်'));b.append(h);
@@ -268,11 +276,12 @@ function renderQuakes(){
   if(!QK.length)ul.append(el('li',null,'No earthquakes on the list right now.'));
   QK.slice(0,12).forEach(function(q){var li=el('li','q-row'),g=el('b',q.mag>=5?'q-mag hi':'q-mag',q.mag.toFixed(1)),c=el('div'),a=el('a',null,q.where);a.href=safe(q.url);a.target='_blank';a.rel='noopener';c.append(a,el('small',null,qAgo(q.time)+' · '+q.dist+' km away'));li.append(g,c);ul.append(li)});
   side.append(ul);pair.append(m,side);b.append(pair);
-  var act=el('div','q-act'),g1=el('button','btn',GEO?'Location saved':'Use my location'),g2=el('button','btn','Turn on notifications'),g3=el('button','btn',store('pd-qsound')?'Sound on':'Turn on sound');[g1,g2,g3].forEach(function(x){x.type='button'});
+  var act=el('div','q-act'),g1=el('button','btn',GEO?'Location saved':'Use my location'),g2=el('button','btn',store('pd-push')?'Notifications on':'Turn on notifications'),g3=el('button','btn',store('pd-qsound')?'Sound on':'Turn on sound');[g1,g2,g3].forEach(function(x){x.type='button'});
   g1.onclick=function(){if(!navigator.geolocation){g1.textContent='Location not available';return}navigator.geolocation.getCurrentPosition(function(p){GEO={lat:+p.coords.latitude.toFixed(2),lon:+p.coords.longitude.toFixed(2)};store('pd-geo',GEO);qSet([],QK_SRC)},function(){g1.textContent='Location was blocked'})};
-  g2.onclick=function(){if(!('Notification' in window)){g2.textContent='Add to Home Screen first';return}Notification.requestPermission().then(function(r){g2.textContent=r==='granted'?'Notifications on':'Notifications blocked'})};
+  g2.onclick=function(){g2.textContent='Turning on…';enablePush().then(function(){g2.textContent='Notifications on';g4.hidden=false}).catch(function(e){g2.textContent=e.message||'Could not turn on'})};
+  var g4=el('button','btn','Send a test');g4.type='button';g4.hidden=!store('pd-push');g4.onclick=function(){g4.textContent='Sending…';testPush().then(function(){g4.textContent='Test sent'}).catch(function(){g4.textContent='Test failed'})};
   g3.onclick=function(){var v=!store('pd-qsound');store('pd-qsound',v);if(v)beep();g3.textContent=v?'Sound on':'Turn on sound'};
-  act.append(g1,g2,g3);b.append(act);
+  act.append(g1,g2,g3,g4);b.append(act);
   b.append(el('p','small-note','Alerts show for magnitude 4.5+ in or near Myanmar, or 4.0+ within 300 km of '+o.name+'. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
   b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
 }

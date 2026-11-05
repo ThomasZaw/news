@@ -1,9 +1,13 @@
 name = "parabaik-alerts"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
+workers_dev = true
 
 [triggers]
 crons = ["* * * * *"]
+
+[vars]
+VAPID_PUBLIC = "BOUkTsuubE4ts37xqV5YzU9XZGjZHLdD13Lo9PotcyyD1jAWWbjAZvzhJmwOhESHkiYQTVAGeCwdsHqu84C1xXU"
 
 [[kv_namespaces]]
 binding = "SEEN"
