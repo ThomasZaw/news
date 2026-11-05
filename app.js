@@ -58,7 +58,7 @@ function renderDay(){
     var dt=[calView[0],calView[1],d],k=md(dt),c=el('button'),s=mmNum(k.mf);
     c.type='button';c.append(el('b',null,d),el('small',null,s));
     var hol=k.holidays.length>0;
-    c.className=(hol?'hol ':'')+(k.mp===1?'full ':k.mp===3?'newm ':'')+(k.sabbath==='Sabbath'?'sab ':'')+(wd(dt)%6===0?'wkend ':'')+(iso(dt)===iso(TODAY)?'now ':'')+(notes.some(function(x){return x.date===iso(dt)})?'note':'');
+    c.className=(hol?'hol ':'')+(k.mp===1?'full ':k.mp===3?'newm ':'')+(k.sabbath==='Sabbath'?'sab ':'')+(iso(dt)===iso(TODAY)?'now ':'')+(notes.some(function(x){return x.date===iso(dt)})?'note':'');
     c.setAttribute('aria-pressed',iso(dt)===iso(pick)?'true':'false');
     c.setAttribute('aria-label',d+' '+MON[calView[1]-1]+', '+k.ToMString('&M &P &ff')+(hol?', '+k.holidays.join(', '):''));
     c.onclick=function(){pick=dt;renderDay();var f=$('note-date');if(f)f.value=iso(dt)};
@@ -152,12 +152,12 @@ function renderWx(){
   var st=el('div','stats');
   [['Feels like',Math.round(c.apparent_temperature)+'°'],['Chance of rain',(H.precipitation_probability[i]||0)+'%'],['Wind',Math.round(c.wind_speed_10m)+' km/h'],['Humidity',c.relative_humidity_2m+'%']].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   now.append(main,st);b.append(now);
-  var ah=el('h3','sec',"Today's alerts ");ah.append(mm('span','သတိပေးချက်'));b.append(ah);
-  var ag=el('div','alerts'),lv=fireLevel(H,i),F=FIRE[lv],fl=lv>=3?2:lv>=1?1:0;
-  wxAlerts().concat([{i:'🔥',en:'Fire danger',mm:'မီးဘေး',l:fl,word:F[1],msg:F[4]}]).forEach(function(x){var d=el('div','al l'+x.l),t=el('div','al-t');t.append(el('span','al-i',x.i),el('b',null,x.en),el('em',null,x.word||LV[x.l]));d.append(t,mm('span',x.mm+' · '+LVM[x.l]),el('p',null,x.msg));ag.append(d)});b.append(ag);
-  var hh=el('h3','sec','Next 24 hours'),hs=el('div','week-scroll'),hr=el('div','hours');b.append(hh);
+  var ah=el('h3','sec',"Today's alerts");ah.append(mm('span','သတိပေးချက်'));
+  var asec=el('div','week');asec.append(ah);var ag=el('div','alerts'),lv=fireLevel(H,i),F=FIRE[lv],fl=lv>=3?2:lv>=1?1:0;
+  wxAlerts().concat([{en:'Fire danger',mm:'မီးဘေး',l:fl,word:F[1],msg:F[4]}]).forEach(function(x){var d=el('div','al l'+x.l),t=el('div'),n=el('div','al-n');n.append(el('b',null,x.en),mm('span',x.mm));t.append(n,el('p',null,x.msg));d.append(el('i'),t,el('em',null,x.word||LV[x.l]));ag.append(d)});asec.append(ag);b.append(asec);
+  var hsec=el('div','week'),hh=el('h3','sec','Next 24 hours'),hs=el('div','week-scroll'),hr=el('div','hours');hsec.append(hh);
   for(var q=0;q<=24&&i+q<H.time.length;q+=3){var ck=code(H.weather_code[i+q],(function(t){var n=+t.slice(11,13);return n>=6&&n<18})(H.time[i+q])),d=el('div');d.append(el('b',null,q?hhmm(H.time[i+q]):'Now'),el('em',null,ck[0]),el('span',null,Math.round(H.temperature_2m[i+q])+'°'),el('small',null,(H.precipitation_probability[i+q]||0)+'%'));hr.append(d)}
-  hs.append(hr);b.append(hs);
+  hs.append(hr);hsec.append(hs);b.append(hsec);
   var w=el('div','week'),wr=el('div','week-scroll'),row=el('div','week-row');w.append(el('h3','sec','Next 7 days'));
   D.time.forEach(function(t,n){var p=t.split('-').map(Number),cd=code(D.weather_code[n],1),d=el('div');d.append(el('b',null,n===0?'Today':n===1?'Tomorrow':WDN[wd(p)].slice(0,3)),el('em',null,cd[0]),el('span',null,Math.round(D.temperature_2m_max[n])+'° / '+Math.round(D.temperature_2m_min[n])+'°'),el('small',null,'Rain '+D.precipitation_probability_max[n]+'%'));row.append(d)});
   wr.append(row);w.append(wr);b.append(w);
@@ -312,50 +312,6 @@ function renderQuakes(){
   b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
 }
 
-/* Realistic sky card */
-function seeded(n){return function(){n=(n*16807)%2147483647;return n/2147483647}}
-function skyColors(c,h,day){
-  var dawn=h>=5&&h<7,dusk=h>=17&&h<19;
-  if(c>=95)return ['#1B2230','#39424F','#6A6F73'];
-  if(c>=51)return day?['#465565','#74838F','#AEB6B7']:['#141B26','#27313F','#46505A'];
-  if(c===3||c===45||c===48)return day?['#74899C','#AAB7C1','#DAD8CF']:['#171F2C','#2C3644','#4A515A'];
-  if(!day)return ['#050B1C','#10203F','#2B3B62'];
-  if(dawn)return ['#3A6EA8','#E9A77C','#FFD9A0'];
-  if(dusk)return ['#29497F','#C9694F','#FFB765'];
-  return ['#1F6FC4','#6FB4E8','#FBE7C3'];
-}
-function cloudCanvas(cover,seed,dark,day){
-  var W=1400,H=360,c=document.createElement('canvas');c.width=W;c.height=H;var x=c.getContext('2d'),r=seeded(seed);
-  var base=dark?[120,128,136]:day?[255,255,255]:[150,160,180],shade=dark?[62,70,80]:day?[176,190,205]:[70,80,100];
-  function puff(px,py,rad,col,al){[px-W,px,px+W].forEach(function(q){var g=x.createRadialGradient(q,py,0,q,py,rad);g.addColorStop(0,'rgba('+col+','+al+')');g.addColorStop(.6,'rgba('+col+','+al*.45+')');g.addColorStop(1,'rgba('+col+',0)');x.fillStyle=g;x.fillRect(q-rad,py-rad,rad*2,rad*2)})}
-  for(var n=0;n<cover;n++){var cx=r()*W,cy=40+r()*170,w=120+r()*230,h=28+r()*42;
-    for(var i=0;i<46;i++){var a=r()*6.28,d=Math.sqrt(r()),px=cx+Math.cos(a)*d*w,py=cy+Math.sin(a)*d*h,s=22+r()*42*(1-d*.5);puff(px,py+s*.34,s*1.05,shade,.16);puff(px,py,s,base,.2)}}
-  return c;
-}
-function stupa(x,b,s){var w=46*s,h=118*s;return 'M'+(x-w*1.5)+' '+b+'V'+(b-10*s)+'H'+(x-w*1.25)+'V'+(b-20*s)+'H'+(x-w)+'V'+(b-30*s)+'H'+(x-w*.78)+'C'+(x-w*.62)+' '+(b-58*s)+' '+(x-w*.22)+' '+(b-74*s)+' '+(x-w*.12)+' '+(b-h*.82)+'L'+(x-1.5*s)+' '+(b-h*1.32)+'H'+(x+1.5*s)+'L'+(x+w*.12)+' '+(b-h*.82)+'C'+(x+w*.22)+' '+(b-74*s)+' '+(x+w*.62)+' '+(b-58*s)+' '+(x+w*.78)+' '+(b-30*s)+'H'+(x+w)+'V'+(b-20*s)+'H'+(x+w*1.25)+'V'+(b-10*s)+'H'+(x+w*1.5)+'V'+b+'Z'}
-function palm(x,b,s){var p='M'+x+' '+b+'Q'+(x+5*s)+' '+(b-40*s)+' '+(x+2*s)+' '+(b-78*s)+'L'+(x+6*s)+' '+(b-78*s)+'Q'+(x+10*s)+' '+(b-40*s)+' '+(x+6*s)+' '+b+'Z';[-34,-22,-10,12,24,36].forEach(function(o){var e=x+4*s+o*s,y=b-78*s+Math.abs(o)*.55*s;p+='M'+(x+4*s)+' '+(b-80*s)+'Q'+(x+4*s+o*.55*s)+' '+(b-92*s)+' '+e+' '+y+'Q'+(x+4*s+o*.45*s)+' '+(b-84*s)+' '+(x+4*s)+' '+(b-77*s)+'Z'});return p}
-function horizon(far,near){var f='',n='';[[150,.62],[290,.8],[470,.55],[710,.72],[880,.58],[1090,.78]].forEach(function(p){f+=stupa(p[0],160,p[1])});[[60,.7],[1010,.62]].forEach(function(p){n+=palm(p[0],170,p[1])});n+=stupa(610,170,1.08)+stupa(835,170,.66)+stupa(300,170,.74)+palm(450,170,.82)+palm(1140,170,.9)+palm(205,170,.56);
-  return '<svg class="hz" viewBox="0 0 1200 170" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><path fill="'+far+'" d="'+f+'M0 170V150Q300 138 600 148T1200 144V170Z"/><path fill="'+near+'" d="'+n+'M0 170V160Q300 152 620 160T1200 156V170Z"/></svg>'}
-function drawSky(b){
-  clear(b);
-  if(!WX){b.classList.remove('live-sky');b.append(el('p','line','Weather is loading.'));return}
-  b.classList.add('live-sky');
-  var w=WX.current,hr=parseInt(w.time.slice(11,13),10),day=!!w.is_day,c=w.weather_code,k=code(c,w.is_day),i=nowIdx(WX),F=FIRE[fireLevel(WX.hourly,i)],C=skyColors(c,hr,day);
-  var s=el('div','sky-bg');s.style.background='linear-gradient(180deg,'+C[0]+' 0%,'+C[1]+' 62%,'+C[2]+' 100%)';
-  var clearSky=c===0,part=c>=1&&c<=2,wet=c>=51;
-  if(day&&(clearSky||part)){var sun=el('i','sun');sun.style.left=Math.max(8,Math.min(92,(hr-6)/12*100))+'%';sun.style.top=(22+Math.abs(hr-12)*5)+'%';s.append(sun)}
-  if(!day&&(clearSky||part)){var r=seeded(7),st=el('div','stars');for(var q=0;q<70;q++){var t=el('i');t.style.cssText='left:'+r()*100+'%;top:'+r()*62+'%;opacity:'+(.3+r()*.7);st.append(t)}s.append(st);var m=el('i','moon');s.append(m)}
-  var cover=clearSky?1:part?6:c===3?20:wet?24:14,dark=wet||c>=95;
-  [[cover,11,'c1'],[Math.ceil(cover*.7),29,'c2']].forEach(function(l){var tr=el('div','clouds '+l[2]);tr.append(cloudCanvas(l[0],l[1],dark,day));var cv2=document.createElement('canvas');cv2.width=1400;cv2.height=360;cv2.getContext('2d').drawImage(tr.firstChild,0,0);tr.append(cv2);s.append(tr)});
-  if(wet)s.append(el('div','rain'));
-  var far=day?'rgba(46,60,72,.5)':'rgba(10,16,30,.7)',near=day?'#141B1F':'#05080F',h=el('div');h.className='hz-wrap';h.innerHTML=horizon(far,near);s.append(h);b.append(s);
-  var top=el('div','card-t');top.append(city+' now');top.append(mm('span','ရာသီဥတု'));
-  var main=el('div','sky-main'),tx=el('div','c');tx.append(k[1],mm('span',k[2]));main.append(el('span','t',Math.round(w.temperature_2m)+'°'),tx);
-  var fire=el('div','glass');fire.style.setProperty('--fire',F[3]);fire.append('🔥 Fire danger: '+F[1],mm('span',F[2]));
-  var info=el('p','sky-info','Feels like '+Math.round(w.apparent_temperature)+'°  ·  Rain '+(WX.hourly.precipitation_probability[i]||0)+'%  ·  Wind '+Math.round(w.wind_speed_10m)+' km/h');
-  var fg=el('div','sky-fg');fg.append(top,main,info,fire);wxAlerts().filter(function(x){return x.l>0}).forEach(function(x){var q=el('div','glass warnline');q.style.setProperty('--fire',x.l>1?'#E0252B':'#E0A01F');q.append(x.i+' '+x.en+': '+LV[x.l]);fg.append(q)});b.append(fg);
-}
-
 /* Daily edition */
 function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',Date.now()-new Date(i.published)<36e5?'fresh':null),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source));li.append(t,c);ul.append(li)});return ul}
 var N=$('news'),liveBox=el('section','live');liveBox.id='live';
@@ -418,11 +374,15 @@ function route(jump){
 function redraw(){if(view==='quakes')renderQuakes();if(view==='weather'&&WX)renderWx();if(view==='enso')renderEnso(ENSO)}
 function card(cls,href,title,m){var c=el(href?'a':'section','card '+cls);if(href)c.href=href;var t=el('div','card-t');t.append(title);if(m)t.append(mm('span',m));if(href)t.append(el('i',null,'→'));c.append(t);return c}
 function renderHome(){
-  var g=$('hgrid');if(!g||view!=='home')return;
-  var slot=$('home-sky');if(!slot){slot=el('a','sky card w6');slot.id='home-sky';slot.href='#weather';g.prepend(slot)}
-  while(g.children.length>1)g.removeChild(g.lastChild);
-  var skey=WX?city+WX.current.time+WX.current.weather_code+Math.round(WX.current.temperature_2m):'wait';
-  if(slot.dataset.key!==skey){slot.dataset.key=skey;drawSky(slot)}
+  var g=$('hgrid');if(!g||view!=='home')return;clear(g);
+  var c=card('w6','#weather','Weather · '+city,'ရာသီဥတု');
+  if(WX){var w=WX.current,k=code(w.weather_code,w.is_day),i=nowIdx(WX),F=FIRE[fireLevel(WX.hourly,i)],row=el('div','h-row'),r=el('div','h-wx'),tx=el('div','c'),st=el('div','h-stats');
+    tx.append(k[1],mm('span',k[2]));r.append(el('span','e',k[0]),el('span','t',Math.round(w.temperature_2m)+'°'),tx);
+    [['Feels like',Math.round(w.apparent_temperature)+'°'],['Rain',(WX.hourly.precipitation_probability[i]||0)+'%'],['Wind',Math.round(w.wind_speed_10m)+' km/h']].forEach(function(x){var d=el('div');d.append(el('b',null,x[0]),el('span',null,x[1]));st.append(d)});row.append(r,st);c.append(row);
+    var f=el('div','h-fire');f.style.setProperty('--fire',F[3]);f.append('Fire danger: '+F[1],mm('span',F[2]));c.append(f);
+    wxAlerts().filter(function(x){return x.l>0}).forEach(function(x){var q=el('div','h-fire');q.style.setProperty('--fire',x.l>1?'var(--red)':'var(--amber)');q.append(x.en+': '+LV[x.l]);c.append(q)})
+  }else c.append(el('p','line muted','Weather is loading.'));
+  g.append(c);
   var en=card('','#enso','El Niño','အယ်လ်နီညို');
   if(ENSO&&ENSO.weeks&&ENSO.weeks.length){var L=ENSO.weeks[ENSO.weeks.length-1],P=ensoPhase(L.n34);en.append(el('div','big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p','line',P[0]))}else en.append(el('p','line muted','Loading.'));
   g.append(en);
