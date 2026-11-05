@@ -246,12 +246,14 @@ def markets(path):
 
 
 def probe():
+    day = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+    url = "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=VIIRS_NOAA20_Thermal_Anomalies_375m_All&CRS=EPSG:3857&BBOX=10000000,1000000,12000000,3500000&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true&TIME=" + day
     try:
-        x = get("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities")
-        for m in sorted(set(re.findall(r"[^'\"<> ]*Thermal_Anomalies[^'\"<> ]*", x)))[:30]:
-            print("cap", m)
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=25) as r:
+            b = r.read()
+            print("wms", r.status, r.headers.get("content-type"), len(b), b[:80] if b[:4] != b"\x89PNG" else "png")
     except Exception as e:
-        print("cap failed", e)
+        print("wms FAILED", e)
 
 
 def main(path="data/live.json"):
