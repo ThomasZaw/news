@@ -5,6 +5,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      test_push:
+        description: Send a test phone notification
+        type: boolean
+        default: false
 permissions:
   contents: read
   pages: write
@@ -24,6 +29,10 @@ jobs:
         with:
           python-version: "3.12"
       - run: python scripts/fetch_feeds.py data/live.json
+        env:
+          NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
+      - if: ${{ inputs.test_push }}
+        run: curl -sS -H "Title: Parabaik Daily" -d "Test alert. Notifications are working." "https://ntfy.sh/${{ vars.NTFY_TOPIC }}"
       - run: |
           mkdir -p _site
           cp -r index.html app.js manifest.webmanifest icon-180.png icon-512.png data lib _site/

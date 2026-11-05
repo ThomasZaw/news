@@ -186,6 +186,39 @@ function renderWeatherNews(){
 }
 var RT;addEventListener('resize',function(){clearTimeout(RT);RT=setTimeout(function(){var c=$('chart');if(c&&WX)drawChart(c,WX.hourly,nowIdx(WX))},200)});
 
+/* El Nino */
+function ensoColor(v){return v>=2?'#B3202A':v>=1?'#D8532B':v>=.5?'#E8A04A':v<=-1?'#2B6CB0':v<=-.5?'#6FA8DC':'#8E8A82'}
+function ensoPhase(v){return v>=2?['Very strong El Niño','အလွန်ပြင်းထန်သော အယ်လ်နီညို']:v>=1.5?['Strong El Niño','ပြင်းထန်သော အယ်လ်နီညို']:v>=.5?['El Niño','အယ်လ်နီညို']:v<=-.5?['La Niña','လာနီညာ']:['Neutral','ပုံမှန်']}
+function renderEnso(d){
+  var b=$('enso');clear(b);var h=el('div','enso-head'),t=el('h2',null,'El Niño tracker');h.append(t,mm('span','အယ်လ်နီညို'));b.append(h);
+  if(!d||!d.weeks||!d.weeks.length){b.append(el('p',null,'El Niño data is loading. It updates every week from NOAA.'));return}
+  var L=d.weeks[d.weeks.length-1],P=ensoPhase(L.n34),s=el('div','enso-state'),one=el('div'),two=el('div');
+  one.append(el('div','enso-big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p',null,P[0]+' by the weekly sea reading'),mm('p',P[1]));
+  two.append(el('strong',null,d.status?'NOAA status: '+d.status:'NOAA status unavailable'));if(d.synopsis)two.append(el('p',null,d.synopsis));
+  two.append(el('p','small-note','Sea surface temperature compared with normal, week of '+L.week+'.'+(d.issued?' NOAA outlook issued '+d.issued+'.':'')));
+  s.append(one,two);b.append(s);
+  var k=720/260,x=function(lon){return 360+((lon+360)%360-170)*k},y=function(lat){return 130-(lat-5)*k};
+  function box(a,c,n,v,name){var X=x(a),W=x(c)-X,Y=y(n),H=y(-Math.abs(n===0?10:n))-Y;if(n===0){H=10*k}return '<rect class="box" x="'+X+'" y="'+Y+'" width="'+W+'" height="'+H+'" fill="'+ensoColor(v)+'" fill-opacity=".85"/><text x="'+(X+W/2)+'" y="'+(Y-5)+'" text-anchor="middle">'+name+'</text><text x="'+(X+W/2)+'" y="'+(Y+H+15)+'" text-anchor="middle">'+(v>0?'+':'')+v.toFixed(1)+'°</text>'}
+  var my=[x(96),y(21)];
+  var svg='<svg class="map" viewBox="0 0 720 260" role="img" aria-label="Map of the Pacific showing the El Niño regions along the equator and Myanmar to the west"><path class="land" d="'+LAND_PATH+'"/><line x1="0" x2="720" y1="'+y(0)+'" y2="'+y(0)+'" stroke="var(--muted)" stroke-dasharray="3 5" opacity=".5"/>'+box(160,-150,5,L.n4,'Niño 4')+box(-150,-90,5,L.n3,'Niño 3')+box(-90,-80,0,L.n12,'1+2')+'<rect x="'+x(-170)+'" y="'+y(5)+'" width="'+(x(-120)-x(-170))+'" height="'+(10*k)+'" fill="none" stroke="var(--gold)" stroke-width="2.5"/><circle class="pin" cx="'+my[0]+'" cy="'+my[1]+'" r="6"/><text x="'+my[0]+'" y="'+(my[1]-11)+'" text-anchor="middle">Myanmar</text></svg>';
+  var w=el('div');w.innerHTML=svg;b.append(w);
+  var lg=el('div','legend');[['#B3202A','Much warmer'],['#E8A04A','Warmer'],['#8E8A82','Normal'],['#2B6CB0','Colder']].forEach(function(r){var i=el('span'),c=el('i');c.style.background=r[0];i.append(c,r[1]);lg.append(i)});
+  var o=el('span');var c2=el('i');c2.style.background='transparent';c2.style.borderColor='var(--gold)';o.append(c2,'Niño 3.4, the main measuring area');lg.append(o);b.append(lg);
+  var tr3=el('div','trend'),W=Math.max(320,b.clientWidth||680),H=170,V=d.weeks.map(function(q){return q.n34}),lo=Math.floor(Math.min.apply(null,V.concat(-.5))),hi=Math.ceil(Math.max.apply(null,V.concat(.5))),X2=function(i){return 8+i*(W-52)/(V.length-1)},Y2=function(v){return 12+(hi-v)*(H-40)/(hi-lo)};
+  var path=V.map(function(v,i){return (i?'L':'M')+X2(i).toFixed(1)+' '+Y2(v).toFixed(1)}).join(' '),e=V.length-1;
+  var g='<svg viewBox="0 0 '+W+' '+H+'" height="'+H+'" role="img" aria-label="Niño 3.4 temperature difference over the last six months"><line class="gl" x1="8" x2="'+(W-44)+'" y1="'+Y2(0)+'" y2="'+Y2(0)+'"/><line class="th" x1="8" x2="'+(W-44)+'" y1="'+Y2(.5)+'" y2="'+Y2(.5)+'"/><text x="10" y="'+(Y2(.5)-5)+'">El Niño line +0.5°</text><path class="l" d="'+path+'"/><circle class="d" r="5" cx="'+X2(e)+'" cy="'+Y2(V[e])+'"/><text class="k" x="'+(X2(e)+9)+'" y="'+(Y2(V[e])+5)+'">'+V[e].toFixed(1)+'°</text><text x="8" y="'+(H-4)+'">'+d.weeks[0].week+'</text><text x="'+(W-44)+'" y="'+(H-4)+'" text-anchor="end">'+L.week+'</text></svg>';
+  tr3.innerHTML='<h3 style="margin:0 0 6px;font:600 1rem/1.4 var(--body)">Last 6 months</h3>'+g;b.append(tr3);
+  var ef=el('p',null,'Myanmar reports warn that El Niño can bring more heat, drought and fire risk here. Water shortages are a concern too.');ef.append(srcs([{name:'Global New Light of Myanmar',url:'https://www.gnlm.com.mm/super-el-nino-in-late-2026-why-myanmar-must-prepare-now/'}]));b.append(ef);
+  var n=el('div');n.id='enso-news';b.append(n);renderEnsoNews();
+  b.append(el('p','small-note','Data from NOAA Climate Prediction Center. Checked every 30 minutes; NOAA publishes new sea readings weekly and its outlook monthly.'));
+}
+function renderEnsoNews(){var n=$('enso-news');if(!n||!LIVE)return;clear(n);var r=LIVE.items.filter(function(i){return i.topic==='enso'}).slice(0,5);if(r.length){var h=el('h3',null,'El Niño news');h.style.margin='0 0 4px';n.append(h,feedList(r))}}
+function renderBreaking(){
+  var b=$('breaking'),seen=store('pd-seen')||[],a=(LIVE&&LIVE.alerts||[]).filter(function(x){return seen.indexOf(x.title)<0})[0];clear(b);b.hidden=!a;if(!a)return;
+  var row=el('div','breaking-row'),t=el('div'),l=el('a',null,a.title),c=el('button',null,'Dismiss');c.type='button';l.href=safe(a.url);l.target='_blank';l.rel='noopener';
+  t.append(el('b',null,'🚨 Breaking'),l,el('small',null,a.source+' · '+ago(a.published)+' ago'));c.onclick=function(){seen.push(a.title);store('pd-seen',seen.slice(-40));renderBreaking()};row.append(t,c);b.append(row);
+}
+
 /* Daily edition */
 function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',Date.now()-new Date(i.published)<36e5?'fresh':null),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source));li.append(t,c);ul.append(li)});return ul}
 var N=$('news'),TB=$('tabs'),liveBox=el('section','live');liveBox.id='live';
@@ -230,7 +263,7 @@ function renderLive(){
   clear(liveBox);var h=el('div','live-head'),a0=LIVE?ago(LIVE.updated):'';
   h.append(el('i','dot'),el('h2',null,'Live feed'),mm('span','တိုက်ရိုက်'),el('span','live-state',!LIVE?'Loading':a0==='now'?'Updated just now':'Updated '+a0+' ago'));liveBox.append(h);
   if(!LIVE){liveBox.append(el('p','empty','Live headlines appear here once the feed loads.'));return}
-  var rows=LIVE.items.filter(function(i){return i.topic!=='weather'&&(key==='all'||i.topic===key)}).slice(0,key==='all'?12:30);
+  var rows=LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'&&(key==='all'||i.topic===key)}).slice(0,key==='all'?12:30);
   if(!rows.length){liveBox.append(el('p','empty','No headlines from the last two days in this topic.'));return}
   liveBox.append(feedList(rows));
 }
@@ -240,8 +273,9 @@ function route(jump){
   renderNews();if(jump===true)document.querySelector('.tabs-box').scrollIntoView();
 }
 function get(p){return fetch(p+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
-function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderLive();renderWeatherNews()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
+function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
 
+renderEnso(null);get('data/enso.json').then(renderEnso).catch(function(){});
 renderDateline();renderDay();renderNotes();renderWx();loadWx();
 setInterval(loadWx,9e5);setInterval(drawNotes,3e4);
 get('data/edition.json').then(function(j){E=j;renderEdition();route();renderWeatherNews();pullLive();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});

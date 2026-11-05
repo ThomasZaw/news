@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build data/live.json from public RSS and Atom feeds. Standard library only."""
-import email.utils, json, re, sys, urllib.request
+import email.utils, json, os, re, sys, urllib.request
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -8,6 +8,7 @@ from html import unescape
 
 G = "https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US:en&q="
 FEEDS = {
+    "enso": [("Google News", G + "El+Nino+when:7d")],
     "weather": [("Google News", G + "Myanmar+weather+OR+storm+OR+flood+OR+cyclone+when:3d"),
                 ("Google News", G + "Bay+of+Bengal+cyclone+when:3d"),
                 ("Google News", G + "Myanmar+fire+breaks+out+when:3d"),
@@ -24,6 +25,7 @@ FEEDS = {
     "tech": [("The Verge", "https://www.theverge.com/rss/index.xml"), ("TechCrunch", "https://techcrunch.com/feed/"),
              ("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index")],
 }
+SITE = "https://thomaszaw.github.io/news/"
 MAX_AGE = timedelta(hours=48)
 PER_TOPIC = 30
 UA = {"User-Agent": "ParabaikDaily/1.0 (personal news reader)"}
@@ -90,6 +92,9 @@ def fetch(job):
             rows = parse(r.read(), source, topic)
         if source == "GDACS":
             rows = [i for i in rows if REGION.search(i["title"])]
+            for i in rows:
+                if re.search(r"\bred\b", i["title"], re.I) or (re.search(r"\borange\b", i["title"], re.I) and re.search("myanmar|burma", i["title"], re.I)):
+                    i["level"] = "red"
         return rows, None
     except Exception as e:
         return [], f"{source} ({topic}): {e}"
@@ -109,8 +114,92 @@ def quakes():
         p = q["properties"]
         if 9 <= lat <= 29 and 91 <= lon <= 102 and p.get("mag"):
             d = datetime.fromtimestamp(p["time"] / 1000, timezone.utc)
-            out.append({"title": f"Magnitude {p['mag']:.1f} earthquake: {p['place']}", "url": p["url"], "source": "USGS", "topic": "weather", "published": d.isoformat(timespec="seconds")})
+            out.append({"title": f"Magnitude {p['mag']:.1f} earthquake: {p['place']}", "url": p["url"], "source": "USGS", "topic": "weather", "published": d.isoformat(timespec="seconds"), "level": "red" if p["mag"] >= 6 else None})
     return out
+
+
+def get(url):
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def parse_weekly(text):
+    """Read NOAA's weekly table: date, then SST and anomaly for Nino 1+2, 3, 3.4 and 4."""
+    weeks = []
+    for line in text.splitlines():
+        m = re.match(r"\s*(\d{2}[A-Z]{3}\d{4})(.*)", line)
+        if not m:
+            continue
+        v = re.findall(r"-?\d+\.\d", m.group(2))
+        if len(v) == 8:
+            weeks.append({"week": datetime.strptime(m.group(1).title(), "%d%b%Y").strftime("%Y-%m-%d"), "n12": float(v[1]), "n3": float(v[3]), "n34": float(v[5]), "n4": float(v[7])})
+    return weeks
+
+
+def parse_status(html):
+    text = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", html)))
+    status = re.search(r"ENSO Alert System Status:\s*(.+?)\s*Synopsis:\s*(.+?\.)\s", text)
+    issued = re.search(r"issued by.*?(\d{1,2} [A-Z][a-z]+ 20\d\d)", text) or re.search(r"(\d{1,2} [A-Z][a-z]+ 20\d\d)", text)
+    return {"status": status.group(1) if status else "", "synopsis": status.group(2) if status else "", "issued": issued.group(1) if issued else ""}
+
+
+def enso(path):
+    out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    try:
+        out["weeks"] = parse_weekly(get("https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for"))[-26:]
+        out.update(parse_status(get("https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml")))
+    except Exception as e:
+        print("skipped ENSO:", e, file=sys.stderr)
+    if out.get("weeks"):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=1)
+        print("ENSO", out.get("status"), out["weeks"][-1])
+
+
+ALARM = re.compile(r"\b(earthquake|tsunami|cyclone|typhoon|hurricane|coup|assassinat\w*|explosion|war declared|invad\w*|dies|dead|killed|attack|crash|collapse\w*|resign\w*)\b", re.I)
+STOP = set("the a an of in on at to for and or as is are was were with from by after over amid says say said new his her its their it this that will has have".split())
+
+
+def words(t):
+    return {w for w in re.findall(r"[a-z0-9]+", t.lower()) if w not in STOP and len(w) > 2}
+
+
+def alerts(rows, now):
+    """Keep this strict: official hazard data, or one story from at least 4 outlets within 3 hours."""
+    out = []
+    for r in rows:
+        age = now - datetime.fromisoformat(r["published"])
+        if r.get("level") and age <= timedelta(hours=12):
+            out.append({k: r[k] for k in ("title", "url", "source", "published")})
+    recent = [r for r in rows if now - datetime.fromisoformat(r["published"]) <= timedelta(hours=3) and r["source"] not in ("GDACS", "USGS")]
+    used = set()
+    for a in recent:
+        if id(a) in used or not ALARM.search(a["title"]):
+            continue
+        ws, group = words(a["title"]), [a]
+        for b in recent:
+            if b is not a and id(b) not in used and len(ws & words(b["title"])) / max(1, len(ws | words(b["title"]))) >= 0.3:
+                group.append(b)
+        if len({g["source"] for g in group}) >= 4:
+            used.update(id(g) for g in group)
+            out.append({k: a[k] for k in ("title", "url", "source", "published")})
+    return out[:3]
+
+
+def key_of(a):
+    return re.sub(r"[^a-z0-9]+", "", a["title"].lower())[:70]
+
+
+def push(new):
+    topic = os.environ.get("NTFY_TOPIC")
+    if not topic:
+        return
+    for a in new:
+        try:
+            req = urllib.request.Request(f"https://ntfy.sh/{topic}", data=a["title"].encode("utf-8"), headers={"Title": "Parabaik breaking news", "Priority": "high", "Click": a["url"], "Tags": "rotating_light"})
+            urllib.request.urlopen(req, timeout=20).close()
+        except Exception as e:
+            print("push failed:", e, file=sys.stderr)
 
 
 def weather(path):
@@ -147,9 +236,17 @@ def main(path="data/live.json"):
     items = sorted((i for v in by_topic.values() for i in v), key=lambda i: i["published"], reverse=True)
     if not items:
         sys.exit("No headlines fetched")
+    found = alerts(rows, now)
+    try:
+        before = {key_of(a) for a in json.loads(get(SITE + "data/live.json")).get("alerts", [])}
+    except Exception:
+        before = None
+    if before is not None:
+        push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
-        json.dump({"updated": now.isoformat(timespec="seconds"), "items": items}, f, ensure_ascii=False, indent=1)
+        json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
     weather("data/weather.json")
+    enso("data/enso.json")
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 
