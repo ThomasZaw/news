@@ -30,9 +30,10 @@ jobs:
           python-version: "3.12"
       - run: python scripts/fetch_feeds.py data/live.json
         env:
-          NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
+          NTFY_TOPIC: parabaik-4d56d1440f
       - if: ${{ inputs.test_push }}
-        run: curl -sS -H "Title: Parabaik Daily" -d "Test alert. Notifications are working." "https://ntfy.sh/${{ vars.NTFY_TOPIC }}"
+        run: |
+          curl -sS -H "Title: Parabaik Daily" -d "Test alert. Notifications are working." https://ntfy.sh/parabaik-4d56d1440f
       - run: |
           mkdir -p _site
           cp -r index.html app.js manifest.webmanifest icon-180.png icon-512.png data lib _site/
