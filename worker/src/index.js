@@ -111,14 +111,32 @@ async function getJson(url) {
   return r.json();
 }
 
-export async function run(env, now = Date.now()) {
-  if (!env.VAPID_PRIVATE) return console.log("VAPID_PRIVATE is not set");
-  const [q, n] = await Promise.allSettled([getJson(USGS), getJson(ORIGIN + "/data/live.json?t=" + now)]);
-  const list = [];
-  if (q.status === "fulfilled") list.push(...quakeAlerts(q.value, now));
-  else console.log(String(q.reason));
-  if (n.status === "fulfilled") list.push(...newsAlerts(n.value));
-  else console.log(String(n.reason));
+const CITIES = [["Yangon", 16.87, 96.2], ["Mandalay", 21.97, 96.08], ["Naypyitaw", 19.75, 96.12], ["Hpa-An", 16.89, 97.63], ["Mawlamyine", 16.49, 97.63], ["Pathein", 16.78, 94.73], ["Bago", 17.34, 96.48], ["Taunggyi", 20.79, 97.04], ["Sittwe", 20.15, 92.9], ["Myitkyina", 25.38, 97.4], ["Monywa", 22.11, 95.14], ["Kawthaung", 9.98, 98.55]];
+
+export function weatherAlerts(data, day) {
+  const out = [];
+  (Array.isArray(data) ? data : [data]).forEach((d, i) => {
+    const city = CITIES[i][0], y = d.daily || {}, rain = (y.precipitation_sum || [0])[0] || 0, gust = (y.wind_gusts_10m_max || [0])[0] || 0, heat = (y.apparent_temperature_max || [0])[0] || 0;
+    const add = (type, body) => out.push({ key: `w:${day}:${city}:${type}`, title: `Weather warning: ${city}`, body, click: SITE + "#weather" });
+    if (rain >= 100) add("rain", `Heavy rain: ${Math.round(rain)} mm forecast today`);
+    if (gust >= 75) add("wind", `Strong wind: gusts up to ${Math.round(gust)} km/h today`);
+    if (heat >= 46) add("heat", `Extreme heat: feels like up to ${Math.round(heat)}° today`);
+  });
+  return out;
+}
+
+export function yangonDay(now) {
+  return new Date(now + 6.5 * 3600e3).toISOString().slice(0, 10);
+}
+
+export function healthAlerts(edition, live, now) {
+  const out = [], y = new Date(now + 6.5 * 3600e3), day = y.toISOString().slice(0, 10);
+  if (edition && y.getUTCHours() >= 8 && edition.date !== day) out.push({ key: "h:edition:" + day, title: "Parabaik Daily needs attention", body: "The morning update did not run today.", click: SITE });
+  if (live && now - Date.parse(live.updated) > 2 * 3600e3) out.push({ key: "h:live:" + day, title: "Parabaik Daily needs attention", body: "The live feed has not updated for 2 hours.", click: SITE });
+  return out;
+}
+
+async function sendNew(env, list) {
   for (const a of list.slice(0, 5)) {
     if (await env.SEEN.get(a.key)) continue;
     await push(env, a);
@@ -126,15 +144,61 @@ export async function run(env, now = Date.now()) {
   }
 }
 
+export async function run30(env, now = Date.now()) {
+  if (!env.VAPID_PRIVATE) return;
+  const url = "https://api.open-meteo.com/v1/forecast?latitude=" + CITIES.map((c) => c[1]).join(",") + "&longitude=" + CITIES.map((c) => c[2]).join(",") + "&daily=precipitation_sum,wind_gusts_10m_max,apparent_temperature_max&forecast_days=1&timezone=Asia%2FYangon";
+  const [w, e, l] = await Promise.allSettled([getJson(url), getJson(ORIGIN + "/data/edition.json?t=" + now), getJson(ORIGIN + "/data/live.json?t=" + now)]);
+  const list = [];
+  if (w.status === "fulfilled") list.push(...weatherAlerts(w.value, yangonDay(now)));
+  list.push(...healthAlerts(e.status === "fulfilled" ? e.value : null, l.status === "fulfilled" ? l.value : null, now));
+  await sendNew(env, list);
+}
+
+async function dueReminders(env, now) {
+  const list = (await env.SEEN.get("reminders", "json")) || [];
+  const due = list.filter((r) => r.at <= now);
+  if (!due.length) return;
+  await env.SEEN.put("reminders", JSON.stringify(list.filter((r) => r.at > now)));
+  for (const r of due) await sendOne(env, await subKey(r.sub.endpoint), r.sub, { title: "Parabaik reminder", body: r.text, click: SITE + "#reminders" }).catch((e) => console.log(String(e)));
+}
+
+export async function run(env, now = Date.now()) {
+  if (!env.VAPID_PRIVATE) return console.log("VAPID_PRIVATE is not set");
+  await dueReminders(env, now);
+  const [q, n] = await Promise.allSettled([getJson(USGS), getJson(ORIGIN + "/data/live.json?t=" + now)]);
+  const list = [];
+  if (q.status === "fulfilled") list.push(...quakeAlerts(q.value, now));
+  else console.log(String(q.reason));
+  if (n.status === "fulfilled") list.push(...newsAlerts(n.value));
+  else console.log(String(n.reason));
+  await sendNew(env, list);
+}
+
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(run(env));
+    ctx.waitUntil(event.cron === "*/30 * * * *" ? run30(env) : run(env));
   },
   async fetch(request, env) {
     const from = request.headers.get("Origin");
     const cors = { "Access-Control-Allow-Origin": ALLOWED.includes(from) ? from : ALLOWED[0], Vary: "Origin", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
     const url = new URL(request.url), path = url.pathname;
+    if (url.hostname === "www.parabaikdaily.com") return Response.redirect("https://parabaikdaily.com" + path + url.search, 301);
     if (request.method === "OPTIONS") return new Response(null, { headers: cors });
+    if (request.method === "POST" && path === "/reminder") {
+      const b = await request.json().catch(() => null);
+      if (!b || !b.sub || !/^https:\/\//.test(b.sub.endpoint || "") || !b.sub.keys || !(b.at > Date.now()) || typeof b.text !== "string") return new Response("Invalid reminder", { status: 400, headers: cors });
+      const list = ((await env.SEEN.get("reminders", "json")) || []).filter((r) => r.id !== b.id);
+      if (list.length >= 500) return new Response("Reminder list is full", { status: 429, headers: cors });
+      list.push({ id: String(b.id).slice(0, 40), at: b.at, text: b.text.slice(0, 200), sub: { endpoint: b.sub.endpoint, keys: b.sub.keys } });
+      await env.SEEN.put("reminders", JSON.stringify(list));
+      return new Response("Saved", { headers: cors });
+    }
+    if (request.method === "POST" && path === "/reminder/delete") {
+      const b = await request.json().catch(() => null);
+      const list = (await env.SEEN.get("reminders", "json")) || [];
+      if (b && list.some((r) => r.id === String(b.id))) await env.SEEN.put("reminders", JSON.stringify(list.filter((r) => r.id !== String(b.id))));
+      return new Response("Deleted", { headers: cors });
+    }
     if (request.method === "POST" && (path === "/subscribe" || path === "/test")) {
       const sub = await request.json().catch(() => null);
       if (!sub || !/^https:\/\//.test(sub.endpoint || "") || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) return new Response("Invalid subscription", { status: 400, headers: cors });

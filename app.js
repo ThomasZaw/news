@@ -17,6 +17,7 @@ function iso(d){return d[0]+'-'+String(d[1]).padStart(2,'0')+'-'+String(d[2]).pa
 /* Text size */
 function size(n){n=Math.max(0,Math.min(2,n));document.documentElement.dataset.size=n;store('pd-size',n);return n}
 var sz=size(store('pd-size')||0);
+['lang1','lang2'].forEach(function(i){var b=$(i);if(b){b.textContent=window.PD_LANG==='mm'?'EN':'မြန်မာ';b.onclick=function(){window.setLang(window.PD_LANG==='mm'?'en':'mm')}}});
 ['size-up','size-up2'].forEach(function(i){$(i).onclick=function(){sz=size(sz+1);redraw()}});['size-down','size-down2'].forEach(function(i){$(i).onclick=function(){sz=size(sz-1);redraw()}});
 
 /* Burmese calendar */
@@ -81,9 +82,9 @@ function renderNotes(){
   var f=el('form','note-form');f.autocomplete='off';
   f.innerHTML='<label class="w" for="note-text">What should I remind you about?<input class="field" id="note-text" required maxlength="200"></label><label for="note-date">Date<input class="field" id="note-date" type="date" required></label><label for="note-time">Time<input class="field" id="note-time" type="time"></label><button class="btn main w" type="submit">Add reminder</button>';
   var list=el('ul','nlist');
-  b.append(h,alertBox,f,list,el('p','small-note','Reminders stay on this device and show here when you open the page.'));
+  b.append(h,alertBox,f,list,el('p','small-note','Reminders appear here. Turn on notifications to get them on your device too.'));
   $('note-date').value=iso(pick);
-  f.addEventListener('submit',function(e){e.preventDefault();var t=$('note-text').value.trim();if(!t)return;var n=loadNotes();n.push({id:Date.now(),text:t,date:$('note-date').value,time:$('note-time').value});store('pd-notes',n);renderNotes();renderDay()});
+  f.addEventListener('submit',function(e){e.preventDefault();var t=$('note-text').value.trim();if(!t)return;var n=loadNotes();var r={id:String(Date.now()),text:t,date:$('note-date').value,time:$('note-time').value};n.push(r);store('pd-notes',n);syncReminder(r);renderNotes();renderDay()});
   drawNotes();
 }
 function due(n){var now=ygn(),y=new Date(Date.now()+6.5*36e5),t=String(y.getUTCHours()).padStart(2,'0')+':'+String(y.getUTCMinutes()).padStart(2,'0');return n.date<iso(now)||(n.date===iso(now)&&(!n.time||n.time<=t))}
@@ -92,7 +93,7 @@ function drawNotes(){
   var n=loadNotes().sort(function(x,y){return (x.date+x.time).localeCompare(y.date+y.time)}),c=0;
   if(!n.length)list.append(el('li',null,'No reminders yet.'));
   n.forEach(function(r){var d=due(r);if(d)c++;var li=el('li',d?'due':null),w=el('div'),x=el('button','btn','Done');x.type='button';w.append(el('strong',null,r.text),el('small',null,r.date+(r.time?' at '+r.time:'')));
-    x.setAttribute('aria-label','Mark done: '+r.text);x.onclick=function(){store('pd-notes',loadNotes().filter(function(q){return q.id!==r.id}));renderNotes();renderDay()};li.append(w,x);list.append(li)});
+    x.setAttribute('aria-label','Mark done: '+r.text);x.onclick=function(){store('pd-notes',loadNotes().filter(function(q){return q.id!==r.id}));if(store('pd-push'))fetch(PUSH_API+'/reminder/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:String(r.id)})}).catch(function(){});renderNotes();renderDay()};li.append(w,x);list.append(li)});
   if(c)a.append(el('p','note-alert',c===1?'1 reminder is due now':c+' reminders are due now'));
   renderHome();
 }
@@ -120,10 +121,10 @@ function cbi(t,h){return Math.max(0,((110-1.373*h)-0.54*(10.2-t))*(124*Math.pow(
 function fireLevel(H,i){var peak=0;for(var j=i;j<Math.min(i+24,H.time.length);j++)peak=Math.max(peak,cbi(H.temperature_2m[j],H.relative_humidity_2m[j]));return FIRE.findIndex(function(f){return peak<f[0]})}
 function nowIdx(d){var t=d.current.time.slice(0,13);var i=d.hourly.time.findIndex(function(x){return x.slice(0,13)===t});return i<0?0:i}
 function hhmm(s){return s.slice(11,16)}
-function url(c){return 'https://api.open-meteo.com/v1/forecast?latitude='+c[1]+'&longitude='+c[2]+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,is_day&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,wind_gusts_10m_max,precipitation_sum,apparent_temperature_max&timezone=Asia%2FYangon&forecast_days=7'}
+function url(c){return 'https://api.open-meteo.com/v1/forecast?latitude='+c[1]+'&longitude='+c[2]+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,is_day&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,wind_gusts_10m_max,precipitation_sum,apparent_temperature_max,sunrise,sunset&timezone=Asia%2FYangon&forecast_days=7'}
 function loadWx(){
   var c=CITIES.find(function(x){return x[0]===city})||CITIES[0];
-  return fetch(url(c)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){WX=j;wxSource='Live from Open-Meteo';renderWx()}).catch(function(){
+  return fetch(url(c)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){WX=j;wxSource='Live from Open-Meteo, updated '+new Date(Date.now()+6.5*36e5).toISOString().slice(11,16);renderWx()}).catch(function(){
     return get('data/weather.json').then(function(a){if(!a.cities[city])throw 0;WX=a.cities[city];wxSource='Saved '+ago(a.updated)+' ago';renderWx()}).catch(function(){if(!WX)renderWx()})});
 }
 function wxAlerts(){
@@ -136,7 +137,7 @@ function wxAlerts(){
    {i:'⛈',en:'Storm',mm:'မုန်တိုင်း',l:cyclone?2:thunder?1:0,msg:cyclone?cyclone.title:thunder?'Thunderstorms possible in the next 24 hours':'No storm in the forecast'},
    {i:'🌧',en:'Heavy rain',mm:'မိုးသည်းထန်',l:lvl(mm0,50,100),msg:Math.round(mm0)+' mm of rain forecast today'},
    {i:'💨',en:'Strong wind',mm:'လေပြင်း',l:lvl(gust,50,75),msg:'Gusts up to '+Math.round(gust)+' km/h today'},
-   {i:'🌡',en:'Extreme heat',mm:'အပူလွန်ကဲ',l:lvl(feel,41,46),msg:'Feels like up to '+Math.round(feel)+'° today'}];
+   {i:'🌡',en:'Extreme heat',mm:'အပူလွန်ကဲ',l:lvl(feel,41,46),msg:'Feels like up to '+Math.round(feel)+'° today'}].concat(AQ?[{en:'Air quality',mm:'လေထုအရည်အသွေး',l:lvl(AQ.current.us_aqi,101,151),word:aqiWord(AQ.current.us_aqi),msg:'Index '+AQ.current.us_aqi+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³'}]:[]);
 }
 var LV=['Clear','Watch','Warning'],LVM=['ကင်းရှင်း','သတိထားရန်','သတိပေးချက်'];
 function renderWx(){
@@ -144,14 +145,17 @@ function renderWx(){
   var top=el('div','wx-top'),h=el('h2',null,'Weather');h.append(' ',mm('span','ရာသီဥတု'));
   var s=el('select','field');s.id='city';s.setAttribute('aria-label','Choose a city');
   CITIES.forEach(function(c){var o=el('option',null,c[0]+'  '+c[3]);o.value=c[0];o.selected=c[0]===city;s.append(o)});
-  s.onchange=function(){city=s.value;store('pd-city',city);loadWx()};top.append(h,s);b.append(top);
+  s.onchange=function(){city=s.value;store('pd-city',city);loadWx();loadAir();loadRiver()};top.append(h,s);b.append(top);
   if(!WX){renderHome();b.append(el('p',null,'Weather is loading. If it does not appear, check your internet connection.'));return}
   var c=WX.current,k=code(c.weather_code,c.is_day),i=nowIdx(WX),H=WX.hourly,D=WX.daily;
   var now=el('div','wx-now'),main=el('div','wx-main'),cond=el('div','wx-cond'),tx=el('div');
   tx.append(el('div','wx-temp',Math.round(c.temperature_2m)+'°'));cond.append(k[1],mm('span',k[2]));tx.append(cond);main.append(el('div','wx-emoji',k[0]),tx);
   var st=el('div','stats');
   [['Feels like',Math.round(c.apparent_temperature)+'°'],['Chance of rain',(H.precipitation_probability[i]||0)+'%'],['Wind',Math.round(c.wind_speed_10m)+' km/h'],['Humidity',c.relative_humidity_2m+'%']].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
+  if(D.sunrise)[['Sunrise',D.sunrise[0].slice(11,16)],['Sunset',D.sunset[0].slice(11,16)]].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   now.append(main,st);b.append(now);
+  var pl=el('div','places'),saved=places();saved.forEach(function(n){var q=el('button','chip',n);q.type='button';if(n===city)q.setAttribute('aria-pressed','true');q.onclick=function(){city=n;store('pd-city',city);loadWx();loadAir();loadRiver()};pl.append(q)});
+  if(saved.indexOf(city)<0){var sv=el('button','chip add','Save this city');sv.type='button';sv.onclick=function(){store('pd-places',saved.concat(city));renderWx()};pl.append(sv)}b.append(pl);
   var ah=el('h3','sec',"Today's alerts");ah.append(mm('span','သတိပေးချက်'));
   var asec=el('div','week');asec.append(ah);var ag=el('div','alerts'),lv=fireLevel(H,i),F=FIRE[lv],fl=lv>=3?2:lv>=1?1:0;
   wxAlerts().concat([{en:'Fire danger',mm:'မီးဘေး',l:fl,word:F[1],msg:F[4]}]).forEach(function(x){var d=el('div','al l'+x.l),t=el('div'),n=el('div','al-n');n.append(el('b',null,x.en),mm('span',x.mm));t.append(n,el('p',null,x.msg));d.append(el('i'),t,el('em',null,x.word||LV[x.l]));ag.append(d)});asec.append(ag);b.append(asec);
@@ -194,11 +198,12 @@ function drawChart(box,H,i){
 function renderWeatherNews(){
   var b=$('wn');if(!b||!E)return;clear(b);
   var s=E.sections.find(function(x){return x.id==='weather'}),h=el('h3',null,'Weather and fire news ');h.append(mm('span','သတင်း'));b.append(h);
-  var ul=el('ul','hl');if(s)s.items.slice(0,3).forEach(function(i){ul.append(hlRow(i.title,i.sources[0].url,i.sources[0].name))});
+  var ul=el('ul','hl');if(s)s.items.slice(0,3).forEach(function(i){ul.append(hlRow(tt(i),i.sources[0].url,i.sources[0].name))});
   if(LIVE)LIVE.items.filter(function(i){return i.topic==='weather'}).slice(0,5).forEach(function(i){ul.append(hlRow(i.title,i.url,ago(i.published)+' ago · '+i.source))});
   b.append(ul);
 }
-function hlRow(t,u,s){var li=el('li'),a=el('a',null,t);a.href=safe(u);a.target='_blank';a.rel='noopener';li.append(a,el('small',null,s));return li}
+function tt(i){return window.PD_LANG==='mm'&&i.title_mm?i.title_mm:i.title}
+function hlRow(t,u,s){var li=el('li'),a=el('a',null,t),m=el('small',null,s);a.href=safe(u);a.target='_blank';a.rel='noopener';if(/DMH|USGS|GDACS|NOAA|Fire Services/.test(s))m.prepend(el('b','off','Official'),' ');li.append(a,m);return li}
 var RT;addEventListener('resize',function(){clearTimeout(RT);RT=setTimeout(function(){var c=$('chart');if(c&&c.offsetWidth&&WX)drawChart(c,WX.hourly,nowIdx(WX))},200)});
 
 /* El Nino */
@@ -273,6 +278,7 @@ function post(path,sub){return fetch(PUSH_API+path,{method:'POST',headers:{'Cont
 function enablePush(){
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return Promise.reject(new Error(/iPad|iPhone|Macintosh/.test(navigator.userAgent)&&!navigator.standalone?'Add to Home Screen first':'Not supported here'));
   return Notification.requestPermission().then(function(p){if(p!=='granted')throw new Error('Notifications blocked');return pushSub()}).then(function(s){return post('/subscribe',s)}).then(function(){store('pd-push',1)})}
+function syncReminder(r){if(!store('pd-push'))return;var at=Date.parse(r.date+'T'+(r.time||'08:00')+':00+06:30');if(!(at>Date.now()))return;pushSub().then(function(s){return post('/reminder',{sub:s,id:r.id,at:at,text:r.text})}).catch(function(){})}
 function testPush(){return pushSub().then(function(s){return post('/test',s)})}
 var QM=null,QL=null;
 function qMap(box,top){
@@ -312,6 +318,34 @@ function renderQuakes(){
   b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
 }
 
+/* Safety */
+var AQ=null,RV=null,HM=null;
+function places(){return store('pd-places')||['Yangon','Hpa-An','Kawthaung']}
+function aqiWord(v){return v<=50?'Good':v<=100?'Moderate':v<=150?'Unhealthy for some':v<=200?'Unhealthy':'Very unhealthy'}
+function curCity(){return CITIES.find(function(x){return x[0]===city})||CITIES[0]}
+function loadAir(){var c=curCity();return fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+c[1]+'&longitude='+c[2]+'&current=us_aqi,pm2_5&timezone=Asia%2FYangon').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){AQ=j;if(view==='weather')renderWx();if(view==='safety')renderSafety();renderHome()}).catch(function(){})}
+function loadRiver(){var c=curCity();return fetch('https://flood-api.open-meteo.com/v1/flood?latitude='+c[1]+'&longitude='+c[2]+'&daily=river_discharge&past_days=7&forecast_days=7').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){RV=j;if(view==='safety')renderSafety()}).catch(function(){})}
+function renderSafety(){
+  var b=$('safety-box');if(!b)return;var keep=HM?HM.getContainer():null;clear(b);
+  var h=el('h2',null,'Safety');h.append(mm('span','ဘေးကင်းရေး'));b.append(h);
+  var s1=el('div','week'),ec=el('h3','sec','Emergency contacts');s1.append(ec);var g=el('div','tel');
+  [['Fire','191','🚒'],['Ambulance','192','🚑'],['Police','199','🚓']].forEach(function(r){var a=el('a');a.href='tel:'+r[1];a.append(el('span',null,r[2]),el('b',null,r[0]),el('strong',null,r[1]));g.append(a)});s1.append(g);
+  var src=el('p','small-note','These national numbers may not work the same way on every network, so keep your local station number too. ');var q=el('a',null,'Source');q.href='https://naypyidaw.embassy.qa/en/myanmar/important-phones';q.target='_blank';q.rel='noopener';src.append(q);s1.append(src);b.append(s1);
+  var s2=el('div','week'),ag=el('div','alerts');s2.append(el('h3','sec','Conditions in '+city));
+  function row(n,sub,word,l){var d=el('div','al l'+l),t=el('div');t.append(el('div','al-n',n));t.firstChild.textContent=n;t.append(el('p',null,sub));d.append(el('i'),t,el('em',null,word));ag.append(d)}
+  if(AQ){var v=AQ.current.us_aqi;row('Air quality','Index '+v+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³',aqiWord(v),v>150?2:v>100?1:0)}else row('Air quality','Loading','Checking',0);
+  if(RV&&RV.daily&&RV.daily.river_discharge){var d=RV.daily.river_discharge,n=d.length,i=7,now=d[i],pk=Math.max.apply(null,d.slice(i)),tr2=pk>now*1.15?'Rising':d[Math.min(n-1,i+3)]<now*.85?'Falling':'Steady';row('River level','Flood model estimate near '+city+': '+Math.round(now)+' m³/s now, peak '+Math.round(pk)+' m³/s this week',tr2,tr2==='Rising'?1:0)}else row('River level','No river data for this place','Unknown',0);
+  b.append(s2);
+  var s3=el('div','week'),m=el('div');m.id='hot-holder';s3.append(el('h3','sec','Fire hotspots'),m,el('p','small-note','NASA satellite heat detections from yesterday, shown as small red or orange points when you zoom in. Some are farm burning or factories, and thin cloud can hide fires.'));b.append(s3);
+  if(window.L){if(!HM){var e=el('div','qmap');m.append(e);HM=L.map(e,{minZoom:4,maxZoom:9,scrollWheelZoom:false}).setView([20,96.5],5);var G='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/',dy=new Date(Date.now()-864e5).toISOString().slice(0,10);L.imageOverlay('lib/myanmar.jpg',[[4,86],[32,108]]).addTo(HM);L.tileLayer(G+'BlueMarble_ShadedRelief_Bathymetry/default//GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',{maxNativeZoom:8,maxZoom:9,attribution:'NASA GIBS · Leaflet'}).addTo(HM);L.tileLayer(G+'VIIRS_SNPP_Thermal_Anomalies_375m_All/default/'+dy+'/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png',{maxNativeZoom:9,maxZoom:9}).addTo(HM);L.geoJSON({type:'Feature',geometry:MM_GEO},{style:{color:'#FFD24A',weight:1.6,fill:false},interactive:false}).addTo(HM)}else{m.append(keep)}setTimeout(function(){HM.invalidateSize()},0)}
+}
+function renderPrivacy(){var b=$('privacy-box');if(!b||b.firstChild)return;var h=el('h2',null,'Privacy');b.append(h);[
+ ['Your location','It stays on your device and is only used to measure earthquake distance.'],
+ ['Reminders','They are saved on your device. If notifications are on, the reminder text and your notification address are also stored on Cloudflare until the reminder is sent or removed.'],
+ ['Notifications','Cloudflare stores your device notification address so alerts can reach you. Turn notifications off in your device settings to stop them.'],
+ ['Services used','GitHub, Cloudflare, Open-Meteo, USGS, NASA, NOAA and news publishers. Fonts load from Google Fonts. Each service may see basic connection details.'],
+ ['No accounts','There is no login, and we do not sell personal data.']].forEach(function(r){var d=el('div');d.append(el('h3','sec',r[0]),el('p',null,r[1]));b.append(d)})}
+
 /* Daily edition */
 function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',Date.now()-new Date(i.published)<36e5?'fresh':null),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source));li.append(t,c);ul.append(li)});return ul}
 var N=$('news'),liveBox=el('section','live');liveBox.id='live';
@@ -344,7 +378,7 @@ function renderNews(){
   [['all','All']].concat(TOPICS.map(function(t){return [t.id,t.en]})).forEach(function(t){var a=el('a',null,t[1]);a.href='#'+t[0];if(t[0]===key)a.setAttribute('aria-current','true');C.append(a)});
   $('lead').hidden=key!=='all';
   if(key==='all'){N.append(liveBox);renderLive();
-    TOPICS.forEach(function(s){var sec=el('section'),h=el('div','sec-head'),l=el('a',null,s.en);l.href='#'+s.id;var t=el('h2');t.append(l);h.append(t,mm('span',s.mm));var ul=el('ul','hl');s.items.slice(0,3).forEach(function(i){ul.append(hlRow(i.title,i.sources[0].url,i.sources[0].name))});sec.append(h,ul);N.append(sec)});return}
+    TOPICS.forEach(function(s){var sec=el('section'),h=el('div','sec-head'),l=el('a',null,s.en);l.href='#'+s.id;var t=el('h2');t.append(l);h.append(t,mm('span',s.mm));var ul=el('ul','hl');s.items.slice(0,3).forEach(function(i){ul.append(hlRow(tt(i),i.sources[0].url,i.sources[0].name))});sec.append(h,ul);N.append(sec)});return}
   var s=E.sections.find(function(x){return x.id===key});if(!s)return;
   var sec=el('section'),h=el('div','sec-head');h.append(el('h2',null,s.en),mm('span',s.mm));sec.append(h);
   if(s.table){var wr=el('div','mkt-wrap');wr.tabIndex=0;var tb=el('table','mkt');tb.innerHTML='<thead><tr><th scope="col">Market</th><th scope="col">Level</th><th scope="col">Change</th><th scope="col">As of</th></tr></thead>';var b=el('tbody');mergeMarkets().forEach(function(r){var q=el('tr');q.append(el('td',null,r.name),el('td',null,r.value),el('td',dir(r.change),pct(r.change)),el('td','w',r.when));b.append(q)});tb.append(b);wr.append(tb);sec.append(wr,el('p','note',E.marketNote))}
@@ -358,20 +392,20 @@ function renderLive(){
   if(!rows.length){liveBox.append(el('p','empty','No headlines from the last two days in this topic.'));return}
   liveBox.append(feedList(rows));
 }
-var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['enso','El Niño','အယ်လ်နီညို'],['quakes','Earthquakes','ငလျင်'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['all','News','သတင်း'],['learn','Learn','လေ့လာရန်']];
+var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['enso','El Niño','အယ်လ်နီညို'],['quakes','Earthquakes','ငလျင်'],['safety','Safety','ဘေးကင်းရေး'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['all','News','သတင်း'],['learn','Learn','လေ့လာရန်']];
 (function(){var n=$('nav');NAV.forEach(function(x){var a=el('a');a.href='#'+x[0];a.dataset.key=x[0];a.append(x[1],mm('span',x[2]));n.append(a)})})();
-var VIEWS=['home','weather','enso','quakes','calendar','reminders','learn'],NEWS=['all','myanmar','world','politics','business','stocks','tech'];
+var VIEWS=['home','weather','enso','quakes','safety','privacy','calendar','reminders','learn'],NEWS=['all','myanmar','world','politics','business','stocks','tech'];
 function route(jump){
   var k=location.hash.slice(1);if(VIEWS.indexOf(k)<0&&NEWS.indexOf(k)<0)k='home';
   var v=NEWS.indexOf(k)>=0?'news':k;view=v;if(v==='news')key=k;
   VIEWS.concat('news').forEach(function(x){$('v-'+x).hidden=x!==v});$('band').hidden=v!=='home';
   Array.prototype.forEach.call($('nav').querySelectorAll('a'),function(a){var on=a.dataset.key===(v==='news'?'all':k);if(on){a.setAttribute('aria-current','page');var nv=$('nav');if(nv.scrollWidth>nv.clientWidth)nv.scrollLeft=a.offsetLeft-40}else a.removeAttribute('aria-current')});
   if(E&&v==='news')renderNews();
-  if(v==='home')renderHome();
+  if(v==='home')renderHome();if(v==='privacy')renderPrivacy();
   redraw();
   if(jump===true)scrollTo(0,0);
 }
-function redraw(){if(view==='quakes')renderQuakes();if(view==='weather'&&WX)renderWx();if(view==='enso')renderEnso(ENSO)}
+function redraw(){if(view==='quakes')renderQuakes();if(view==='safety')renderSafety();if(view==='weather'&&WX)renderWx();if(view==='enso')renderEnso(ENSO)}
 function card(cls,href,title,m){var c=el(href?'a':'section','card '+cls);if(href)c.href=href;var t=el('div','card-t');t.append(title);if(m)t.append(mm('span',m));if(href)t.append(el('i',null,'→'));c.append(t);return c}
 function renderHome(){
   var g=$('hgrid');if(!g||view!=='home')return;clear(g);
@@ -399,7 +433,9 @@ function pullMarkets(){return get('data/markets.json').then(function(j){MK=j;if(
 function get(p){return fetch(p+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
 function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderHome();renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
 
-pullQuakes(true);setInterval(pullQuakes,6e4);
+pullQuakes(true);setInterval(pullQuakes,6e4);loadAir();loadRiver();setInterval(loadAir,18e5);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+function netState(){$('offline').hidden=navigator.onLine}addEventListener('online',netState);addEventListener('offline',netState);netState();
 get('data/enso.json').then(function(d){ENSO=d;renderHome();if(view==='enso')renderEnso(d)}).catch(function(){});
 renderDateline();renderDay();renderNotes();route();loadWx();
 setInterval(loadWx,9e5);setInterval(drawNotes,3e4);

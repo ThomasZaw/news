@@ -136,6 +136,12 @@ a.card:hover{box-shadow:inset 0 0 0 1px var(--gold)}
 @media (max-width:1000px){.card{grid-column:span 6}.cal-lay,#rail{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:640px){.card{grid-column:span 12}.q-pair{grid-template-columns:minmax(0,1fr)}.qmap{height:54vh}.h-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 16px;width:100%}.al{grid-template-columns:12px minmax(0,1fr) auto}}
 @media (max-width:759px) and (orientation:portrait){.breaking{position:static}#qalert{position:fixed;left:0;right:0;bottom:0;z-index:30;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}}
+
+.lang{font-family:var(--mm)}
+.places{display:flex;flex-wrap:wrap;gap:8px}.chip{min-height:40px;padding:0 14px;background:var(--panel);border:1px solid var(--line);cursor:pointer;font-weight:600}.chip[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}.chip.add{background:transparent;color:var(--muted)}
+.tel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.tel a{display:grid;justify-items:center;gap:4px;padding:16px 8px;background:var(--panel);text-decoration:none}.tel span{font-size:1.5rem}.tel b{font-weight:600}.tel strong{font:600 1.7rem/1.1 var(--display);color:var(--red)}
+.off{color:var(--jade);font-weight:700;margin-right:4px}
+.offline{padding:8px 16px;background:var(--panel);text-align:center;font-weight:600;color:var(--red)}
 </style>
 </head>
 <body>
@@ -146,12 +152,13 @@ a.card:hover{box-shadow:inset 0 0 0 1px var(--gold)}
       <svg viewBox="0 0 120 150" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M60 4v20M54 12h12"/><path d="M60 24C54 40 50 52 38 66h44C70 52 66 40 60 24Z"/><path d="M30 66h60v10H30zM22 76h76v12H22zM12 88h96v14H12zM2 102h116v14H2z"/><path class="t" d="M36 116v14l-14 10M60 116v28M84 116v14l14 10"/></svg>
       <span><b>Parabaik Daily</b><span class="mm" lang="my">ပုရပိုက်</span></span>
     </a>
-    <div class="size" role="group" aria-label="Text size"><button class="btn" id="size-down" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up" type="button" aria-label="Larger text">A+</button></div>
+    <div class="size" role="group" aria-label="Text size"><button class="btn lang" id="lang1" type="button">မြန်မာ</button><button class="btn" id="size-down" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up" type="button" aria-label="Larger text">A+</button></div>
   </div>
   <nav class="nav" id="nav" aria-label="Main"></nav>
-  <div class="size size-bottom" role="group" aria-label="Text size"><button class="btn" id="size-down2" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up2" type="button" aria-label="Larger text">A+</button></div>
+  <div class="size size-bottom" role="group" aria-label="Text size"><button class="btn lang" id="lang2" type="button">မြန်မာ</button><button class="btn" id="size-down2" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up2" type="button" aria-label="Larger text">A+</button></div>
 </aside>
 <div class="main">
+  <div class="offline" id="offline" hidden>You are offline. Showing the last saved information.</div>
   <div class="breaking" id="qalert" hidden></div>
   <div class="breaking" id="breaking" hidden></div>
   <div class="band" id="band" aria-hidden="true"></div>
@@ -161,6 +168,8 @@ a.card:hover{box-shadow:inset 0 0 0 1px var(--gold)}
       <section class="view" id="v-weather" aria-label="Weather" hidden><div class="wx-hero" id="wx"></div></section>
       <section class="view" id="v-enso" aria-label="El Niño" hidden><div class="enso" id="enso-box"></div></section>
       <section class="view" id="v-quakes" aria-label="Earthquakes" hidden><div class="enso" id="quake-box"></div></section>
+      <section class="view" id="v-safety" aria-label="Safety" hidden><div class="enso" id="safety-box"></div></section>
+      <section class="view" id="v-privacy" aria-label="Privacy" hidden><div class="enso" id="privacy-box"></div></section>
       <section class="view" id="v-calendar" aria-label="Burmese calendar" hidden><div class="day-box" id="daybox"></div></section>
       <section class="view" id="v-reminders" aria-label="Reminders" hidden><div class="notes" id="notes"></div></section>
       <section class="view" id="v-news" aria-label="News" hidden>
@@ -170,10 +179,11 @@ a.card:hover{box-shadow:inset 0 0 0 1px var(--gold)}
       </section>
       <section class="view" id="v-learn" aria-label="Learn" hidden><div id="rail"></div></section>
     </main>
-    <footer class="foot"><p id="foot"></p></footer>
+    <footer class="foot"><p id="foot"></p><p><a href="#privacy">Privacy</a></p></footer>
   </div>
 </div>
 </div>
+<script src="lib/i18n.js?v=__V__"></script>
 <script src="lib/leaflet.js?v=__V__"></script>
 <script src="lib/myanmar.js?v=__V__"></script>
 <script src="lib/ceMmDateTime.js?v=__V__"></script>

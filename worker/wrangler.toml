@@ -3,8 +3,16 @@ main = "src/index.js"
 compatibility_date = "2026-10-01"
 workers_dev = true
 
+[[routes]]
+pattern = "parabaikdaily.com"
+custom_domain = true
+
+[[routes]]
+pattern = "www.parabaikdaily.com"
+custom_domain = true
+
 [triggers]
-crons = ["* * * * *"]
+crons = ["* * * * *", "*/30 * * * *"]
 
 [vars]
 VAPID_PUBLIC = "BOUkTsuubE4ts37xqV5YzU9XZGjZHLdD13Lo9PotcyyD1jAWWbjAZvzhJmwOhESHkiYQTVAGeCwdsHqu84C1xXU"

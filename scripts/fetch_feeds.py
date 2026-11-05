@@ -29,6 +29,7 @@ SITE = "https://thomaszaw.github.io/news/"
 MAX_AGE = timedelta(hours=48)
 PER_TOPIC = 30
 UA = {"User-Agent": "ParabaikDaily/1.0 (personal news reader)"}
+LOCAL = re.compile(r"myanmar|burma|yangon|mandalay|naypyi|sagaing|magway|bago|ayeyarwady|irrawaddy|rakhine|shan state|kachin|kayin|karen|kayah|chin state|mon state|tanintharyi|hpa-an|bay of bengal|andaman", re.I)
 REGION = re.compile(r"myanmar|burma|bay of bengal|andaman|bangladesh|thailand", re.I)
 CITIES = [("Yangon", 16.87, 96.20), ("Mandalay", 21.97, 96.08), ("Naypyitaw", 19.75, 96.12), ("Hpa-An", 16.89, 97.63),
           ("Mawlamyine", 16.49, 97.63), ("Pathein", 16.78, 94.73), ("Bago", 17.34, 96.48), ("Taunggyi", 20.79, 97.04),
@@ -92,6 +93,8 @@ def fetch(job):
             rows = parse(r.read(), source, topic)
         if source == "GDACS":
             rows = [i for i in rows if REGION.search(i["title"])]
+        if topic == "weather" and source == "Google News":
+            rows = [i for i in rows if LOCAL.search(i["title"])]
             for i in rows:
                 if re.search(r"\bred\b", i["title"], re.I) or (re.search(r"\borange\b", i["title"], re.I) and re.search("myanmar|burma", i["title"], re.I)):
                     i["level"] = "red"
@@ -149,7 +152,9 @@ def parse_status(html):
 def enso(path):
     out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     try:
-        out["weeks"] = parse_weekly(get("https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for"))[-26:]
+        raw = get("https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for")
+        print("NOAA raw:", raw.splitlines()[1:4], raw.splitlines()[-2:])
+        out["weeks"] = parse_weekly(raw)[-26:]
         out.update(parse_status(get("https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml")))
     except Exception as e:
         print("skipped ENSO:", e, file=sys.stderr)
@@ -240,6 +245,15 @@ def markets(path):
     print(len(out), "markets")
 
 
+def probe():
+    for name, url in {"blue": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default//GoogleMapsCompatible_Level8/4/7/11.jpeg", "labels": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Reference_Labels_15m/default//GoogleMapsCompatible_Level13/4/7/11.png", "viirs": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/" + (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d") + "/GoogleMapsCompatible_Level9/4/7/11.png", "flood": "https://flood-api.open-meteo.com/v1/flood?latitude=16.87&longitude=96.2&daily=river_discharge", "air": "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=16.87&longitude=96.2&current=us_aqi,pm2_5"}.items():
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=20) as r:
+                print("probe", name, r.status, r.headers.get("content-type"))
+        except Exception as e:
+            print("probe", name, "FAILED", e)
+
+
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -272,6 +286,7 @@ def main(path="data/live.json"):
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
+    probe()
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 
