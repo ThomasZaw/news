@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Parabaik Daily</title>
+<meta name="description" content="A daily Burmese-tech news briefing with a live feed.">
+<meta name="theme-color" content="#14100E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Parabaik">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+Myanmar:wght@400;600;700&family=Unbounded:wght@400;600;700&display=swap">
+<style>
+/* Layout: a parabaik folding book. Black lacquer page, chalk text, gold kanote band;
+   each story is a node on a circuit trace. News column plus a reference rail on wide screens. */
+:root{
+  --ground:#14100E; --panel:#1E1714; --line:#3B2E27; --chalk:#F1E9DB; --muted:#AD9E8E;
+  --gold:#DDAE45; --vermilion:#EC6248; --jade:#45CDB4; --up:#45CDB4; --down:#F07A62;
+  --display:"Unbounded","Noto Serif Myanmar",system-ui,sans-serif;
+  --body:"Hanken Grotesk","Noto Serif Myanmar",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --mm:"Noto Serif Myanmar","Myanmar Text","Noto Sans Myanmar",Padauk,serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --ground:#F2E7D1; --panel:#FAF3E4; --line:#D7C5A4; --chalk:#231712; --muted:#6A5849;
+  --gold:#8D6210; --vermilion:#B22F18; --jade:#08705F; --up:#08705F; --down:#B22F18; color-scheme:light}}
+:root[data-theme="light"]{
+  --ground:#F2E7D1; --panel:#FAF3E4; --line:#D7C5A4; --chalk:#231712; --muted:#6A5849;
+  --gold:#8D6210; --vermilion:#B22F18; --jade:#08705F; --up:#08705F; --down:#B22F18; color-scheme:light}
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--ground);color:var(--chalk);font:400 16px/1.55 var(--body);-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ground)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
+.wrap{max-width:1180px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mm{font-family:var(--mm)}
+.band{height:18px;background:var(--gold);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='18' fill='none' stroke='%23000' stroke-width='1.4'%3E%3Ccircle cx='9' cy='9' r='6'/%3E%3Cpath d='M15 9h9l4-6h10l4 6h12l4 6h10l4-6h9'/%3E%3Ccircle cx='28' cy='3' r='1.6' fill='%23000'/%3E%3Cpath d='M42 9a6 6 0 1 1 12 0'/%3E%3Ccircle cx='68' cy='15' r='1.6' fill='%23000'/%3E%3C/svg%3E") repeat-x left center/96px 18px;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='18' fill='none' stroke='%23000' stroke-width='1.4'%3E%3Ccircle cx='9' cy='9' r='6'/%3E%3Cpath d='M15 9h9l4-6h10l4 6h12l4 6h10l4-6h9'/%3E%3Ccircle cx='28' cy='3' r='1.6' fill='%23000'/%3E%3Cpath d='M42 9a6 6 0 1 1 12 0'/%3E%3Ccircle cx='68' cy='15' r='1.6' fill='%23000'/%3E%3C/svg%3E") repeat-x left center/96px 18px}
+
+.mast{display:flex;gap:24px;align-items:flex-end;justify-content:space-between;padding-block:22px 16px}
+.mast-text{min-width:0}
+.brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+.brand h1{margin:0;font:700 clamp(1.7rem,6vw,3.1rem)/1.05 var(--display);letter-spacing:-.02em}
+.brand .mm{font-size:clamp(1.3rem,4vw,2rem);color:var(--gold);line-height:1.5}
+.dateline{margin-top:8px;display:flex;flex-wrap:wrap;gap:2px 16px;font:400 .8rem/1.6 var(--mono);color:var(--muted)}
+.dateline .mm{font-family:var(--mm);color:var(--chalk);font-size:.95rem}
+.stale{color:var(--vermilion)}
+.stupa{flex:none;width:84px;height:auto;color:var(--gold)}
+.stupa .n{fill:var(--jade);stroke:none}
+.stupa .t{stroke:var(--jade)}
+
+.lead{padding-block:18px 26px}
+.flag{display:inline-block;font:500 .72rem/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ground);background:var(--vermilion);padding:5px 8px}
+.lead h2{margin:12px 0 10px;font:600 clamp(1.45rem,4.2vw,2.5rem)/1.2 var(--display);letter-spacing:-.015em;text-wrap:balance;max-width:24em}
+.lead p{margin:0;max-width:44rem;font-size:1.08rem;color:var(--chalk)}
+
+.tape-box{border-block:1px solid var(--line);background:var(--panel)}
+.tape{display:flex;gap:0;overflow-x:auto;scrollbar-width:none}
+.tape::-webkit-scrollbar{display:none}
+.tick{flex:1 0 auto;min-width:118px;padding:10px 14px;border-right:1px solid var(--line);font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tick:last-child{border-right:0}
+.tick b{display:block;font-weight:400;font-size:.7rem;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.tick span{display:block;font-size:.98rem;font-weight:500}
+.tick i{font-style:normal;font-size:.76rem}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
+
+.tabs-box{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--ground);border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-block:8px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs a{flex:none;min-height:40px;display:flex;align-items:center;padding:0 13px;text-decoration:none;font:500 .86rem/1 var(--body);color:var(--muted);border:1px solid transparent}
+.tabs a:hover{color:var(--chalk)}
+.tabs a[aria-current="true"]{color:var(--gold);border-color:var(--gold)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:44px;padding-block:28px 40px}
+.news{min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:38px}
+.sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.sec-head h2{margin:0;font:600 1.02rem/1.3 var(--display)}
+.sec-head .mm{color:var(--gold);font-size:1.02rem}
+.items{list-style:none;margin:0;padding:0}
+.item{position:relative;padding:14px 0 14px 26px}
+.item::before{content:"";position:absolute;left:5px;top:0;bottom:0;width:1px;background:var(--line)}
+.item:first-child::before{top:24px}
+.item:last-child::before{bottom:calc(100% - 24px)}
+.item::after{content:"";position:absolute;left:0;top:20px;width:11px;height:11px;border-radius:50%;border:2px solid var(--gold);background:var(--ground)}
+.item h3{margin:0;font:600 1.1rem/1.32 var(--body);text-wrap:balance}
+.item p{margin:4px 0 6px;color:var(--chalk);opacity:.86;max-width:40rem}
+.src{font:400 .74rem/1.4 var(--mono);color:var(--muted)}
+.src a{color:var(--jade);text-underline-offset:2px}
+
+.mkt-wrap{overflow-x:auto;margin-top:6px;border:1px solid var(--line);background:var(--panel)}
+.mkt{width:100%;border-collapse:collapse;font:400 .9rem/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.mkt th,.mkt td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.mkt th:first-child,.mkt td:first-child{text-align:left}
+.mkt thead th{font-weight:400;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mkt tbody tr:last-child td{border-bottom:0}
+.mkt td.w{font-size:.76rem;color:var(--muted)}
+.note{margin:8px 0 0;font-size:.82rem;color:var(--muted)}
+
+.rail{min-width:0;display:grid;gap:30px;align-content:start}
+.rail h2{margin:0 0 10px;display:flex;align-items:baseline;gap:10px;font:600 1.02rem/1.3 var(--display)}
+.rail h2 .mm{color:var(--gold);font-weight:400}
+.word{padding-block:12px;border-top:1px solid var(--line)}
+.word:first-of-type{border-top:0;padding-top:0}
+.word .term{font:600 1.16rem/1.3 var(--body)}
+.word .pos{font:400 .74rem var(--mono);color:var(--muted);margin-left:6px}
+.word .mm{display:block;color:var(--gold);font-size:1rem;line-height:1.7}
+.word p{margin:2px 0}
+.word .ex{color:var(--muted);font-size:.92rem}
+.quote{margin:0;padding:18px;background:var(--panel);border:1px solid var(--line)}
+.quote p{margin:0;font-size:1.14rem;line-height:1.5}
+.quote footer{margin-top:10px;font:400 .74rem/1.4 var(--mono);color:var(--muted)}
+.wx{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wx div{padding:10px;background:var(--panel);border:1px solid var(--line)}
+.wx b{display:block;font-weight:400;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.wx span{font-size:.94rem;font-weight:500;white-space:nowrap}
+.foot{border-top:1px solid var(--line);padding-block:16px 28px;font-size:.84rem;color:var(--muted)}
+.foot p{margin:0;max-width:46rem}
+
+.live{border:1px solid var(--line);background:var(--panel);padding:14px 16px 6px}
+.live-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:6px}
+.live-head h2{margin:0;font:600 1.02rem/1.3 var(--display)}
+.live-head .mm{color:var(--gold)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--jade);flex:none}
+.live-state{margin-left:auto;font:400 .74rem/1.4 var(--mono);color:var(--muted)}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.feed time{font:400 .76rem/1.5 var(--mono);color:var(--jade)}
+.feed a{font-weight:500;text-decoration:none;line-height:1.35}
+.feed a:hover{text-decoration:underline}
+.feed span{display:block;font:400 .74rem/1.5 var(--mono);color:var(--muted)}
+.feed .fresh a{color:var(--gold)}
+.more{display:inline-block;margin:6px 0 0 26px;font:500 .86rem/1.4 var(--body);color:var(--gold)}
+.empty{padding:10px 0;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.dot{animation:pulse 2.4s ease-in-out infinite}@keyframes pulse{50%{opacity:.35}}}
+@media (max-width:920px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:36px}
+  .rail{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+  .rail .span{grid-column:1/-1}
+}
+@media (max-width:620px){
+  .rail{grid-template-columns:minmax(0,1fr)}
+  .stupa{width:58px}
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+</head>
+<body>
+<div class="band" aria-hidden="true"></div>
+<header class="wrap mast">
+  <div class="mast-text">
+    <div class="brand"><h1>Parabaik Daily</h1><span class="mm" lang="my">ပုရပိုက်</span></div>
+    <div class="dateline" id="dateline"></div>
+  </div>
+  <svg class="stupa" viewBox="0 0 120 150" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+    <path d="M60 4v20M54 12h12M56 18h8"/>
+    <path d="M60 24C54 40 50 52 38 66h44C70 52 66 40 60 24Z"/>
+    <path d="M30 66h60v10H30zM22 76h76v12H22zM12 88h96v14H12zM2 102h116v14H2z"/>
+    <path class="t" d="M36 116v14l-14 10M60 116v28M84 116v14l14 10"/>
+    <circle class="n" cx="22" cy="140" r="3.4"/><circle class="n" cx="60" cy="145" r="3.4"/><circle class="n" cx="98" cy="140" r="3.4"/><circle class="n" cx="60" cy="4" r="3"/>
+  </svg>
+</header>
+
+<section class="wrap lead" id="lead" aria-label="Top story"></section>
+<div class="tape-box"><div class="wrap"><div class="tape" id="tape" tabindex="0" aria-label="Key market numbers"></div></div></div>
+<nav class="tabs-box" aria-label="Sections"><div class="wrap"><div class="tabs" id="tabs"></div></div></nav>
+
+<div class="wrap layout">
+  <main class="news" id="news"></main>
+  <aside class="rail" id="rail"></aside>
+</div>
+<footer class="wrap foot"><p id="foot"></p></footer>
+<script>
+(function(){
+  var E=null,LIVE=null,key='all',TOPICS=[];
+  function el(t,c,x){var n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n}
+  function safe(u){return /^https?:\/\//.test(u||'')?u:'#'}
+  function srcs(a){var p=el('div','src');p.append('Source: ');a.forEach(function(s,i){if(i)p.append(', ');var l=el('a',null,s.name);l.href=safe(s.url);l.target='_blank';l.rel='noopener';p.append(l)});return p}
+  function dir(v){return v>0?'up':v<0?'down':'flat'}
+  function pct(v){if(!v)return 'unchanged';return (v>0?'▲ +':'▼ −')+Math.abs(v).toFixed(2).replace(/0$/,'')+'%'}
+  function ago(iso){var m=Math.max(0,Math.round((Date.now()-new Date(iso))/6e4));return m<1?'now':m<60?m+'m':m<1440?Math.round(m/60)+'h':Math.round(m/1440)+'d'}
+  function mmn(n){return String(n).replace(/\d/g,function(x){return '၀၁၂၃၄၅၆၇၈၉'[x]})}
+  function clear(n){while(n.firstChild)n.removeChild(n.firstChild)}
+  var wdE=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],wdM=['တနင်္ဂနွေ','တနင်္လာ','အင်္ဂါ','ဗုဒ္ဓဟူး','ကြာသပတေး','သောကြာ','စနေ'],moM=['ဇန်နဝါရီ','ဖေဖော်ဝါရီ','မတ်','ဧပြီ','မေ','ဇွန်','ဇူလိုင်','သြဂုတ်','စက်တင်ဘာ','အောက်တိုဘာ','နိုဝင်ဘာ','ဒီဇင်ဘာ'],post=['Garuda','Tiger','Lion','Elephant','Rat','Guinea pig','Naga'];
+  var N=document.getElementById('news'),TB=document.getElementById('tabs'),liveBox=el('section','live');liveBox.id='live';
+
+  function renderEdition(){
+    var p=E.date.split('-').map(Number),d=new Date(Date.UTC(p[0],p[1]-1,p[2])),w=d.getUTCDay(),me=p[0]-(p[1]>4||(p[1]===4&&p[2]>=17)?638:639);
+    var dl=document.getElementById('dateline');clear(dl);
+    var mm=el('span','mm',wdM[w]+'နေ့၊ '+mmn(p[0])+' ခုနှစ်၊ '+moM[p[1]-1]+'လ '+mmn(p[2])+' ရက်');mm.lang='my';
+    dl.append(mm,el('span',null,wdE[w]+' · ME '+me+' · '+post[w]+' post'),el('span',null,'Edition updated '+E.updated));
+    var y=new Date(Date.now()+6.5*3600e3),age=Math.floor((Date.UTC(y.getUTCFullYear(),y.getUTCMonth(),y.getUTCDate())-d.getTime())/864e5);
+    if(age>=2)dl.append(el('span','stale','This edition is '+age+' days old'));
+    var L=document.getElementById('lead');clear(L);
+    var ls=srcs(E.lead.sources);ls.style.marginTop='8px';
+    L.append(el('span','flag',E.lead.flag),el('h2',null,E.lead.title),el('p',null,E.lead.body),ls);
+    var T=document.getElementById('tape');clear(T);
+    E.tape.forEach(function(t){var n=el('div','tick');n.append(el('b',null,t.label),el('span',null,t.value),el('i',dir(t.change),pct(t.change)));T.append(n)});
+    TOPICS=[{id:'all',en:'All'}].concat(E.sections);clear(TB);
+    TOPICS.forEach(function(t){var a=el('a',null,t.en);a.href='#'+t.id;a.dataset.key=t.id;TB.append(a)});
+    var R=document.getElementById('rail');clear(R);
+    function head(en,m){var h=el('h2',null,en),s=el('span','mm',m);s.lang='my';h.append(' ',s);return h}
+    var wb=el('section');wb.append(head('Three words','စကားလုံး'));
+    E.words.forEach(function(v){var n=el('div','word'),t=el('div');t.append(el('span','term',v.term),el('span','pos',v.pos));var s=el('span','mm',v.mm);s.lang='my';n.append(t,s,el('p',null,v.meaning),el('p','ex',v.example));wb.append(n)});
+    var qb=el('section');qb.append(head('Quote','အဆိုအမိန့်'));
+    var q=el('blockquote','quote');q.append(el('p',null,E.quote.text),el('footer',null,E.quote.source));qb.append(q);
+    var xb=el('section','span');xb.append(head('Yangon','ရန်ကုန်'));
+    var x=el('div','wx');[['Today',E.weather.now],['Rain',E.weather.rain],['Tomorrow',E.weather.tomorrow]].forEach(function(r){var c=el('div');c.append(el('b',null,r[0]),el('span',null,r[1]));x.append(c)});xb.append(x);
+    R.append(wb,qb,xb);
+    document.getElementById('foot').textContent='Stories, words and the quote refresh every morning before 7:00 AM Myanmar time. The live feed checks public news feeds about every 30 minutes. Conflict reports can be hard to verify independently, so check the source for detail.';
+  }
+  function renderNews(){
+    clear(N);
+    E.sections.forEach(function(s){
+      if(key!=='all'&&key!==s.id)return;
+      var sec=el('section'),h=el('div','sec-head'),m=el('span','mm',s.mm);m.lang='my';h.append(el('h2',null,s.en),m);sec.append(h);
+      if(s.table&&key==='stocks'){
+        var wr=el('div','mkt-wrap');wr.tabIndex=0;var tb=el('table','mkt');
+        tb.innerHTML='<thead><tr><th scope="col">Market</th><th scope="col">Level</th><th scope="col">Change</th><th scope="col">As of</th></tr></thead>';
+        var b=el('tbody');E.markets.forEach(function(r){var tr=el('tr');tr.append(el('td',null,r.name),el('td',null,r.value),el('td',dir(r.change),pct(r.change)),el('td','w',r.when));b.append(tr)});
+        tb.append(b);wr.append(tb);sec.append(wr,el('p','note',E.marketNote));
+      }
+      var ul=el('ul','items'),list=key==='all'?s.items.slice(0,3):s.items;
+      list.forEach(function(i){var li=el('li','item');li.append(el('h3',null,i.title),el('p',null,i.body),srcs(i.sources));ul.append(li)});
+      sec.append(ul);
+      if(key==='all'){var a=el('a','more','All '+s.en+' news');a.href='#'+s.id;sec.append(a)}
+      N.append(sec);
+    });
+    if(key==='all')N.prepend(liveBox);else N.append(liveBox);
+    renderLive();
+  }
+  function renderLive(){
+    clear(liveBox);
+    var h=el('div','live-head'),m=el('span','mm','တိုက်ရိုက်');m.lang='my';
+    var a0=LIVE?ago(LIVE.updated):'',state=!LIVE?'Loading':a0==='now'?'Updated just now':'Updated '+a0+' ago';
+    h.append(el('i','dot'),el('h2',null,'Live feed'),m,el('span','live-state',state));liveBox.append(h);
+    if(!LIVE){liveBox.append(el('p','empty','Live headlines appear here once the feed loads.'));return}
+    var rows=LIVE.items.filter(function(i){return key==='all'||i.topic===key}).slice(0,key==='all'?12:30);
+    if(!rows.length){liveBox.append(el('p','empty','No headlines from the last two days in this topic.'));return}
+    var ul=el('ul','feed');
+    rows.forEach(function(i){var li=el('li',Date.now()-new Date(i.published)<36e5?'fresh':null),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source));li.append(t,c);ul.append(li)});
+    liveBox.append(ul);
+  }
+  function route(){
+    var k=location.hash.slice(1);key=TOPICS.some(function(t){return t.id===k})?k:'all';
+    Array.prototype.forEach.call(TB.children,function(a){var on=a.dataset.key===key;a.setAttribute('aria-current',on?'true':'false');if(on&&location.hash)a.scrollIntoView({block:'nearest',inline:'center'})});
+    renderNews();
+  }
+  function get(path){return fetch(path+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
+  function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderLive()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
+  get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();addEventListener('hashchange',route);setInterval(pullLive,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden)pullLive()})}).catch(function(){document.getElementById('news').append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
+})();
+</script>
+</body>
+</html>

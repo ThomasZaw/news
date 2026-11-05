@@ -1,0 +1,700 @@
+{
+ "date": "2026-11-05",
+ "updated": "11:00 Yangon",
+ "lead": {
+  "flag": "Top story",
+  "title": "Democrats take Congress, and Trump admits the Iran war hurt his party",
+  "body": "Republicans lost both chambers in the US midterms, with some votes still being counted. Trump called the war \"worth it\" but said it was \"largely true\" that it cost them.",
+  "sources": [
+   {
+    "name": "ABC News",
+    "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+   }
+  ]
+ },
+ "sections": [
+  {
+   "id": "myanmar",
+   "en": "Myanmar",
+   "mm": "မြန်မာ",
+   "items": [
+    {
+     "title": "World Court to rule on Rohingya genocide case on Nov 19",
+     "body": "Myanmar Now reports the ICJ will deliver its verdict seven years after the case began.",
+     "sources": [
+      {
+       "name": "Myanmar Now",
+       "url": "https://myanmar-now.org/en/news/category/news/"
+      }
+     ]
+    },
+    {
+     "title": "Thai foreign minister to visit Myanmar on Nov 12",
+     "body": "Sihasak Phuangketkeow wants relations restored and tensions eased after cross-border clashes, ahead of the ASEAN summit in Manila on Nov 16-18.",
+     "sources": [
+      {
+       "name": "Manila Times",
+       "url": "https://www.manilatimes.net/2026/11/04/world/asia-oceania/thai-foreign-minister-to-visit-myanmar-ahead-of-asean-summit/2461590"
+      }
+     ]
+    },
+    {
+     "title": "Airstrikes reported on schools and a Rakhine bridge",
+     "body": "Myanmar Now reports seven killed in strikes on two schools. BNI reports seven civilians killed at the Yoe Creek Bridge in Kyauktaw.",
+     "sources": [
+      {
+       "name": "Myanmar Now",
+       "url": "https://myanmar-now.org/en/news/category/news/"
+      },
+      {
+       "name": "BNI",
+       "url": "https://www.bnionline.net/en/news"
+      }
+     ]
+    },
+    {
+     "title": "Arakan Army's political wing signs India border trade deal",
+     "body": "BNI reports the ULA signed an accord with a Mizoram transport body to formalize cross-border trade.",
+     "sources": [
+      {
+       "name": "BNI",
+       "url": "https://www.bnionline.net/en/news"
+      }
+     ]
+    },
+    {
+     "title": "Military reinforcements reported on the Chin-Magway border",
+     "body": "BNI reports hundreds of troops moved in two convoys as fighting intensifies.",
+     "sources": [
+      {
+       "name": "BNI",
+       "url": "https://www.bnionline.net/en/news"
+      }
+     ]
+    },
+    {
+     "title": "Analysts doubt a quick return to full ASEAN standing",
+     "body": "BNI reports they see this as unlikely despite efforts to modify the Five-Point Consensus.",
+     "sources": [
+      {
+       "name": "BNI",
+       "url": "https://www.bnionline.net/en/news"
+      }
+     ]
+    },
+    {
+     "title": "New US strategy statement gives little weight to democracy, Myanmar Now says",
+     "body": "The outlet says the document focuses on Washington's own goals.",
+     "sources": [
+      {
+       "name": "Myanmar Now",
+       "url": "https://myanmar-now.org/en/news/category/news/"
+      }
+     ]
+    },
+    {
+     "title": "Report questions dismissals of Myanmar workers",
+     "body": "BNI says a STUM-linked report found 47 of 72 documented 2025 dismissals lacked valid cause.",
+     "sources": [
+      {
+       "name": "BNI",
+       "url": "https://www.bnionline.net/en/news"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "world",
+   "en": "World",
+   "mm": "ကမ္ဘာ",
+   "items": [
+    {
+     "title": "Schumer says the Iran war must end",
+     "body": "He suggested Democrats could use their control of funding. Trump says the war will end \"whenever I want it to.\"",
+     "sources": [
+      {
+       "name": "The Standard",
+       "url": "https://www.thestandard.com.hk/news/article/347566/Morning-Recap-November-5-2026"
+      },
+      {
+       "name": "ABC News",
+       "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+      }
+     ]
+    },
+    {
+     "title": "Ukraine's post-war rebuild discussed by European and US delegations",
+     "body": "Ukraine, Germany, France, Britain and the US met NATO and World Bank representatives on Wednesday, the EU said.",
+     "sources": [
+      {
+       "name": "The Standard",
+       "url": "https://www.thestandard.com.hk/news/article/347566/Morning-Recap-November-5-2026"
+      }
+     ]
+    },
+    {
+     "title": "New Zealand votes on Saturday",
+     "body": "The race between Christopher Luxon's coalition and Chris Hipkins' Labour is close to a toss-up.",
+     "sources": [
+      {
+       "name": "Diplomatic Courier",
+       "url": "https://www.diplomaticourier.com/posts/november-2026s-elections-to-watch"
+      }
+     ]
+    },
+    {
+     "title": "EU hopes the new Congress adds pressure on Russia",
+     "body": "Foreign policy chief Kaja Kallas linked the US result to ending the war in Ukraine.",
+     "sources": [
+      {
+       "name": "ABC News",
+       "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+      }
+     ]
+    },
+    {
+     "title": "Grenada holds a snap election today",
+     "body": "Prime Minister Dickon Mitchell is seeking a second term nearly a year early.",
+     "sources": [
+      {
+       "name": "Diplomatic Courier",
+       "url": "https://www.diplomaticourier.com/posts/november-2026s-elections-to-watch"
+      }
+     ]
+    },
+    {
+     "title": "Spain votes on Nov 29 after Sanchez calls a snap election",
+     "body": "Polls suggest the PP and Vox could win a majority.",
+     "sources": [
+      {
+       "name": "Diplomatic Courier",
+       "url": "https://www.diplomaticourier.com/posts/november-2026s-elections-to-watch"
+      }
+     ]
+    },
+    {
+     "title": "EU sets out its 2027 work programme",
+     "body": "The Commission's plan focuses on a stronger, more sovereign Europe.",
+     "sources": [
+      {
+       "name": "The Standard",
+       "url": "https://www.thestandard.com.hk/news/article/347566/Morning-Recap-November-5-2026"
+      }
+     ]
+    },
+    {
+     "title": "Swiss voters to decide on looser arms-export rules",
+     "body": "The Nov 29 referendum matters for neutrality and for countries supplying Ukraine.",
+     "sources": [
+      {
+       "name": "Diplomatic Courier",
+       "url": "https://www.diplomaticourier.com/posts/november-2026s-elections-to-watch"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "politics",
+   "en": "Politics",
+   "mm": "နိုင်ငံရေး",
+   "items": [
+    {
+     "title": "Vance breaks with the war: \"The reason we lost is the war\"",
+     "body": "The vice president called for an honest discussion about the party's direction.",
+     "sources": [
+      {
+       "name": "ABC News",
+       "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+      }
+     ]
+    },
+    {
+     "title": "Talarico beats Paxton in Texas",
+     "body": "It is the first Democratic Senate win in Texas since 1988. Alaska and Mississippi were still too close to call in early reports.",
+     "sources": [
+      {
+       "name": "ABC News",
+       "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+      }
+     ]
+    },
+    {
+     "title": "Speaker Johnson will not run for minority leader",
+     "body": "A source said Mike Johnson will step aside after the House loss. Jeffries is expected to become Speaker.",
+     "sources": [
+      {
+       "name": "The Standard",
+       "url": "https://www.thestandard.com.hk/news/article/347566/Morning-Recap-November-5-2026"
+      }
+     ]
+    },
+    {
+     "title": "Jeffries projects at least 255 House seats",
+     "body": "He called the result a \"tsunami\" and is expected to become Speaker. This is his projection, not a final count.",
+     "sources": [
+      {
+       "name": "ABC News",
+       "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+      }
+     ]
+    },
+    {
+     "title": "Schumer is poised to lead the Senate",
+     "body": "He said Democrats won \"against all odds.\" His colleagues still need to confirm him as Majority Leader.",
+     "sources": [
+      {
+       "name": "ABC News",
+       "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+      }
+     ]
+    },
+    {
+     "title": "DeSantis calls the result a \"meteor strike\"",
+     "body": "He said Republicans face a hard path to retaking the Senate by 2028.",
+     "sources": [
+      {
+       "name": "ABC News",
+       "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+      }
+     ]
+    },
+    {
+     "title": "Trump shrugs off impeachment talk",
+     "body": "He said he is \"not even a little bit\" worried.",
+     "sources": [
+      {
+       "name": "ABC News",
+       "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+      }
+     ]
+    },
+    {
+     "title": "Harris says Democrats must deliver economic relief",
+     "body": "She also called for holding the administration accountable.",
+     "sources": [
+      {
+       "name": "ABC News",
+       "url": "https://www.abc.net.au/news/2026-11-05/us-midterm-elections-2026-live-updates/107257050"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "business",
+   "en": "Business",
+   "mm": "စီးပွားရေး",
+   "items": [
+    {
+     "title": "Oracle raises $20B for AI data centers",
+     "body": "The deal splits into $10B of common stock at $116 a share and $10B of senior notes.",
+     "sources": [
+      {
+       "name": "HDFC Sky",
+       "url": "https://hdfcsky.com/news/wayfair-jumps-9-8percent-on-earnings-beat-shoals-gains-8-97percent-on-merger-oracle-raises-20b-marathon-falls-9-66percent"
+      }
+     ]
+    },
+    {
+     "title": "Shoals and ARRAY agree a $1.32B solar merger",
+     "body": "The all-stock deal is expected to close in the first quarter of 2027.",
+     "sources": [
+      {
+       "name": "HDFC Sky",
+       "url": "https://hdfcsky.com/news/wayfair-jumps-9-8percent-on-earnings-beat-shoals-gains-8-97percent-on-merger-oracle-raises-20b-marathon-falls-9-66percent"
+      }
+     ]
+    },
+    {
+     "title": "Apple's strong quarter is shadowed by memory-chip costs",
+     "body": "Results beat expectations, but rising memory prices threaten gross margins over the holidays.",
+     "sources": [
+      {
+       "name": "Zacks via Yahoo Finance",
+       "url": "https://ca.finance.yahoo.com/news/company-news-nov-4-2026-132600113.html"
+      }
+     ]
+    },
+    {
+     "title": "Meta seeks $20-25B in bonds, including its first euro bond",
+     "body": "It expects 2026 capital spending of $135-145B.",
+     "sources": [
+      {
+       "name": "KillTheAI, citing CNBC",
+       "url": "https://killtheai.com/news/top-10-ai-news-today-november-4-2026/"
+      }
+     ]
+    },
+    {
+     "title": "Marathon Petroleum sells two refineries to CVR Energy for $4.2B",
+     "body": "The sale covers Upper Midwest refineries and related assets.",
+     "sources": [
+      {
+       "name": "HDFC Sky",
+       "url": "https://hdfcsky.com/news/wayfair-jumps-9-8percent-on-earnings-beat-shoals-gains-8-97percent-on-merger-oracle-raises-20b-marathon-falls-9-66percent"
+      }
+     ]
+    },
+    {
+     "title": "Thomson Reuters misses revenue estimates",
+     "body": "Q3 revenue of $1.83B came in below the $1.91B consensus.",
+     "sources": [
+      {
+       "name": "Zacks via Yahoo Finance",
+       "url": "https://ca.finance.yahoo.com/news/company-news-nov-4-2026-132600113.html"
+      }
+     ]
+    },
+    {
+     "title": "Ferrari beats earnings estimates",
+     "body": "It reported adjusted Q3 earnings of $2.81 a share against a $2.66 consensus.",
+     "sources": [
+      {
+       "name": "Zacks via Yahoo Finance",
+       "url": "https://ca.finance.yahoo.com/news/company-news-nov-4-2026-132600113.html"
+      }
+     ]
+    },
+    {
+     "title": "LS Power proposes buying EVgo at $2 a share",
+     "body": "The offer is non-binding and a special board committee is reviewing it.",
+     "sources": [
+      {
+       "name": "HDFC Sky",
+       "url": "https://hdfcsky.com/news/wayfair-jumps-9-8percent-on-earnings-beat-shoals-gains-8-97percent-on-merger-oracle-raises-20b-marathon-falls-9-66percent"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "stocks",
+   "en": "Stocks",
+   "mm": "စတော့ဈေးကွက်",
+   "items": [
+    {
+     "title": "The Dow gains 3% as oil drops about 8%",
+     "body": "Stocks rallied on the election result, and Brent fell back below $100 on hopes of an end to the war. Energy was the weakest sector.",
+     "sources": [
+      {
+       "name": "TheStreet",
+       "url": "https://www.thestreet.com/stock-market-today/stock-market-today-dow-jones-sp-500-nasdaq-updates-nov-04-2026"
+      },
+      {
+       "name": "Stocktitan",
+       "url": "https://www.stocktitan.net/articles/stock-market-today-live-november-4-2026"
+      }
+     ]
+    },
+    {
+     "title": "Asian chip stocks sell off on AI regulation fears",
+     "body": "SK Hynix fell 7.4% and Samsung 5.7% in Seoul, after US data center shares dropped.",
+     "sources": [
+      {
+       "name": "AP via WSLS",
+       "url": "https://www.wsls.com/business/2026/11/05/asian-shares-mostly-advance-following-us-midterms-though-kospi-falls-on-selling-of-chipmakers/"
+      },
+      {
+       "name": "The Standard",
+       "url": "https://www.thestandard.com.hk/news/article/347566/Morning-Recap-November-5-2026"
+      }
+     ]
+    },
+    {
+     "title": "Biggest moves: Kyndryl +30%, Amdocs -30%, Trump Media -24%",
+     "body": "Kyndryl held its outlook and Amdocs forecast lower 2027 revenue. Trump Media fell after the Democrats won.",
+     "sources": [
+      {
+       "name": "Stocktitan",
+       "url": "https://www.stocktitan.net/articles/stock-market-today-live-november-4-2026"
+      }
+     ]
+    },
+    {
+     "title": "Crypto recovers alongside stocks",
+     "body": "Prices bounced from overnight losses tied to the Democrats' wins.",
+     "sources": [
+      {
+       "name": "The Standard",
+       "url": "https://www.thestandard.com.hk/news/article/347566/Morning-Recap-November-5-2026"
+      }
+     ]
+    },
+    {
+     "title": "Hang Seng jumps 2.8% as Tokyo tech slides",
+     "body": "Advantest fell 9.4% and Tokyo Electron 7.7%, while Hong Kong has less AI exposure.",
+     "sources": [
+      {
+       "name": "AP via WSLS",
+       "url": "https://www.wsls.com/business/2026/11/05/asian-shares-mostly-advance-following-us-midterms-though-kospi-falls-on-selling-of-chipmakers/"
+      }
+     ]
+    },
+    {
+     "title": "FIS falls about 24% after cutting its outlook",
+     "body": "It lowered its 2026 adjusted EPS growth forecast to 1.2-2.4%.",
+     "sources": [
+      {
+       "name": "Stocktitan",
+       "url": "https://www.stocktitan.net/articles/stock-market-today-live-november-4-2026"
+      }
+     ]
+    },
+    {
+     "title": "Cricut surges 49% on a special dividend",
+     "body": "Q3 revenue rose 11% to $188.6M and it declared a $0.70 dividend.",
+     "sources": [
+      {
+       "name": "Stocktitan",
+       "url": "https://www.stocktitan.net/articles/stock-market-today-live-november-4-2026"
+      }
+     ]
+    },
+    {
+     "title": "Palantir slips despite 96% revenue growth",
+     "body": "Mid-morning shares dipped as total contract value grew only 6%.",
+     "sources": [
+      {
+       "name": "HDFC Sky",
+       "url": "https://hdfcsky.com/news/wayfair-jumps-9-8percent-on-earnings-beat-shoals-gains-8-97percent-on-merger-oracle-raises-20b-marathon-falls-9-66percent"
+      }
+     ]
+    }
+   ],
+   "table": true
+  },
+  {
+   "id": "tech",
+   "en": "Tech & AI",
+   "mm": "နည်းပညာ",
+   "items": [
+    {
+     "title": "OpenAI says GPT-6 Astra designed a hardware device in under a week",
+     "body": "It covered the enclosure, circuit board and firmware, though people still revised it for manufacturing tolerances.",
+     "sources": [
+      {
+       "name": "KillTheAI, citing OpenAI",
+       "url": "https://killtheai.com/news/top-10-ai-news-today-november-4-2026/"
+      }
+     ]
+    },
+    {
+     "title": "ChatGPT search nears 20% of Google's volume, OpenAI estimates",
+     "body": "The company also puts weekly users at 1.2 billion.",
+     "sources": [
+      {
+       "name": "KillTheAI, citing The Verge",
+       "url": "https://killtheai.com/news/top-10-ai-news-today-november-4-2026/"
+      }
+     ]
+    },
+    {
+     "title": "Binance says it has recovered about 90% after the $6.3B hack",
+     "body": "The record theft has been linked to North Korea's TraderTraitor group. Binance says users will not bear the loss.",
+     "sources": [
+      {
+       "name": "LBC",
+       "url": "https://www.lbc.co.uk/article/crypto-firm-binance-says-it-has-replenished-90-of-losses-after-63bn-hack-5HjdkjM_2/"
+      }
+     ]
+    },
+    {
+     "title": "Google to switch off Search for K-12 accounts unless schools opt in",
+     "body": "Gemini and Search stay off by default for student accounts.",
+     "sources": [
+      {
+       "name": "KillTheAI, citing Ars Technica",
+       "url": "https://killtheai.com/news/top-10-ai-news-today-november-4-2026/"
+      }
+     ]
+    },
+    {
+     "title": "Brookfield and Drax plan a $27B AI data center in Yorkshire",
+     "body": "It still needs planning approval, network approvals and a tenant.",
+     "sources": [
+      {
+       "name": "KillTheAI, citing The Guardian",
+       "url": "https://killtheai.com/news/top-10-ai-news-today-november-4-2026/"
+      }
+     ]
+    },
+    {
+     "title": "Fal raises $1.3B at a $16B valuation",
+     "body": "The AI inference startup reports $800M in annualized revenue.",
+     "sources": [
+      {
+       "name": "KillTheAI, citing TechCrunch",
+       "url": "https://killtheai.com/news/top-10-ai-news-today-november-4-2026/"
+      }
+     ]
+    },
+    {
+     "title": "Stanford retest finds 44% of cited LLM claims have expired",
+     "body": "Researchers tested 50 claims against 20 models released through September 2026.",
+     "sources": [
+      {
+       "name": "KillTheAI, citing Stanford",
+       "url": "https://killtheai.com/news/top-10-ai-news-today-november-4-2026/"
+      }
+     ]
+    },
+    {
+     "title": "UK warns of AI ransomware on critical infrastructure by 2028",
+     "body": "The National Cyber Security Centre calls this highly likely.",
+     "sources": [
+      {
+       "name": "KillTheAI, citing NCSC",
+       "url": "https://killtheai.com/news/top-10-ai-news-today-november-4-2026/"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "tape": [
+  {
+   "label": "S&P 500",
+   "value": "7,688.62",
+   "change": 1.58
+  },
+  {
+   "label": "Dow",
+   "value": "53,356.12",
+   "change": 3.03
+  },
+  {
+   "label": "Nasdaq",
+   "value": "25,736.51",
+   "change": 1.44
+  },
+  {
+   "label": "Brent",
+   "value": "$93.91",
+   "change": -0.8
+  },
+  {
+   "label": "Gold",
+   "value": "$4,065",
+   "change": 3.5
+  },
+  {
+   "label": "Bitcoin",
+   "value": "$80,464",
+   "change": 3.4
+  },
+  {
+   "label": "USD/MMK",
+   "value": "2,093.70",
+   "change": 0
+  }
+ ],
+ "markets": [
+  {
+   "name": "Dow Jones",
+   "value": "53,356.12",
+   "change": 3.03,
+   "when": "Nov 4 close"
+  },
+  {
+   "name": "S&P 500",
+   "value": "7,688.62",
+   "change": 1.58,
+   "when": "Nov 4 close"
+  },
+  {
+   "name": "Nasdaq",
+   "value": "25,736.51",
+   "change": 1.44,
+   "when": "Nov 4 close"
+  },
+  {
+   "name": "Russell 2000",
+   "value": "2,856.96",
+   "change": 1.58,
+   "when": "Nov 4 close"
+  },
+  {
+   "name": "Nikkei 225",
+   "value": "61,914.53",
+   "change": -0.5,
+   "when": "Nov 5 session"
+  },
+  {
+   "name": "Kospi",
+   "value": "5,484.38",
+   "change": -3.5,
+   "when": "Nov 5 late morning"
+  },
+  {
+   "name": "Hang Seng",
+   "value": "24,597.59",
+   "change": 2.8,
+   "when": "Nov 5 session"
+  },
+  {
+   "name": "ASX 200",
+   "value": "9,003.40",
+   "change": 1.9,
+   "when": "Nov 5 session"
+  },
+  {
+   "name": "Brent crude",
+   "value": "$93.91",
+   "change": -0.8,
+   "when": "Nov 5 early"
+  },
+  {
+   "name": "WTI crude",
+   "value": "$87.27",
+   "change": -1.0,
+   "when": "Nov 5 early"
+  },
+  {
+   "name": "Gold",
+   "value": "$4,065",
+   "change": 3.5,
+   "when": "Nov 5, approx."
+  },
+  {
+   "name": "Bitcoin",
+   "value": "$80,464",
+   "change": 3.4,
+   "when": "Nov 5, approx."
+  }
+ ],
+ "marketNote": "Asian figures were taken mid-session, so they will differ from the close. USD/MMK is the Trading Economics listing from Nov 3 and may not match the street rate in Yangon.",
+ "words": [
+  {
+   "term": "repudiate",
+   "pos": "verb",
+   "mm": "အသိအမှတ်မပြုဘဲ ငြင်းပယ်သည်",
+   "meaning": "To reject something publicly and refuse to support it.",
+   "example": "Vance repudiated the war after the election."
+  },
+  {
+   "term": "rebuke",
+   "pos": "noun",
+   "mm": "ပြင်းပြင်းထန်ထန် ပြစ်တင်ဝေဖန်ခြင်း",
+   "meaning": "A sharp expression of disapproval.",
+   "example": "Voters delivered a clear rebuke to the party."
+  },
+  {
+   "term": "volatile",
+   "pos": "adjective",
+   "mm": "အတက်အကျမြန်သော၊ မတည်ငြိမ်သော",
+   "meaning": "Likely to change suddenly and sharply.",
+   "example": "Oil has been volatile since the war began."
+  }
+ ],
+ "quote": {
+  "text": "By effort and heedfulness, discipline and self-mastery, let the wise one make for himself an island which no flood can overwhelm.",
+  "source": "Dhammapada, verse 25, translated by Acharya Buddharakkhita"
+ },
+ "weather": {
+  "now": "34°/26°",
+  "rain": "70%",
+  "tomorrow": "33°/25°"
+ }
+}
