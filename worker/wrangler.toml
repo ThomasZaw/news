@@ -1,0 +1,13 @@
+name = "parabaik-alerts"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[kv_namespaces]]
+binding = "SEEN"
+id = "b97bb564947e407189b034918d0db8e5"
+
+[observability]
+enabled = true
