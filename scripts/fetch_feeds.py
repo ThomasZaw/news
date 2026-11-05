@@ -153,7 +153,6 @@ def enso(path):
     out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     try:
         raw = get("https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for")
-        print("NOAA raw:", raw.splitlines()[1:4], raw.splitlines()[-2:])
         out["weeks"] = parse_weekly(raw)[-26:]
         out.update(parse_status(get("https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml")))
     except Exception as e:
@@ -245,17 +244,6 @@ def markets(path):
     print(len(out), "markets")
 
 
-def probe():
-    day = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
-    url = "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=VIIRS_NOAA20_Thermal_Anomalies_375m_All&CRS=EPSG:3857&BBOX=10000000,1000000,12000000,3500000&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true&TIME=" + day
-    try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=25) as r:
-            b = r.read()
-            print("wms", r.status, r.headers.get("content-type"), len(b), b[:80] if b[:4] != b"\x89PNG" else "png")
-    except Exception as e:
-        print("wms FAILED", e)
-
-
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -288,7 +276,6 @@ def main(path="data/live.json"):
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
-    probe()
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 
