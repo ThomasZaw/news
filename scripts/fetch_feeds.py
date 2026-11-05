@@ -381,21 +381,6 @@ def main(path="data/live.json"):
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
     fallback_edition(items)
     dmh("data/dmh.json")
-    for name, url in {"him": "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=Himawari_AHI_Band13_Clean_Infrared&CRS=EPSG:3857&BBOX=10000000,1000000,12000000,3500000&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true"}.items():
-        try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=25) as r:
-                b = r.read()
-                print("PROBE", name, r.status, r.headers.get("content-type"), len(b))
-        except Exception as e:
-            print("PROBE", name, "FAILED", e)
-    try:
-        j = json.loads(get("https://api.rainviewer.com/public/weather-maps.json"))
-        p = j["radar"]["past"][-1]["path"]
-        for z, x, y in ((6, 46, 29), (5, 23, 14)):
-            with urllib.request.urlopen(urllib.request.Request(f"{j['host']}{p}/256/{z}/{x}/{y}/2/1_1.png", headers=UA), timeout=20) as r:
-                print("PROBE rv", z, r.status, len(r.read()))
-    except Exception as e:
-        print("PROBE rv FAILED", e)
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")

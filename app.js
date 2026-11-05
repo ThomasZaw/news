@@ -159,6 +159,7 @@ function renderWx(){
   if(saved.indexOf(city)<0){var sv=el('button','chip add','Save this city');sv.type='button';sv.onclick=function(){store('pd-places',saved.concat(city));renderWx()};pl.append(sv)}b.append(pl);
   var ah=el('h3','sec',"Today's alerts");ah.append(mm('span','သတိပေးချက်'));
   var asec=el('div','week');asec.append(ah);var ag=el('div','alerts'),lv=fireLevel(H,i),F=FIRE[lv],fl=lv>=3?2:lv>=1?1:0;
+  var act=dmhActive();if(DMH){var off=el('a','al l'+(act.length?2:0)),ot=el('div'),on=el('div','al-n');off.href=act.length?act[0].url:'https://www.moezala.gov.mm/en';off.target='_blank';off.rel='noopener';on.append(el('b',null,'Official warnings'),mm('span','တရားဝင်'));ot.append(on,el('p',null,act.length?act[0].kind+': '+act[0].title+', issued '+act[0].issued:'No active warning from Myanmar\'s weather department. Checked '+DMH.checked));off.append(el('i'),ot,el('em',null,act.length?'Warning':'None'));ag.append(off)}
   wxAlerts().concat([{en:'Fire danger',mm:'မီးဘေး',l:fl,word:F[1],msg:F[4]}]).forEach(function(x){var d=el('div','al l'+x.l),t=el('div'),n=el('div','al-n');n.append(el('b',null,x.en),mm('span',x.mm));t.append(n,el('p',null,x.msg));d.append(el('i'),t,el('em',null,x.word||LV[x.l]));ag.append(d)});asec.append(ag);b.append(asec);
   var hsec=el('div','week'),hh=el('h3','sec','Next 24 hours'),hs=el('div','week-scroll'),hr=el('div','hours');hsec.append(hh);
   for(var q=0;q<=24&&i+q<H.time.length;q+=3){var ck=code(H.weather_code[i+q],(function(t){var n=+t.slice(11,13);return n>=6&&n<18})(H.time[i+q])),d=el('div');d.append(el('b',null,q?hhmm(H.time[i+q]):'Now'),el('em',null,ck[0]),el('span',null,Math.round(H.temperature_2m[i+q])+'°'),el('small',null,(H.precipitation_probability[i+q]||0)+'%'));hr.append(d)}
@@ -166,9 +167,10 @@ function renderWx(){
   var w=el('div','week'),wr=el('div','week-scroll'),row=el('div','week-row');w.append(el('h3','sec','Next 7 days'));
   D.time.forEach(function(t,n){var p=t.split('-').map(Number),cd=code(D.weather_code[n],1),d=el('div');d.append(el('b',null,n===0?'Today':n===1?'Tomorrow':WDN[wd(p)].slice(0,3)),el('em',null,cd[0]),el('span',null,Math.round(D.temperature_2m_max[n])+'° / '+Math.round(D.temperature_2m_min[n])+'°'),el('small',null,'Rain '+D.precipitation_probability_max[n]+'%'));row.append(d)});
   wr.append(row);w.append(wr);b.append(w);
+  var sd=el('details','enso-more'),sb=el('div');sd.append(el('summary',null,'Live storm map'),sb,el('p','small-note','Satellite cloud image from Himawari with rain radar where it is available. Rain radar coverage in Myanmar is limited, so bright cold clouds may be the best storm sign. The map opens on your chosen city.'));sd.addEventListener('toggle',function(){if(sd.open)stormMap(sb)});b.append(sd);
   var det=el('details','enso-more'),sm=el('summary',null,'View full details'),ch=el('div','chart');ch.id='chart';det.append(sm,ch);
   var ln=el('div','ext'),cc=CITIES.find(function(x){return x[0]===city})||CITIES[0];
-  [['Live rain and storm map (Windy)','https://www.windy.com/-Weather-radar-radar?radar,'+cc[1]+','+cc[2]+',8'],['Myanmar weather department','https://www.moezala.gov.mm/en'],['Global disaster alerts (GDACS)','https://www.gdacs.org/']].forEach(function(r){var a=el('a',null,r[0]+' ↗');a.href=r[1];a.target='_blank';a.rel='noopener';ln.append(a)});det.append(ln);
+  [['Live rain and storm map (Windy)','https://www.windy.com/-Weather-radar-radar?radar,'+cc[1]+','+cc[2]+',8'],['Myanmar weather department','https://www.moezala.gov.mm/en'],['Official Yangon radar image','https://www.moezala.gov.mm/index.php/en/bay-bulletin/11803'],['Global disaster alerts (GDACS)','https://www.gdacs.org/']].forEach(function(r){var a=el('a',null,r[0]+' ↗');a.href=r[1];a.target='_blank';a.rel='noopener';ln.append(a)});det.append(ln);
   det.append(el('p','small-note','Alerts are estimates from the forecast and storm feeds, not official warnings. Fire danger uses the Chandler Burning Index from temperature and humidity.'));
   det.addEventListener('toggle',function(){if(det.open)drawChart(ch,H,i)});b.append(det);
   var wn=el('div','wn');wn.id='wn';b.append(wn);renderWeatherNews();
@@ -323,6 +325,19 @@ function obsCode(o){return !o?null:o.ts?95:o.heavy?65:o.rain?63:null}
 function applyObs(){if(!WX)return;var o=curObs(),c=obsCode(o);if(WX.current._model==null){WX.current._model=WX.current.weather_code;WX.current._mt=WX.current.temperature_2m}WX.current.weather_code=c==null?WX.current._model:c;WX.current.temperature_2m=o&&o.temp!=null?o.temp:WX.current._mt;WX.current._obs=o}
 function loadObs(){var u=location.hostname==='parabaikdaily.com'?'/obs':PUSH_API+'/obs';return fetch(u+'?t='+Math.floor(Date.now()/12e4)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){OBS=Array.isArray(j)?j:[];applyObs();if(view==='weather')renderWx();renderHome()}).catch(function(){})}
 
+/* Official warnings and storm map */
+var DMH=null,SM=null;
+function loadDmh(){return get('data/dmh.json').then(function(j){DMH=j;if(view==='weather')renderWx();renderHome()}).catch(function(){})}
+function dmhActive(){return DMH?DMH.items.filter(function(x){return x.active}):[]}
+function stormMap(box){
+  if(!window.L)return;
+  if(!SM){var e=el('div','qmap');box.append(e);var cc=curCity();SM=L.map(e,{minZoom:4,maxZoom:8,scrollWheelZoom:false}).setView([cc[1],cc[2]],6);baseMap(SM);
+    L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'Himawari_AHI_Band13_Clean_Infrared',format:'image/png',transparent:true,version:'1.3.0',opacity:.55,attribution:'Himawari satellite via NASA'}).addTo(SM);
+    fetch('https://api.rainviewer.com/public/weather-maps.json').then(function(r){return r.json()}).then(function(j){var p=j.radar.past[j.radar.past.length-1];L.tileLayer(j.host+p.path+'/256/{z}/{x}/{y}/2/1_1.png',{maxNativeZoom:7,maxZoom:8,opacity:.75,attribution:'Radar by RainViewer'}).addTo(SM)}).catch(function(){})
+  }else box.append(SM.getContainer());
+  setTimeout(function(){SM.invalidateSize()},0);
+}
+
 /* Safety */
 var AQ=null,RV=null,HM=null,HS=null;
 function places(){return store('pd-places')||['Yangon','Hpa-An','Kawthaung']}
@@ -427,6 +442,7 @@ function renderHome(){
     tx.append(k[1],mm('span',k[2]));r.append(el('span','e',k[0]),el('span','t',Math.round(w.temperature_2m)+'°'),tx);
     [['Feels like',Math.round(w.apparent_temperature)+'°'],['Rain',(WX.hourly.precipitation_probability[i]||0)+'%'],['Wind',(w._obs&&w._obs.wind!=null?w._obs.wind:Math.round(w.wind_speed_10m))+' km/h']].forEach(function(x){var d=el('div');d.append(el('b',null,x[0]),el('span',null,x[1]));st.append(d)});row.append(r,st);c.append(row);
     var f=el('div','h-fire');f.style.setProperty('--fire',F[3]);f.append('Fire danger: '+F[1],mm('span',F[2]));c.append(f);
+    dmhActive().forEach(function(x){var q=el('div','h-fire');q.style.setProperty('--fire','var(--red)');q.append('Official: '+x.kind+' warning');c.append(q)});
     wxAlerts().filter(function(x){return x.l>0}).forEach(function(x){var q=el('div','h-fire');q.style.setProperty('--fire',x.l>1?'var(--red)':'var(--amber)');q.append(x.en+': '+LV[x.l]);c.append(q)})
   }else c.append(el('p','line muted','Weather is loading.'));
   g.append(c);
@@ -446,12 +462,12 @@ function pullMarkets(){return get('data/markets.json').then(function(j){MK=j;if(
 function get(p){return fetch(p+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
 function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderHome();renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
 
-pullQuakes(true);setInterval(pullQuakes,6e4);get('data/hotspots.json').then(function(j){HS=j;if(view==='safety')renderSafety()}).catch(function(){});loadAir();loadRiver();setInterval(loadAir,18e5);
+pullQuakes(true);setInterval(pullQuakes,6e4);get('data/hotspots.json').then(function(j){HS=j;if(view==='safety')renderSafety()}).catch(function(){});loadAir();loadRiver();loadDmh();setInterval(loadAir,18e5);setInterval(loadDmh,6e5);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
 function netState(){$('offline').hidden=navigator.onLine}addEventListener('online',netState);addEventListener('offline',netState);netState();
 get('data/enso.json').then(function(d){ENSO=d;renderHome();if(view==='enso')renderEnso(d)}).catch(function(){});
 renderDateline();renderDay();renderNotes();route();loadWx();
 setInterval(loadWx,3e5);loadObs();setInterval(loadObs,3e5);setInterval(drawNotes,3e4);
-get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();pullMarkets();checkVersion();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);setInterval(pullMarkets,3e5);setInterval(checkVersion,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){loadObs();checkVersion();pullMarkets();pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
+get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();pullMarkets();checkVersion();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);setInterval(pullMarkets,3e5);setInterval(checkVersion,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){loadObs();loadDmh();checkVersion();pullMarkets();pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
 addEventListener('load',function(){scrollTo(0,0)});
 })();
