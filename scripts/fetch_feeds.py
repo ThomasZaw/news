@@ -246,12 +246,12 @@ def markets(path):
 
 
 def probe():
-    for name, url in {"blue": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default//GoogleMapsCompatible_Level8/4/7/11.jpeg", "labels": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Reference_Labels_15m/default//GoogleMapsCompatible_Level13/4/7/11.png", "viirs": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/" + (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d") + "/GoogleMapsCompatible_Level9/4/7/11.png", "flood": "https://flood-api.open-meteo.com/v1/flood?latitude=16.87&longitude=96.2&daily=river_discharge", "air": "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=16.87&longitude=96.2&current=us_aqi,pm2_5"}.items():
-        try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=20) as r:
-                print("probe", name, r.status, r.headers.get("content-type"))
-        except Exception as e:
-            print("probe", name, "FAILED", e)
+    try:
+        x = get("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities")
+        for m in re.findall(r"https://[^\"]*Thermal_Anomalies[^\"]*", x)[:12]:
+            print("cap", m)
+    except Exception as e:
+        print("cap failed", e)
 
 
 def main(path="data/live.json"):
