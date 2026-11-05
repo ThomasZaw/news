@@ -354,19 +354,19 @@ def main(path="data/live.json"):
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
     fallback_edition(items)
-    for name, url in {"dmh": "https://www.moezala.gov.mm/en", "dmh2": "https://www.moezala.gov.mm/en/bay-bengal-condition", "rv": "https://api.rainviewer.com/public/weather-maps.json"}.items():
-        try:
-            t = get(url)
-            print("PROBE", name, len(t), re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", t))[:500])
-        except Exception as e:
-            print("PROBE", name, "FAILED", e)
     try:
-        x = get("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities")
-        print("PROBE layers", sorted(set(re.findall(r"Himawari[A-Za-z0-9_]*", x)))[:30])
-        i = x.find("Himawari_AHI_Band13_Clean_Infrared")
-        print("PROBE tpl", re.findall(r"template=.[^'\"]*Himawari_AHI_Band13[^'\"]*", x)[:2], re.findall(r"<Default>[^<]*</Default>", x[i:i+4000])[:2], re.findall(r"<Value>[^<]*</Value>", x[i:i+4000])[:1])
+        h = get("https://www.moezala.gov.mm/en")
+        for m in re.finditer(r"(?i)radar", h):
+            print("PROBE r", re.sub(r"\s+", " ", h[max(0, m.start()-120):m.start()+200]))
+            break
+        print("PROBE imgs", [x for x in re.findall(r"""<img[^>]+src=["']([^"']+)""", h) if re.search(r"(?i)radar|sat|flood|ffg", x)][:10])
+        for u in ("cyclone-warning", "strong-wind-warning", "heavy-rainfall-warning", "untimely-rainfall-warning"):
+            t = get("https://www.moezala.gov.mm/en/" + u)
+            b = t[t.find("main-content"):]
+            print("PROBE", u, re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", b))[300:800])
+            print("PROBE links", re.findall(r"""href=["'](/en/[a-z-]*/?[0-9]+)["']""", b)[:6])
     except Exception as e:
-        print("PROBE layers FAILED", e)
+        print("PROBE FAILED", e)
     weather("data/weather.json")
     enso("data/enso.json")
     markets("data/markets.json")
