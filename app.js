@@ -132,11 +132,11 @@ function wxAlerts(){
   function lvl(x,w,a){return x>=a?2:x>=w?1:0}
   var thunder=H.weather_code.slice(i,i+24).some(function(x){return x>=95});
   var cyclone=LIVE?LIVE.items.filter(function(q){return q.source==='GDACS'&&/cyclone|storm/i.test(q.title)})[0]:null;
-  var gust=Math.max(c.wind_gusts_10m||0,(D.wind_gusts_10m_max||[0])[0]||0),mm0=(D.precipitation_sum||[0])[0]||0,feel=Math.max(c.apparent_temperature||0,(D.apparent_temperature_max||[0])[0]||0);
+  var ob=c._obs,gust=Math.max(c.wind_gusts_10m||0,(D.wind_gusts_10m_max||[0])[0]||0,ob&&ob.gust||0),mm0=(D.precipitation_sum||[0])[0]||0,feel=Math.max(c.apparent_temperature||0,(D.apparent_temperature_max||[0])[0]||0);
   return [
    {i:'⛈',en:'Storm',mm:'မုန်တိုင်း',l:cyclone||(c._obs&&c._obs.ts)?2:thunder?1:0,msg:cyclone?cyclone.title:c._obs&&c._obs.ts?'Thunderstorm reported at '+c._obs.name+', '+c._obs.mins+' min ago':thunder?'Thunderstorms possible in the next 24 hours':'No storm in the forecast'},
-   {i:'🌧',en:'Heavy rain',mm:'မိုးသည်းထန်',l:lvl(mm0,50,100),msg:Math.round(mm0)+' mm of rain forecast today'},
-   {i:'💨',en:'Strong wind',mm:'လေပြင်း',l:lvl(gust,50,75),msg:'Gusts up to '+Math.round(gust)+' km/h today'},
+   {i:'🌧',en:'Heavy rain',mm:'မိုးသည်းထန်',l:Math.max(lvl(mm0,50,100),ob&&ob.heavy?2:ob&&(ob.ts||ob.rain)?1:0),msg:ob&&ob.heavy?'Heavy rain reported at '+ob.name+', '+ob.mins+' min ago':ob&&ob.ts?'Storm rain reported nearby. Downpours can be heavier than the '+Math.round(mm0)+' mm forecast':ob&&ob.rain?'Rain reported at '+ob.name+', '+ob.mins+' min ago':Math.round(mm0)+' mm of rain forecast today'},
+   {i:'💨',en:'Strong wind',mm:'လေပြင်း',l:Math.max(lvl(gust,50,75),ob&&ob.ts?1:0),msg:ob&&ob.gust?'Gusts of '+ob.gust+' km/h reported at '+ob.name:ob&&ob.ts?'Storm winds can rise suddenly, even if the forecast shows '+Math.round(gust)+' km/h':'Gusts up to '+Math.round(gust)+' km/h today'},
    {i:'🌡',en:'Extreme heat',mm:'အပူလွန်ကဲ',l:lvl(feel,41,46),msg:'Feels like up to '+Math.round(feel)+'° today'}].concat(AQ?[{en:'Air quality',mm:'လေထုအရည်အသွေး',l:lvl(AQ.current.us_aqi,101,151),word:aqiWord(AQ.current.us_aqi),msg:'Index '+AQ.current.us_aqi+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³'}]:[]);
 }
 var LV=['Clear','Watch','Warning'],LVM=['ကင်းရှင်း','သတိထားရန်','သတိပေးချက်'];
@@ -151,7 +151,7 @@ function renderWx(){
   var now=el('div','wx-now'),main=el('div','wx-main'),cond=el('div','wx-cond'),tx=el('div');
   tx.append(el('div','wx-temp',Math.round(c.temperature_2m)+'°'));cond.append(k[1],mm('span',k[2]));tx.append(cond);main.append(el('div','wx-emoji',k[0]),tx);
   var st=el('div','stats');
-  [['Feels like',Math.round(c.apparent_temperature)+'°'],['Chance of rain',(H.precipitation_probability[i]||0)+'%'],['Wind',Math.round(c.wind_speed_10m)+' km/h'],['Humidity',c.relative_humidity_2m+'%']].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
+  [['Feels like',Math.round(c.apparent_temperature)+'°'],['Chance of rain',(H.precipitation_probability[i]||0)+'%'],['Wind',(c._obs&&c._obs.wind!=null?c._obs.wind:Math.round(c.wind_speed_10m))+' km/h'],['Humidity',c.relative_humidity_2m+'%']].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   if(D.sunrise)[['Sunrise',D.sunrise[0].slice(11,16)],['Sunset',D.sunset[0].slice(11,16)]].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   now.append(main,st);b.append(now);
   b.append(el('p','small-note',c._obs?'Live report from '+c._obs.name+', '+c._obs.mins+' min ago. Rain can differ across the city.':'Forecast estimate. No recent airport report for this area, so local rain may be missed.'));
@@ -318,7 +318,7 @@ function renderQuakes(){
 
 /* Live airport reports */
 var OBS=[],OMAP={Yangon:['VYYY','Yangon Airport'],Bago:['VYYY','Yangon Airport'],Pathein:['VYPT','Pathein Airport'],Mandalay:['VYMD','Mandalay Airport'],Naypyitaw:['VYNT','Naypyitaw Airport'],Taunggyi:['VYHH','Heho Airport'],Sittwe:['VYSW','Sittwe Airport'],Myitkyina:['VYMK','Myitkyina Airport'],Kawthaung:['VYKT','Kawthaung Airport'],Monywa:['VYMY','Monywa Airport'],Mawlamyine:['VYMM','Mawlamyine Airport'],'Hpa-An':['VYMM','Mawlamyine Airport']};
-function curObs(){var s=OMAP[city];if(!s)return null;var r=OBS.filter(function(o){return o.icaoId===s[0]}).sort(function(a,b){return (b.obsTime||0)-(a.obsTime||0)})[0];if(!r||!r.obsTime)return null;var mins=Math.round((Date.now()-r.obsTime*1000)/6e4);if(mins>120)return null;var x=r.wxString||'';return {name:s[1],mins:mins,wx:x,temp:r.temp,ts:/TS/.test(x),rain:/RA|SH|DZ/.test(x),heavy:/\+RA|\+TS/.test(x)}}
+function curObs(){var s=OMAP[city];if(!s)return null;var r=OBS.filter(function(o){return o.icaoId===s[0]}).sort(function(a,b){return (b.obsTime||0)-(a.obsTime||0)})[0];if(!r||!r.obsTime)return null;var mins=Math.round((Date.now()-r.obsTime*1000)/6e4);if(mins>120)return null;var x=r.wxString||'';return {name:s[1],mins:mins,wx:x,temp:r.temp,wind:typeof r.wspd==='number'?Math.round(r.wspd*1.852):null,gust:typeof r.wgst==='number'?Math.round(r.wgst*1.852):null,ts:/TS/.test(x),rain:/RA|SH|DZ/.test(x),heavy:/\+RA|\+TS/.test(x)}}
 function obsCode(o){return !o?null:o.ts?95:o.heavy?65:o.rain?63:null}
 function applyObs(){if(!WX)return;var o=curObs(),c=obsCode(o);if(WX.current._model==null){WX.current._model=WX.current.weather_code;WX.current._mt=WX.current.temperature_2m}WX.current.weather_code=c==null?WX.current._model:c;WX.current.temperature_2m=o&&o.temp!=null?o.temp:WX.current._mt;WX.current._obs=o}
 function loadObs(){var u=location.hostname==='parabaikdaily.com'?'/obs':PUSH_API+'/obs';return fetch(u+'?t='+Math.floor(Date.now()/12e4)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){OBS=Array.isArray(j)?j:[];applyObs();if(view==='weather')renderWx();renderHome()}).catch(function(){})}
@@ -425,7 +425,7 @@ function renderHome(){
   var c=card('w6','#weather','Weather · '+city,'ရာသီဥတု');
   if(WX){var w=WX.current,k=code(w.weather_code,w.is_day),i=nowIdx(WX),F=FIRE[fireLevel(WX.hourly,i)],row=el('div','h-row'),r=el('div','h-wx'),tx=el('div','c'),st=el('div','h-stats');
     tx.append(k[1],mm('span',k[2]));r.append(el('span','e',k[0]),el('span','t',Math.round(w.temperature_2m)+'°'),tx);
-    [['Feels like',Math.round(w.apparent_temperature)+'°'],['Rain',(WX.hourly.precipitation_probability[i]||0)+'%'],['Wind',Math.round(w.wind_speed_10m)+' km/h']].forEach(function(x){var d=el('div');d.append(el('b',null,x[0]),el('span',null,x[1]));st.append(d)});row.append(r,st);c.append(row);
+    [['Feels like',Math.round(w.apparent_temperature)+'°'],['Rain',(WX.hourly.precipitation_probability[i]||0)+'%'],['Wind',(w._obs&&w._obs.wind!=null?w._obs.wind:Math.round(w.wind_speed_10m))+' km/h']].forEach(function(x){var d=el('div');d.append(el('b',null,x[0]),el('span',null,x[1]));st.append(d)});row.append(r,st);c.append(row);
     var f=el('div','h-fire');f.style.setProperty('--fire',F[3]);f.append('Fire danger: '+F[1],mm('span',F[2]));c.append(f);
     wxAlerts().filter(function(x){return x.l>0}).forEach(function(x){var q=el('div','h-fire');q.style.setProperty('--fire',x.l>1?'var(--red)':'var(--amber)');q.append(x.en+': '+LV[x.l]);c.append(q)})
   }else c.append(el('p','line muted','Weather is loading.'));
