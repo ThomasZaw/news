@@ -248,7 +248,7 @@ def markets(path):
 def probe():
     try:
         x = get("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities")
-        for m in re.findall(r"https://[^\"]*Thermal_Anomalies[^\"]*", x)[:12]:
+        for m in sorted(set(re.findall(r"[^'\"<> ]*Thermal_Anomalies[^'\"<> ]*", x)))[:30]:
             print("cap", m)
     except Exception as e:
         print("cap failed", e)
