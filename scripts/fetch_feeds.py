@@ -36,7 +36,7 @@ CITIES = [("Yangon", 16.87, 96.20), ("Mandalay", 21.97, 96.08), ("Naypyitaw", 19
 METEO = ("https://api.open-meteo.com/v1/forecast?current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,"
          "weather_code,wind_speed_10m,wind_gusts_10m,is_day&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,"
          "weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,"
-         "wind_gusts_10m_max&timezone=Asia%2FYangon&forecast_days=7")
+         "wind_gusts_10m_max,precipitation_sum,apparent_temperature_max&timezone=Asia%2FYangon&forecast_days=7")
 
 
 def local(tag):

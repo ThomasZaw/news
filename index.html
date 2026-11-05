@@ -13,6 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="Parabaik">
 <link rel="apple-touch-icon" href="icon-180.png?v=__V__">
 <link rel="icon" href="icon-180.png?v=__V__">
+<link rel="stylesheet" href="lib/leaflet.css?v=__V__">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -416,6 +417,59 @@ a.sky:hover{outline:0}
 .glass{justify-self:start;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-top:4px;padding:8px 13px;background:rgba(10,16,24,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-left:4px solid var(--fire);font-weight:700;text-shadow:none}
 .glass .mm{font-weight:500;color:#FFE7A8}
 @media (prefers-reduced-motion:no-preference){.clouds{animation:drift2 340s linear infinite}.clouds.c2{animation-duration:210s}@keyframes drift2{to{transform:translateX(-50%)}}.rain{animation:fall .55s linear infinite}@keyframes fall{to{background-position:-28px 120px}}}
+
+/* Outline band: shapes only */
+.band{height:30px;background:var(--gold);box-shadow:none;opacity:.8;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='30' fill='none' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M32 27C18 24 14 13 32 3C50 13 46 24 32 27Z'/%3E%3Cpath d='M32 22C26 20 25 14 32 9C39 14 38 20 32 22Z'/%3E%3Cpath d='M0 27C-14 24 -18 13 0 3C18 13 14 24 0 27ZM64 27C50 24 46 13 64 3C82 13 78 24 64 27Z'/%3E%3Cpath d='M0 29.3H64'/%3E%3C/svg%3E") repeat-x left top/64px 30px;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='30' fill='none' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M32 27C18 24 14 13 32 3C50 13 46 24 32 27Z'/%3E%3Cpath d='M32 22C26 20 25 14 32 9C39 14 38 20 32 22Z'/%3E%3Cpath d='M0 27C-14 24 -18 13 0 3C18 13 14 24 0 27ZM64 27C50 24 46 13 64 3C82 13 78 24 64 27Z'/%3E%3Cpath d='M0 29.3H64'/%3E%3C/svg%3E") repeat-x left top/64px 30px}
+/* Weather */
+h3.sec{margin:6px 0 -8px;font:600 1.08rem/1.4 var(--body)}h3.sec .mm{color:var(--gold);font-weight:400}
+.alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px}
+.al{padding:12px 14px;background:var(--panel);border-top:3px solid var(--st);display:grid;gap:2px;--st:#3FA66A}
+.al.l1{--st:#D9A11E}.al.l2{--st:#D8322B}
+.al-t{display:flex;align-items:center;gap:7px}.al-t b{font-weight:600}.al-t em{margin-left:auto;font-style:normal;font-weight:700;font-size:.82rem;color:var(--st)}
+:root .al.l0 .al-t em{color:var(--up)}
+.al .mm{font-size:.86rem;color:var(--muted)}.al p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+.hours{display:grid;grid-template-columns:repeat(9,minmax(70px,1fr));gap:2px;min-width:640px}
+.hours div{background:var(--panel);padding:10px 4px;text-align:center}
+.hours b{display:block;font-weight:600;font-size:.86rem}.hours em{display:block;font-style:normal;font-size:1.5rem;line-height:1.5}
+.hours span{display:block;font-weight:600}.hours small{color:var(--muted)}
+.week-row{gap:2px;background:transparent;border:0}.week-row div{background:var(--panel)}
+.ext{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:10px}.ext a{color:var(--jade);font-weight:600}
+.chart h3{display:none}
+.warnline{margin-top:2px}
+/* Calendar */
+.cal-lay{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;align-items:start}
+.cal-main,.cal-side{min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.cal-side{padding:18px;background:var(--panel)}
+.big-date{font-size:1.5rem;color:var(--vermilion)}
+.cal-en{color:var(--muted);font-size:.94rem}
+.facts{grid-template-columns:repeat(2,minmax(0,1fr))}.facts dt{color:var(--muted)}
+.cal{gap:3px}.cal button{min-height:56px;background:var(--panel);color:var(--chalk);position:relative}
+.cal button.wkend{background:transparent;border-color:var(--line)}
+.cal button.hol b{color:var(--vermilion)}
+.cal button.full small,.cal button.newm small{font-size:0;width:12px;height:12px;border-radius:50%}
+.cal button.full small{background:#E9B93C}.cal button.newm small{background:#2C3A55}
+.cal button.sab::after{content:"";position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--jade)}
+.cal button.now{background:var(--vermilion);border-color:var(--vermilion)}.cal button.now b,.cal button.now small{color:#fff}
+.cal button[aria-pressed="true"]:not(.now){outline:2px solid var(--gold);background:var(--panel)}
+.cal-detail{background:var(--ground);border:0;border-left:3px solid var(--jade)}
+.cal-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.84rem;color:var(--muted)}
+.cal-leg i{display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:50%}
+.cal-leg .today{background:var(--vermilion);border-radius:2px}.cal-leg .full{background:#E9B93C}.cal-leg .newm{background:#2C3A55}.cal-leg .sab{background:var(--jade)}.cal-leg .hol{background:transparent;border:2px solid var(--vermilion)}
+/* Learn */
+#v-learn{display:block}
+#rail{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:36px;align-items:start}
+.learn-side{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
+#rail h2{margin:0 0 10px;font:600 1.15rem/1.3 var(--display)}#rail h2 .mm{color:var(--gold);font-weight:400;font-family:var(--mm)}
+.quote{border:0}.hist{border:0;background:var(--panel)}
+.age-out{margin-top:10px}
+/* Earthquake map */
+.q-pair{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+.qmap{height:min(68vh,620px);width:100%;max-height:none;background:#0B1E33;z-index:1}
+.leaflet-container{font-family:var(--body)}
+.leaflet-popup-content{font-size:.95rem}
+@media (max-width:900px){.cal-lay,#rail{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.q-pair{grid-template-columns:minmax(0,1fr)}.qmap{height:56vh}}
+@media (orientation:landscape) and (max-height:500px){.qmap{height:82vh}}
 </style>
 </head>
 <body>
@@ -454,6 +508,7 @@ a.sky:hover{outline:0}
   </div>
 </div>
 </div>
+<script src="lib/leaflet.js?v=__V__"></script>
 <script src="lib/myanmar.js?v=__V__"></script>
 <script src="lib/ceMmDateTime.js?v=__V__"></script>
 <script src="app.js?v=__V__"></script>
