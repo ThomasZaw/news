@@ -253,7 +253,7 @@ function renderBreaking(){
 var QK=[],QK_T=0,QK_SRC='',GEO=store('pd-geo'),USGS='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/';
 function km(a,b,c,d){var r=Math.PI/180,x=Math.sin((c-a)*r/2),y=Math.sin((d-b)*r/2),h=x*x+Math.cos(a*r)*Math.cos(c*r)*y*y;return Math.round(12742*Math.asin(Math.sqrt(h)))}
 function place(){if(GEO)return {name:'your location',lat:GEO.lat,lon:GEO.lon};var c=CITIES.find(function(x){return x[0]===city})||CITIES[0];return {name:c[0],lat:c[1],lon:c[2]}}
-function qRow(f){var c=f.geometry.coordinates,p=f.properties,o=place();return {id:f.id,mag:p.mag,where:p.place||'Unknown place',time:p.time,url:p.url,lon:c[0],lat:c[1],depth:c[2],dist:km(o.lat,o.lon,c[1],c[0])}}
+function qRow(f){var c=f.geometry.coordinates,p=f.properties,o=place();return {id:f.id,src:p.src||'USGS',srcs:p.srcs||[p.src||'USGS'],mag:p.mag,where:p.place||'Unknown place',time:p.time,url:p.url,lon:c[0],lat:c[1],depth:c[2],dist:km(o.lat,o.lon,c[1],c[0])}}
 var QK_DAYS=store('pd-qdays')||7,FAULT=[[14.8,96.3],[16.2,96.55],[17.3,96.55],[18.9,96.45],[19.75,96.2],[20.6,96.1],[21.4,96],[21.9,96.02],[22.6,95.98],[23.5,96],[24.3,96.1],[25.1,96.4],[25.8,97]];
 function qShown(){var c=Date.now()-QK_DAYS*864e5;return QK.filter(function(q){return q.time>=c})}
 function qWord(m){return m<4?'Minor':m<5?'Light':m<6?'Moderate':m<7?'Strong':'Major'}
@@ -262,16 +262,20 @@ function mmTime(t){var d=new Date(t+234e5);return d.getUTCDate()+' '+['Jan','Feb
 function inRegion(q){return q.lat>=9&&q.lat<=29&&q.lon>=91&&q.lon<=102}
 function qAgo(t){var m=Math.max(0,Math.round((Date.now()-t)/6e4));return m<60?m+' min ago':m<1440?plural(Math.round(m/60),'hour'):plural(Math.round(m/1440),'day')}
 function plural(n,w){return n+' '+w+(n===1?'':'s')+' ago'}
-function qSet(feats,src){var seen={};QK.forEach(function(q){seen[q.id]=q});feats.forEach(function(f){if(f.properties&&f.properties.mag!=null){var q=qRow(f);seen[q.id]=q}});
+function qSet(feats,src,fresh){var seen={};QK.forEach(function(q){if(!fresh||Date.now()-q.time>3*864e5)seen[q.id]=q});feats.forEach(function(f){if(f.properties&&f.properties.mag!=null){var q=qRow(f);seen[q.id]=q}});
   var cut=Date.now()-30*864e5;QK=Object.keys(seen).map(function(k){return seen[k]}).filter(function(q){return q.time>=cut&&q.lat>=4&&q.lat<=32&&q.lon>=86&&q.lon<=108}).sort(function(a,b){return b.time-a.time});QK_T=Date.now();QK_SRC=src;
   QK.forEach(function(q){var o=place();q.dist=km(o.lat,o.lon,q.lat,q.lon)});qAlert();renderQuakes();renderHome()}
 function pullQuakes(first){
+  var u=(location.hostname==='parabaikdaily.com'?'':PUSH_API)+'/quakes?days='+(first||!QK.length?30:3);
+  return fetch(u).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){if(!j.features.length&&!j.sources.some(function(s){return s[1]}))throw 0;var ok=j.sources.filter(function(s){return s[1]}).map(function(s){return s[0]});qSet(j.features,'Live from '+ok.join(', '),true)}).catch(function(){return pullUsgs(first)});
+}
+function pullUsgs(first){
   return fetch(USGS+'2.5_day.geojson').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){qSet(j.features,'Live from USGS');if(first)return fetch(USGS+'2.5_week.geojson').then(function(r){return r.json()}).then(function(k){qSet(k.features,'Live from USGS');return fetch(USGS+'4.5_month.geojson')}).then(function(r){return r.json()}).then(function(k){qSet(k.features,'Live from USGS')})})
   .catch(function(){return get('data/quakes.json').then(function(j){qSet(j.features,'Saved copy, may be up to 15 minutes old')}).catch(function(){renderQuakes()})});
 }
 function qAlert(){
   var seen=store('pd-qseen')||[],lim=Date.now()-6*36e5,o=place();
-  var q=QK.filter(function(x){return x.time>=lim&&seen.indexOf(x.id)<0&&((x.dist<=300&&x.mag>=4)||(inRegion(x)&&x.mag>=4.5))})[0];
+  var q=QK.filter(function(x){return x.time>=lim&&seen.indexOf(x.id)<0&&((x.dist<=300&&x.mag>=4)||(inRegion(x)&&x.mag>=4))})[0];
   var b=$('qalert');clear(b);b.hidden=!q;if(!q)return;
   var row=el('div','breaking-row'),t=el('div'),l=el('a',null,'Magnitude '+q.mag.toFixed(1)+': '+q.where),c=el('button',null,'Dismiss');c.type='button';l.href='#quakes';
   t.append(el('b',null,'⚠️ Earthquake reported'),l,el('small',null,q.dist+' km from '+o.name+' · '+qAgo(q.time)));
@@ -299,7 +303,7 @@ function qMap(box,top){
   }else box.append(QM.getContainer());
   setTimeout(function(){QM.invalidateSize()},0);
   QL.clearLayers();L.polyline(FAULT,{color:'#FF7A59',weight:2,dashArray:'6 6',opacity:.9,interactive:false}).addTo(QL);
-  qShown().reverse().forEach(function(q){var r=Math.max(6,(q.mag-3)*7),last=q===top;var c=L.circleMarker([q.lat,q.lon],{radius:r,color:'#fff',weight:last?2.5:1.5,fillColor:qCol(q.time),fillOpacity:last?.95:.75}).addTo(QL);c.bindPopup('<b>M '+q.mag.toFixed(1)+' · '+qWord(q.mag)+'</b><br>'+q.where.replace(/</g,'&lt;')+'<br>'+mmTime(q.time)+' Myanmar time ('+qAgo(q.time)+')<br>Depth '+Math.round(q.depth)+' km · '+q.dist+' km from '+place().name)});
+  qShown().reverse().forEach(function(q){var r=Math.max(6,(q.mag-3)*7),last=q===top;var c=L.circleMarker([q.lat,q.lon],{radius:r,color:'#fff',weight:last?2.5:1.5,fillColor:qCol(q.time),fillOpacity:last?.95:.75}).addTo(QL);c.bindPopup('<b>M '+q.mag.toFixed(1)+' · '+qWord(q.mag)+'</b><br>'+q.where.replace(/</g,'&lt;')+'<br>'+mmTime(q.time)+' Myanmar time ('+qAgo(q.time)+')<br>Depth '+Math.round(q.depth)+' km · '+q.dist+' km from '+place().name+'<br>Reported by '+q.srcs.join(', '))});
   if(GEO&&GEO.lat>=4&&GEO.lat<=32&&GEO.lon>=86&&GEO.lon<=108)L.circleMarker([GEO.lat,GEO.lon],{radius:7,color:'#fff',weight:2,fillColor:'#FFD24A',fillOpacity:1}).addTo(QL).bindPopup('Your location');
 }
 function renderQuakes(){
@@ -313,7 +317,7 @@ function renderQuakes(){
   var pair=el('div','q-pair'),m=el('div');
   var side=el('div'),ul=el('ul','hl');side.append(el('h3',null,'Last '+QK_DAYS+' days'));
   if(!shown.length)ul.append(el('li',null,'No earthquakes on the list right now.'));
-  shown.slice(0,15).forEach(function(q){var li=el('li','q-row'),g=el('b',q.mag>=5?'q-mag hi':'q-mag',q.mag.toFixed(1)),c=el('div'),a=el('a',null,q.where);a.href=safe(q.url);a.target='_blank';a.rel='noopener';c.append(a,el('small',null,qWord(q.mag)+' · '+qAgo(q.time)+' · '+mmTime(q.time)),el('small',null,'Depth '+Math.round(q.depth)+' km · '+q.dist+' km away'));li.append(g,c);ul.append(li)});
+  shown.slice(0,15).forEach(function(q){var li=el('li','q-row'),g=el('b',q.mag>=5?'q-mag hi':'q-mag',q.mag.toFixed(1)),c=el('div'),a=el('a',null,q.where);a.href=safe(q.url);a.target='_blank';a.rel='noopener';c.append(a,el('small',null,qWord(q.mag)+' · '+qAgo(q.time)+' · '+mmTime(q.time)),el('small',null,'Depth '+Math.round(q.depth)+' km · '+q.dist+' km away · '+q.srcs.join(', ')));li.append(g,c);ul.append(li)});
   side.append(ul);pair.append(m,side);b.append(pair);qMap(m,top);
   var lg=el('div','q-legend');[['#E0252B','Last 24 hours'],['#F08A24','Last 7 days'],['#F2C14E','Older']].forEach(function(x){var i=el('span');var d=el('i');d.style.background=x[0];i.append(d,x[1]);lg.append(i)});var fl=el('span'),fd=el('i','fault');fl.append(fd,'Sagaing Fault, approximate');lg.append(fl,el('span',null,'Bigger circle, stronger quake'));b.append(lg);
   var act=el('div','q-act'),g1=el('button','btn',GEO?'Location saved':'Use my location'),g2=el('button','btn',store('pd-push')?'Notifications on':'Turn on notifications'),g3=el('button','btn',store('pd-qsound')?'Sound on':'Turn on sound');[g1,g2,g3].forEach(function(x){x.type='button'});
@@ -322,7 +326,7 @@ function renderQuakes(){
   var g4=el('button','btn','Send a test');g4.type='button';g4.hidden=!store('pd-push');g4.onclick=function(){g4.textContent='Sending…';testPush().then(function(){g4.textContent='Test sent'}).catch(function(){g4.textContent='Test failed'})};
   g3.onclick=function(){var v=!store('pd-qsound');store('pd-qsound',v);if(v)beep();g3.textContent=v?'Sound on':'Turn on sound'};
   act.append(g1,g2,g3,g4);b.append(act);
-  b.append(el('p','small-note','Alerts show for magnitude 4.5+ in or near Myanmar, or 4.0+ within 300 km of '+o.name+'. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
+  b.append(el('p','small-note','Data from USGS, EMSC and GEOFON, checked every minute. Most quakes near Myanmar appear within 5 to 15 minutes, and the first magnitude can change. Alerts show for magnitude 4.0+ in or near Myanmar. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
   b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
 }
 

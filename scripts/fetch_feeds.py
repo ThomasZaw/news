@@ -402,12 +402,6 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
-    for u in ["https://www.seismicportal.eu/fdsnws/event/1/query?format=json&minlat=4&maxlat=32&minlon=86&maxlon=108&minmag=2&limit=3&orderby=time",
-              "https://geofon.gfz.de/fdsnws/event/1/query?format=text&minlat=4&maxlat=32&minlon=86&maxlon=108&limit=3&orderby=time"]:
-        try:
-            print("PROBE", get(u)[:1500])
-        except Exception as e:
-            print("PROBE FAIL", u, e)
     markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")

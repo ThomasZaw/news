@@ -3,29 +3,61 @@
 const SITE = "https://parabaikdaily.com/";
 const ORIGIN = "https://thomaszaw.github.io/news";
 const ALLOWED = ["https://parabaikdaily.com", "https://thomaszaw.github.io"];
-const USGS = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson";
 const WEEK = 604800;
 
 export function inRegion(lat, lon) {
   return lat >= 9 && lat <= 29 && lon >= 91 && lon <= 102;
 }
 
-export function quakeAlerts(data, now) {
+const BOX = "minlat=4&maxlat=32&minlon=86&maxlon=108";
+function km(a, b, c, d) {
+  const r = Math.PI / 180, x = Math.sin(((c - a) * r) / 2), y = Math.sin(((d - b) * r) / 2);
+  return 12742 * Math.asin(Math.sqrt(x * x + Math.cos(a * r) * Math.cos(c * r) * y * y));
+}
+const inBox = (q) => q.lat >= 4 && q.lat <= 32 && q.lon >= 86 && q.lon <= 108;
+
+export function fromUsgs(j) {
+  return (j.features || []).filter((f) => f.properties && f.properties.mag != null).map((f) => ({ id: f.id, src: "USGS", mag: f.properties.mag, place: f.properties.place || "", time: f.properties.time, lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], depth: f.geometry.coordinates[2], url: f.properties.url }));
+}
+export function fromEmsc(j) {
+  return (j.features || []).filter((f) => f.properties && f.properties.mag != null).map((f) => { const p = f.properties; return { id: "emsc" + p.unid, src: "EMSC", mag: p.mag, place: (p.flynn_region || "").toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase()), time: Date.parse(p.time), lon: p.lon, lat: p.lat, depth: p.depth, url: "https://www.seismicportal.eu/eventdetails.html?unid=" + p.unid }; });
+}
+export function fromGeofon(t) {
+  return t.split("\n").filter((l) => l && l[0] !== "#").map((l) => l.split("|")).filter((c) => c.length > 12 && c[10]).map((c) => ({ id: c[0], src: "GEOFON", mag: +c[10], place: c[12], time: Date.parse(c[1] + "Z"), lat: +c[2], lon: +c[3], depth: +c[4], url: "https://geofon.gfz.de/eqinfo/event.php?id=" + c[0] }));
+}
+// One event can appear in several catalogues. Keep USGS details first, then EMSC, then GEOFON, and remember which sources saw it.
+export function mergeQuakes(lists) {
   const out = [];
-  for (const q of data.features || []) {
-    const p = q.properties || {};
-    const [lon, lat] = q.geometry.coordinates;
-    if (p.mag >= 4.5 && inRegion(lat, lon) && now - p.time <= 3 * 3600e3) {
-      out.push({
-        key: "q:" + q.id,
-        title: "Earthquake in or near Myanmar",
-        body: `Magnitude ${p.mag.toFixed(1)}: ${p.place || "location not given"}`,
-        priority: p.mag >= 5 ? "max" : "high",
-        tags: "warning",
-        click: SITE + "#quakes",
-      });
-    }
+  for (const q of lists.flat()) {
+    if (!q.mag || !isFinite(q.time) || !inBox(q)) continue;
+    const m = out.find((o) => Math.abs(o.time - q.time) < 90e3 && km(o.lat, o.lon, q.lat, q.lon) < 150);
+    if (m) { if (!m.srcs.includes(q.src)) m.srcs.push(q.src); m.first = Math.min(m.first, q.time); } else out.push({ ...q, srcs: [q.src], first: q.time });
   }
+  return out.sort((a, b) => b.time - a.time);
+}
+export async function getQuakes(days, now = Date.now()) {
+  const start = new Date(now - days * 864e5).toISOString().slice(0, 19), small = days > 7 ? 3 : 2;
+  const opt = { cf: { cacheTtl: 45, cacheEverything: true } };
+  const r = await Promise.allSettled([
+    getJson("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&" + BOX + "&minmagnitude=" + small + "&starttime=" + start + "&orderby=time&limit=500", opt).then(fromUsgs),
+    getJson("https://www.seismicportal.eu/fdsnws/event/1/query?format=json&" + BOX + "&minmag=" + small + "&starttime=" + start + "&orderby=time&limit=500", opt).then(fromEmsc),
+    fetch("https://geofon.gfz.de/fdsnws/event/1/query?format=text&" + BOX + "&starttime=" + start + "&orderby=time&limit=300", { headers: { "User-Agent": "ParabaikDaily/1.0" }, ...opt }).then((x) => { if (!x.ok) throw new Error("GEOFON " + x.status); return x.text(); }).then(fromGeofon),
+  ]);
+  r.forEach((x, i) => x.status === "rejected" && console.log(["USGS", "EMSC", "GEOFON"][i], String(x.reason)));
+  return { sources: r.map((x, i) => [["USGS", "EMSC", "GEOFON"][i], x.status === "fulfilled"]), quakes: mergeQuakes(r.map((x) => (x.status === "fulfilled" ? x.value : []))) };
+}
+
+export async function quakeAlerts(env, quakes, now) {
+  const sent = ((await env.SEEN.get("qsent", "json")) || []).filter((s) => now - s.t < 2 * 864e5);
+  const out = [];
+  for (const q of quakes) {
+    if (q.mag < 4 || !inRegion(q.lat, q.lon) || now - q.time > 3 * 3600e3) continue;
+    if (sent.some((s) => Math.abs(s.t - q.time) < 90e3 && km(s.lat, s.lon, q.lat, q.lon) < 150)) continue;
+    sent.push({ t: q.time, lat: q.lat, lon: q.lon });
+    const t = new Date(q.time + 6.5 * 3600e3).toISOString().slice(11, 16);
+    out.push({ key: "q:" + q.id, title: "Earthquake M" + q.mag.toFixed(1) + (q.mag >= 5 ? ", strong" : ""), body: `${q.place || "In or near Myanmar"} at ${t} Myanmar time. Depth ${Math.round(q.depth)} km. Source ${q.src}.`, click: SITE + "#quakes" });
+  }
+  if (out.length) await env.SEEN.put("qsent", JSON.stringify(sent.slice(-200)));
   return out;
 }
 
@@ -105,8 +137,8 @@ async function subKey(endpoint) {
   return "s:" + b64u(await crypto.subtle.digest("SHA-256", enc.encode(endpoint)));
 }
 
-async function getJson(url) {
-  const r = await fetch(url, { headers: { "User-Agent": "ParabaikDaily/1.0" } });
+async function getJson(url, opt = {}) {
+  const r = await fetch(url, { headers: { "User-Agent": "ParabaikDaily/1.0" }, ...opt });
   if (!r.ok) throw new Error(url + " returned " + r.status);
   return r.json();
 }
@@ -167,9 +199,9 @@ async function dueReminders(env, now) {
 export async function run(env, now = Date.now()) {
   if (!env.VAPID_PRIVATE) return console.log("VAPID_PRIVATE is not set");
   await dueReminders(env, now);
-  const [q, n] = await Promise.allSettled([getJson(USGS), getJson(ORIGIN + "/data/live.json?t=" + now)]);
+  const [q, n] = await Promise.allSettled([getQuakes(1, now), getJson(ORIGIN + "/data/live.json?t=" + now)]);
   const list = [];
-  if (q.status === "fulfilled") list.push(...quakeAlerts(q.value, now));
+  if (q.status === "fulfilled") list.push(...(await quakeAlerts(env, q.value.quakes, now)));
   else console.log(String(q.reason));
   if (n.status === "fulfilled") list.push(...newsAlerts(n.value));
   else console.log(String(n.reason));
@@ -215,6 +247,11 @@ export default {
     if (path === "/obs") {
       const r = await fetch("https://aviationweather.gov/api/data/metar?ids=VYYY,VYMD,VYNT,VYMM,VYHH,VYSW,VYMK,VYKT,VYPT,VYMY&format=json&hours=3", { headers: { "User-Agent": "ParabaikDaily/1.0" }, cf: { cacheTtl: 240, cacheEverything: true } });
       return new Response(r.ok ? await r.text() : "[]", { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "max-age=120" } });
+    }
+    if (path === "/quakes") {
+      const days = Math.min(30, Math.max(1, +url.searchParams.get("days") || 7));
+      const d = await getQuakes(days);
+      return new Response(JSON.stringify({ updated: new Date().toISOString(), sources: d.sources, features: d.quakes.map((q) => ({ id: q.id, properties: { mag: q.mag, place: q.place, time: q.time, url: q.url, src: q.src, srcs: q.srcs }, geometry: { coordinates: [q.lon, q.lat, q.depth] } })) }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "max-age=30" } });
     }
     if (path === "/health") return new Response("Parabaik alert checker is running", { headers: cors });
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405, headers: cors });
