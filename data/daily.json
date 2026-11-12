@@ -1,0 +1,720 @@
+{
+ "words": [
+  {
+   "term": "resilient",
+   "pos": "adjective",
+   "mm": "ခံနိုင်ရည်ရှိသော",
+   "meaning": "Able to recover quickly after something bad happens.",
+   "example": "The town was resilient and reopened its markets a week after the flood."
+  },
+  {
+   "term": "mitigate",
+   "pos": "verb",
+   "mm": "လျော့ပါးစေသည်",
+   "meaning": "To make something bad less serious.",
+   "example": "Clearing dry grass helps mitigate the risk of fire."
+  },
+  {
+   "term": "evacuate",
+   "pos": "verb",
+   "mm": "ဘေးလွတ်ရာသို့ ရွှေ့ပြောင်းသည်",
+   "meaning": "To move people away from a dangerous place.",
+   "example": "Officials evacuated the riverside homes before the water rose."
+  },
+  {
+   "term": "forecast",
+   "pos": "noun",
+   "mm": "ကြိုတင်ခန့်မှန်းချက်",
+   "meaning": "A statement about what is likely to happen, especially with the weather.",
+   "example": "The forecast says heavy rain will arrive tonight."
+  },
+  {
+   "term": "volatile",
+   "pos": "adjective",
+   "mm": "မတည်ငြိမ်သော",
+   "meaning": "Likely to change suddenly and without warning.",
+   "example": "Oil prices were volatile all week."
+  },
+  {
+   "term": "infrastructure",
+   "pos": "noun",
+   "mm": "အခြေခံအဆောက်အအုံ",
+   "meaning": "The basic systems a place needs, such as roads, power and water.",
+   "example": "The storm damaged roads, bridges and other infrastructure."
+  },
+  {
+   "term": "sustainable",
+   "pos": "adjective",
+   "mm": "ရေရှည်တည်တံ့သော",
+   "meaning": "Able to continue for a long time without causing harm.",
+   "example": "The village switched to a more sustainable way of farming."
+  },
+  {
+   "term": "negotiate",
+   "pos": "verb",
+   "mm": "ညှိနှိုင်းသည်",
+   "meaning": "To discuss something to reach an agreement.",
+   "example": "The two companies negotiated a new price."
+  },
+  {
+   "term": "ceasefire",
+   "pos": "noun",
+   "mm": "အပစ်အခတ်ရပ်စဲရေး",
+   "meaning": "An agreement to stop fighting.",
+   "example": "Both sides agreed to a short ceasefire."
+  },
+  {
+   "term": "humanitarian",
+   "pos": "adjective",
+   "mm": "လူသားချင်း စာနာထောက်ထားမှုဆိုင်ရာ",
+   "meaning": "Concerned with helping people who are suffering.",
+   "example": "Humanitarian groups sent food and medicine."
+  },
+  {
+   "term": "inflation",
+   "pos": "noun",
+   "mm": "ငွေကြေးဖောင်းပွမှု",
+   "meaning": "A general rise in prices over time.",
+   "example": "Inflation made rice and cooking oil more expensive."
+  },
+  {
+   "term": "scrutiny",
+   "pos": "noun",
+   "mm": "စိစစ်ကြည့်ရှုမှု",
+   "meaning": "Careful and close examination.",
+   "example": "The new rules are under public scrutiny."
+  },
+  {
+   "term": "unprecedented",
+   "pos": "adjective",
+   "mm": "ယခင်က မဖြစ်ဖူးသော",
+   "meaning": "Never having happened before.",
+   "example": "The heat this year was unprecedented."
+  },
+  {
+   "term": "contingency",
+   "pos": "noun",
+   "mm": "မမျှော်လင့်သည့် အခြေအနေအတွက် ကြိုတင်ပြင်ဆင်မှု",
+   "meaning": "A plan for something that might happen.",
+   "example": "Every fire station needs a contingency plan for power cuts."
+  },
+  {
+   "term": "vulnerable",
+   "pos": "adjective",
+   "mm": "ထိခိုက်လွယ်သော",
+   "meaning": "Easily hurt or harmed.",
+   "example": "Older people are more vulnerable in extreme heat."
+  },
+  {
+   "term": "deploy",
+   "pos": "verb",
+   "mm": "နေရာချထား စေလွှတ်သည်",
+   "meaning": "To send people or equipment somewhere for a job.",
+   "example": "The city deployed extra fire trucks during the festival."
+  },
+  {
+   "term": "diligent",
+   "pos": "adjective",
+   "mm": "လုံ့လဝီရိယရှိသော",
+   "meaning": "Working hard and with care.",
+   "example": "She is a diligent student who never misses a class."
+  },
+  {
+   "term": "prudent",
+   "pos": "adjective",
+   "mm": "ချင့်ချိန်ဆင်ခြင်တတ်သော",
+   "meaning": "Careful and wise about the future.",
+   "example": "It is prudent to keep some savings for emergencies."
+  },
+  {
+   "term": "meticulous",
+   "pos": "adjective",
+   "mm": "အသေးစိတ် ဂရုစိုက်သော",
+   "meaning": "Paying very close attention to every detail.",
+   "example": "The engineer kept meticulous records of every test."
+  },
+  {
+   "term": "persevere",
+   "pos": "verb",
+   "mm": "ဇွဲမလျှော့ဘဲ ကြိုးစားသည်",
+   "meaning": "To keep trying even when it is difficult.",
+   "example": "He persevered and passed the exam on his third try."
+  },
+  {
+   "term": "integrity",
+   "pos": "noun",
+   "mm": "ရိုးသားဖြောင့်မတ်မှု",
+   "meaning": "The quality of being honest and having strong morals.",
+   "example": "People trust her because of her integrity."
+  },
+  {
+   "term": "transparent",
+   "pos": "adjective",
+   "mm": "ပွင့်လင်းမြင်သာသော",
+   "meaning": "Open and easy to understand, with nothing hidden.",
+   "example": "The council promised a transparent budget."
+  },
+  {
+   "term": "accountable",
+   "pos": "adjective",
+   "mm": "တာဝန်ခံရသော",
+   "meaning": "Responsible for your actions and expected to explain them.",
+   "example": "Leaders should be accountable to the public."
+  },
+  {
+   "term": "consensus",
+   "pos": "noun",
+   "mm": "သဘောတူညီချက်",
+   "meaning": "General agreement among a group.",
+   "example": "The team reached a consensus after a long meeting."
+  },
+  {
+   "term": "allocate",
+   "pos": "verb",
+   "mm": "ခွဲဝေချထားသည်",
+   "meaning": "To give a share of something for a purpose.",
+   "example": "The government allocated money for new hospitals."
+  },
+  {
+   "term": "surge",
+   "pos": "noun",
+   "mm": "ရုတ်တရက် မြင့်တက်ခြင်း",
+   "meaning": "A sudden, large increase.",
+   "example": "There was a surge in demand for fans during the heatwave."
+  },
+  {
+   "term": "plummet",
+   "pos": "verb",
+   "mm": "ရုတ်တရက် ထိုးကျသည်",
+   "meaning": "To fall very quickly.",
+   "example": "Temperatures plummeted after the storm."
+  },
+  {
+   "term": "sanction",
+   "pos": "noun",
+   "mm": "ပိတ်ဆို့အရေးယူမှု",
+   "meaning": "An official penalty placed on a country or group.",
+   "example": "New sanctions blocked some trade with the company."
+  },
+  {
+   "term": "tariff",
+   "pos": "noun",
+   "mm": "အကောက်ခွန်",
+   "meaning": "A tax on goods coming into or leaving a country.",
+   "example": "The new tariff raised the price of imported cars."
+  },
+  {
+   "term": "deficit",
+   "pos": "noun",
+   "mm": "လိုငွေ",
+   "meaning": "The amount by which spending is more than income.",
+   "example": "The country ran a budget deficit last year."
+  },
+  {
+   "term": "innovation",
+   "pos": "noun",
+   "mm": "ဆန်းသစ်တီထွင်မှု",
+   "meaning": "A new idea, method or product.",
+   "example": "Drones are an innovation in firefighting."
+  },
+  {
+   "term": "obsolete",
+   "pos": "adjective",
+   "mm": "ခေတ်နောက်ကျပြီး မသုံးတော့သော",
+   "meaning": "No longer used because something newer exists.",
+   "example": "Paper maps are becoming obsolete for many drivers."
+  },
+  {
+   "term": "anticipate",
+   "pos": "verb",
+   "mm": "ကြိုတင်မျှော်မှန်းသည်",
+   "meaning": "To expect something and prepare for it.",
+   "example": "We anticipate heavy traffic before the holiday."
+  },
+  {
+   "term": "hazard",
+   "pos": "noun",
+   "mm": "အန္တရာယ်",
+   "meaning": "Something that could cause harm.",
+   "example": "Loose wires are a fire hazard."
+  },
+  {
+   "term": "precaution",
+   "pos": "noun",
+   "mm": "ကြိုတင်ကာကွယ်မှု",
+   "meaning": "Something done to prevent harm before it happens.",
+   "example": "As a precaution, the school closed early."
+  },
+  {
+   "term": "aftermath",
+   "pos": "noun",
+   "mm": "နောက်ဆက်တွဲ အကျိုးဆက်",
+   "meaning": "The period after a disaster and its effects.",
+   "example": "In the aftermath of the earthquake, volunteers cleared the roads."
+  },
+  {
+   "term": "devastating",
+   "pos": "adjective",
+   "mm": "အကြီးအကျယ် ပျက်စီးစေသော",
+   "meaning": "Causing very great damage or sadness.",
+   "example": "The cyclone had a devastating effect on the coast."
+  },
+  {
+   "term": "replenish",
+   "pos": "verb",
+   "mm": "ပြန်လည်ဖြည့်တင်းသည်",
+   "meaning": "To fill something up again.",
+   "example": "The station replenished its water tanks after the fire."
+  },
+  {
+   "term": "compassion",
+   "pos": "noun",
+   "mm": "ကရုဏာ",
+   "meaning": "Kindness and care for others who are suffering.",
+   "example": "The monks showed great compassion to the flood victims."
+  },
+  {
+   "term": "gratitude",
+   "pos": "noun",
+   "mm": "ကျေးဇူးသိတတ်မှု",
+   "meaning": "The feeling of being thankful.",
+   "example": "She wrote a letter of gratitude to her teachers."
+  },
+  {
+   "term": "humble",
+   "pos": "adjective",
+   "mm": "နှိမ့်ချသော",
+   "meaning": "Not proud; not thinking you are better than others.",
+   "example": "Despite his success, he stayed humble."
+  },
+  {
+   "term": "pragmatic",
+   "pos": "adjective",
+   "mm": "လက်တွေ့ကျသော",
+   "meaning": "Dealing with problems in a practical way.",
+   "example": "We need a pragmatic solution, not a perfect one."
+  },
+  {
+   "term": "ambiguous",
+   "pos": "adjective",
+   "mm": "အဓိပ္ပာယ် မရှင်းလင်းသော",
+   "meaning": "Having more than one possible meaning.",
+   "example": "The message was ambiguous, so we called to check."
+  },
+  {
+   "term": "coherent",
+   "pos": "adjective",
+   "mm": "ယုတ္တိရှိရှိ ဆက်စပ်သော",
+   "meaning": "Clear and logical.",
+   "example": "He gave a coherent explanation of the plan."
+  },
+  {
+   "term": "elaborate",
+   "pos": "verb",
+   "mm": "အသေးစိတ် ရှင်းပြသည်",
+   "meaning": "To explain something in more detail.",
+   "example": "Could you elaborate on your idea?"
+  },
+  {
+   "term": "endorse",
+   "pos": "verb",
+   "mm": "ထောက်ခံသည်",
+   "meaning": "To publicly support someone or something.",
+   "example": "Several doctors endorsed the new health campaign."
+  },
+  {
+   "term": "feasible",
+   "pos": "adjective",
+   "mm": "လက်တွေ့ လုပ်ဆောင်နိုင်သော",
+   "meaning": "Possible and practical to do.",
+   "example": "Building the bridge in one year is not feasible."
+  },
+  {
+   "term": "inevitable",
+   "pos": "adjective",
+   "mm": "မလွဲမသွေ ဖြစ်မည့်",
+   "meaning": "Certain to happen and impossible to avoid.",
+   "example": "Some delays are inevitable in the rainy season."
+  },
+  {
+   "term": "mandatory",
+   "pos": "adjective",
+   "mm": "မဖြစ်မနေ လိုက်နာရမည့်",
+   "meaning": "Required by a rule or law.",
+   "example": "Wearing a helmet is mandatory on this site."
+  },
+  {
+   "term": "proactive",
+   "pos": "adjective",
+   "mm": "ကြိုတင်လုပ်ဆောင်တတ်သော",
+   "meaning": "Acting early to prevent problems.",
+   "example": "A proactive manager fixes problems before they grow."
+  },
+  {
+   "term": "reluctant",
+   "pos": "adjective",
+   "mm": "တွန့်ဆုတ်သော",
+   "meaning": "Not willing to do something.",
+   "example": "He was reluctant to leave his home during the flood."
+  },
+  {
+   "term": "tenacious",
+   "pos": "adjective",
+   "mm": "ဇွဲကြီးသော",
+   "meaning": "Not giving up easily.",
+   "example": "The tenacious rescuers searched all night."
+  },
+  {
+   "term": "thrive",
+   "pos": "verb",
+   "mm": "ဖွံ့ဖြိုးရှင်သန်သည်",
+   "meaning": "To grow or develop well.",
+   "example": "Small shops thrive near busy markets."
+  },
+  {
+   "term": "undermine",
+   "pos": "verb",
+   "mm": "အားနည်းအောင် ထိခိုက်စေသည်",
+   "meaning": "To slowly weaken something.",
+   "example": "Rumours can undermine trust in a team."
+  },
+  {
+   "term": "vigilant",
+   "pos": "adjective",
+   "mm": "သတိဝီရိယ ရှိသော",
+   "meaning": "Watching carefully for danger.",
+   "example": "Stay vigilant during thunderstorms."
+  },
+  {
+   "term": "benevolent",
+   "pos": "adjective",
+   "mm": "စေတနာကောင်းသော",
+   "meaning": "Kind and wanting to help others.",
+   "example": "A benevolent donor paid for the new school roof."
+  },
+  {
+   "term": "candid",
+   "pos": "adjective",
+   "mm": "ပွင့်လင်းရိုးသားသော",
+   "meaning": "Honest and direct.",
+   "example": "Thank you for your candid feedback."
+  },
+  {
+   "term": "discern",
+   "pos": "verb",
+   "mm": "ခွဲခြားသိမြင်သည်",
+   "meaning": "To notice or understand something that is not obvious.",
+   "example": "It was hard to discern the road through the heavy rain."
+  },
+  {
+   "term": "empathy",
+   "pos": "noun",
+   "mm": "စာနာနားလည်မှု",
+   "meaning": "The ability to understand how someone else feels.",
+   "example": "Good nurses show empathy to their patients."
+  },
+  {
+   "term": "frugal",
+   "pos": "adjective",
+   "mm": "ချွေတာသော",
+   "meaning": "Careful not to waste money.",
+   "example": "Her frugal habits helped her save for a house."
+  }
+ ],
+ "quotes": [
+  {
+   "text": "Hatred is never appeased by hatred in this world. By non-hatred alone is hatred appeased. This is a law eternal.",
+   "source": "Dhammapada, verse 5, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "Though one may conquer a thousand times a thousand men in battle, yet he indeed is the noblest victor who conquers himself.",
+   "source": "Dhammapada, verse 103, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "Overcome the angry by non-anger; overcome the wicked by goodness; overcome the miser by generosity; overcome the liar by truth.",
+   "source": "Dhammapada, verse 223, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "To avoid all evil, to cultivate good, and to cleanse one's mind — this is the teaching of the Buddhas.",
+   "source": "Dhammapada, verse 183, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "Health is the highest gain. Contentment is the greatest wealth. A trustworthy person is the best kinsman. Nibbana is the highest bliss.",
+   "source": "Dhammapada, verse 204, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "Irrigators regulate the rivers; fletchers straighten the arrow shaft; carpenters shape the wood; the wise control themselves.",
+   "source": "Dhammapada, verse 80, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "Just as a solid rock is not shaken by the storm, even so the wise are not affected by praise or blame.",
+   "source": "Dhammapada, verse 81, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "Let none find fault with others; let none see the omissions and commissions of others. But let one see one's own acts, done and undone.",
+   "source": "Dhammapada, verse 50, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "One truly is the protector of oneself; who else could the protector be? With oneself fully controlled, one gains a mastery that is hard to gain.",
+   "source": "Dhammapada, verse 160, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "Heedfulness is the path to the Deathless. Heedlessness is the path to death. The heedful die not. The heedless are as if dead already.",
+   "source": "Dhammapada, verse 21, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "By effort and heedfulness, discipline and self-mastery, let the wise one make for himself an island which no flood can overwhelm.",
+   "source": "Dhammapada, verse 25, translated by Acharya Buddharakkhita"
+  },
+  {
+   "text": "Waste no more time arguing about what a good man should be. Be one.",
+   "source": "Marcus Aurelius, Meditations 10.16, translated by Gregory Hays"
+  },
+  {
+   "text": "The best revenge is not to be like that.",
+   "source": "Marcus Aurelius, Meditations 6.6, translated by Gregory Hays"
+  },
+  {
+   "text": "We suffer more often in imagination than in reality.",
+   "source": "Seneca, Letters to Lucilius, letter 13"
+  },
+  {
+   "text": "While we are postponing, life speeds by.",
+   "source": "Seneca, Letters to Lucilius, letter 1, translated by Richard Gummere"
+  },
+  {
+   "text": "Men are disturbed not by the things which happen, but by the opinions about the things.",
+   "source": "Epictetus, Enchiridion 5, translated by George Long"
+  },
+  {
+   "text": "A journey of a thousand li commences with a single step.",
+   "source": "Tao Te Ching, chapter 64, translated by James Legge"
+  },
+  {
+   "text": "When you know a thing, to hold that you know it; and when you do not know a thing, to allow that you do not know it; this is knowledge.",
+   "source": "Confucius, Analects 2.17, translated by James Legge"
+  }
+ ],
+ "history": [
+  {
+   "month": 1,
+   "day": 4,
+   "year": 1948,
+   "title": "Burma became independent",
+   "body": "Burma left British rule and became an independent republic on 4 January 1948.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Burma"
+   }
+  },
+  {
+   "month": 2,
+   "day": 12,
+   "year": 1947,
+   "title": "The Panglong Agreement was signed",
+   "body": "Leaders from the Shan, Kachin and Chin hills agreed with Aung San to work together for independence.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Panglong_Agreement"
+   }
+  },
+  {
+   "month": 7,
+   "day": 19,
+   "year": 1947,
+   "title": "Martyrs' Day",
+   "body": "Aung San and members of his cabinet were assassinated in Yangon. The day is remembered every year as Martyrs' Day.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Martyrs'_Day_(Burma)"
+   }
+  },
+  {
+   "month": 5,
+   "day": 2,
+   "year": 2008,
+   "title": "Cyclone Nargis hit Myanmar",
+   "body": "Cyclone Nargis struck the Ayeyarwady Delta and Yangon, causing one of the worst natural disasters in the country's history.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Cyclone_Nargis"
+   }
+  },
+  {
+   "month": 3,
+   "day": 28,
+   "year": 2025,
+   "title": "The Mandalay earthquake",
+   "body": "A magnitude 7.7 earthquake on the Sagaing Fault struck near Mandalay, causing heavy loss of life and damage.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/2025_Myanmar_earthquake"
+   }
+  },
+  {
+   "month": 7,
+   "day": 8,
+   "year": 1975,
+   "title": "The Bagan earthquake of 1975",
+   "body": "A strong earthquake damaged many of the ancient temples of Bagan.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/1975_Bagan_earthquake"
+   }
+  },
+  {
+   "month": 8,
+   "day": 24,
+   "year": 2016,
+   "title": "Bagan earthquake of 2016",
+   "body": "A magnitude 6.8 earthquake damaged hundreds of temples in Bagan.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/2016_Myanmar_earthquake"
+   }
+  },
+  {
+   "month": 5,
+   "day": 5,
+   "year": 1930,
+   "title": "The Bago earthquake",
+   "body": "A major earthquake struck Bago and was also felt strongly in Yangon.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/1930_Bago_earthquake"
+   }
+  },
+  {
+   "month": 3,
+   "day": 23,
+   "year": 1839,
+   "title": "The Ava earthquake",
+   "body": "A powerful earthquake struck the royal capital of Ava and damaged many buildings.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/1839_Ava_earthquake"
+   }
+  },
+  {
+   "month": 11,
+   "day": 3,
+   "year": 1961,
+   "title": "U Thant led the United Nations",
+   "body": "U Thant of Burma became acting Secretary-General of the United Nations, the first Asian to hold the post.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/U_Thant"
+   }
+  },
+  {
+   "month": 12,
+   "day": 5,
+   "year": 1920,
+   "title": "The 1920 university boycott",
+   "body": "Students protested against the University Act. The start of the boycott is now remembered as National Day.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/National_Day_(Myanmar)"
+   }
+  },
+  {
+   "month": 5,
+   "day": 17,
+   "year": 1954,
+   "title": "The Sixth Buddhist Council opened",
+   "body": "The Sixth Buddhist Council opened in Yangon to recite and check the Pali Canon.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Sixth_Buddhist_council"
+   }
+  },
+  {
+   "month": 4,
+   "day": 1,
+   "year": 1937,
+   "title": "Burma was separated from India",
+   "body": "Under British rule, Burma became a separately governed colony instead of a province of India.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/British_rule_in_Burma"
+   }
+  },
+  {
+   "month": null,
+   "day": null,
+   "year": 1857,
+   "title": "Mandalay was founded",
+   "body": "King Mindon founded Mandalay as his new royal capital in 1857.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Mandalay"
+   }
+  },
+  {
+   "month": null,
+   "day": null,
+   "year": 1871,
+   "title": "The Fifth Buddhist Council",
+   "body": "King Mindon hosted the Fifth Buddhist Council in Mandalay, and the Pali Canon was carved on marble slabs at Kuthodaw Pagoda.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Fifth_Buddhist_council"
+   }
+  },
+  {
+   "month": null,
+   "day": null,
+   "year": 1752,
+   "title": "The Konbaung dynasty began",
+   "body": "Alaungpaya founded the Konbaung dynasty, the last royal dynasty of Burma.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Konbaung_dynasty"
+   }
+  },
+  {
+   "month": null,
+   "day": null,
+   "year": 1044,
+   "title": "Anawrahta became king of Pagan",
+   "body": "Anawrahta became king and built Pagan into the first empire to unite much of the Irrawaddy valley.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Anawrahta"
+   }
+  },
+  {
+   "month": null,
+   "day": null,
+   "year": 1430,
+   "title": "Mrauk U became a royal capital",
+   "body": "King Min Saw Mon founded Mrauk U, which became the capital of a powerful Arakanese kingdom.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Mrauk_U_Kingdom"
+   }
+  },
+  {
+   "month": null,
+   "day": null,
+   "year": 1824,
+   "title": "The First Anglo-Burmese War began",
+   "body": "War between Burma and British India began in 1824 and ended with Burma losing Arakan and Tenasserim.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/First_Anglo-Burmese_War"
+   }
+  },
+  {
+   "month": null,
+   "day": null,
+   "year": 1885,
+   "title": "The Third Anglo-Burmese War",
+   "body": "British forces took Mandalay and sent King Thibaw into exile, ending the Burmese monarchy.",
+   "source": {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Third_Anglo-Burmese_War"
+   }
+  }
+ ]
+}

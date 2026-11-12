@@ -305,23 +305,46 @@ def hotspots(path):
 
 
 def fallback_edition(items, path="data/edition.json"):
-    """Keep the news fresh if the morning writer did not run."""
+    """Build today's edition by itself if the morning writer did not run."""
     yangon = datetime.now(timezone.utc) + timedelta(hours=6, minutes=30)
+    today = yangon.strftime("%Y-%m-%d")
     with open(path, encoding="utf-8") as f:
         ed = json.load(f)
-    if ed.get("date") == yangon.strftime("%Y-%m-%d") or yangon.hour < 8:
+    if ed.get("date") == today or yangon.hour < 6:
         return
     for sec in ed["sections"]:
         rows = [i for i in items if i["topic"] == sec["id"]][:8]
         if rows:
             sec["items"] = [{"title": i["title"], "body": "", "sources": [{"name": i["source"], "url": i["url"]}]} for i in rows]
+        elif sec["id"] != "stocks":
+            sec["items"] = []
     top = next((i for i in items if i["topic"] in ("myanmar", "world")), None)
     if top:
         ed["lead"] = {"flag": "Latest", "title": top["title"], "body": "", "sources": [{"name": top["source"], "url": top["url"]}]}
-    ed["date"], ed["updated"] = yangon.strftime("%Y-%m-%d"), yangon.strftime("%H:%M Yangon") + " (automatic headlines)"
+    with open("data/daily.json", encoding="utf-8") as f:
+        bank = json.load(f)
+    n = yangon.toordinal()
+    w = bank["words"]
+    ed["words"] = [w[(n * 3 + k) % len(w)] for k in range(3)]
+    ed["quote"] = bank["quotes"][n % len(bank["quotes"])]
+    hs = bank["history"]
+    exact = [h for h in hs if h["month"] == yangon.month and h["day"] == yangon.day]
+    month = [h for h in hs if h["month"] == yangon.month]
+    h, label = (exact[0], "On this day") if exact else (month[n % len(month)], "This month in history") if month else (hs[n % len(hs)], "From Burmese history")
+    ed["history"] = {"label": label, "title": h["title"] + ", " + str(h["year"]), "body": h["body"], "source": h["source"]}
+    try:
+        with open("data/markets.json", encoding="utf-8") as f:
+            mk = json.load(f)["items"]
+        ed["markets"] = [{"name": k, "value": v["value"], "change": v["change"], "when": v["when"]} for k, v in mk.items()]
+        short = {"S&P 500": "S&P 500", "Dow Jones": "Dow", "Nasdaq": "Nasdaq", "Brent crude": "Brent", "Gold": "Gold", "Bitcoin": "Bitcoin"}
+        ed["tape"] = [{"label": b, "value": mk[a]["value"], "change": mk[a]["change"]} for a, b in short.items() if a in mk]
+        ed["marketNote"] = "Prices come from Yahoo Finance and refresh about every 15 minutes. The As of column shows when each was last traded."
+    except Exception as e:
+        print("edition markets skipped:", e, file=sys.stderr)
+    ed["date"], ed["updated"] = today, yangon.strftime("%H:%M Yangon") + " (automatic)"
     with open(path, "w", encoding="utf-8") as f:
         json.dump(ed, f, ensure_ascii=False, indent=1)
-    print("Used automatic headlines")
+    print("Built automatic edition", today)
 
 
 def dmh(path):
@@ -379,11 +402,17 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
+    markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")
     weather("data/weather.json")
     enso("data/enso.json")
-    markets("data/markets.json")
+    for h in json.load(open("data/daily.json", encoding="utf-8"))["history"]:
+        try:
+            get(h["source"]["url"])
+            print("LINK ok", h["source"]["url"])
+        except Exception as e:
+            print("LINK BAD", h["source"]["url"], e)
     try:
         hotspots("data/hotspots.json")
     except Exception as e:
