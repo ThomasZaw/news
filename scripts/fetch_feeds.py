@@ -21,7 +21,7 @@ FEEDS = {
                 ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
                 ("DVB", "https://english.dvb.no/feed/"),
                 ("Global New Light of Myanmar", "https://www.gnlm.com.mm/feed/"),
-                ("ReliefWeb", "https://reliefweb.int/updates/rss.xml?search=country.exact%3A%22Myanmar%22"),
+                ("ReliefWeb", "https://reliefweb.int/country/mmr/rss.xml"),
                 ("Google News", G + "Bangladesh+OR+Thailand+OR+Andaman+cyclone+OR+storm+OR+depression+when:3d"),
                 ("GDACS", "https://www.gdacs.org/xml/rss.xml")],
     "myanmar": [("The Irrawaddy", "https://www.irrawaddy.com/feed"), ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
@@ -45,7 +45,7 @@ FEEDS = {
                  ("NPR", "https://feeds.npr.org/1006/rss.xml"), ("DW", "https://rss.dw.com/rdf/rss-en-bus"), ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories/"),
                  ("CNA", "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6936")],
     "stocks": [("CNBC", "https://www.cnbc.com/id/20910258/device/rss/rss.html"), ("Google News", G + "stock+market+when:1d"),
-               ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/marketpulse/"), ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex"),
+               ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/marketpulse/"), ("Yahoo Finance", "https://finance.yahoo.com/rss/topstories"),
                ("Investing.com", "https://www.investing.com/rss/news_25.rss")],
     "tech": [("The Verge", "https://www.theverge.com/rss/index.xml"), ("TechCrunch", "https://techcrunch.com/feed/"),
              ("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index"),
@@ -167,6 +167,8 @@ def fetch(job):
         req = urllib.request.Request(url, headers=UA)
         with urllib.request.urlopen(req, timeout=25) as r:
             rows = parse(r.read(), source, topic)
+        if topic == "myanmar" and source == "The Diplomat":
+            rows = [i for i in rows if MMONLY.search(i["title"])]
         if source == "GDACS":
             rows = [i for i in rows if REGION.search(i["title"])]
         if topic == "weather" and source != "GDACS":
@@ -571,7 +573,7 @@ def cluster(rows, now):
     out = []
     for g in groups:
         rs = g["rows"]
-        best = max(rs, key=lambda i: (TRUST.get(i["source"], 5) + (2 if "img" in i else 0) - (1 if i.get("_g") else 0), i["published"]))
+        best = max(rs, key=lambda i: (TRUST.get(i["source"], 5) + (3 if "img" in i else 0) - (2 if i.get("_g") else 0), i["published"]))
         srcs = []
         for i in rs:
             if i["source"] != best["source"] and i["source"] not in [s["name"] for s in srcs]:
@@ -609,9 +611,9 @@ def main(path="data/live.json"):
         best = cluster(v, now)
         cap, out, g = (45 if t == "myanmar" else PER_TOPIC), [], 0
         for i in best:
-            if i.get("_g") and t == "myanmar" and i.get("n", 1) < 2:
+            if i.get("_g") and i.get("n", 1) < 2 and t not in ("weather", "enso"):
                 g += 1
-                if g > 25:
+                if g > (25 if t == "myanmar" else 10):
                     continue
             if len(out) < cap:
                 out.append(i)
