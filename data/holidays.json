@@ -1,0 +1,263 @@
+{
+ "note": "Official public holiday lists. Other years use the calendar's built-in rules.",
+ "years": {
+  "2026": {
+   "source": "government holiday list (ais.gov.mm) and Myanmar Labour News",
+   "url": "https://ais.gov.mm/wp-content/uploads/2025/12/AIC-03-2026.pdf",
+   "pending": "Eid al-Adha and Deepavali dates were announced separately.",
+   "days": [
+    [
+     "2026-01-01",
+     "New Year's Day"
+    ],
+    [
+     "2026-01-02",
+     "New Year holiday"
+    ],
+    [
+     "2026-01-04",
+     "Independence Day"
+    ],
+    [
+     "2026-02-12",
+     "Union Day"
+    ],
+    [
+     "2026-02-13",
+     "Union Day holiday"
+    ],
+    [
+     "2026-02-16",
+     "Chinese New Year"
+    ],
+    [
+     "2026-02-17",
+     "Chinese New Year"
+    ],
+    [
+     "2026-03-02",
+     "Peasants' Day"
+    ],
+    [
+     "2026-03-02",
+     "Full moon of Tabaung"
+    ],
+    [
+     "2026-03-27",
+     "Armed Forces Day"
+    ],
+    [
+     "2026-04-11",
+     "Thingyan"
+    ],
+    [
+     "2026-04-12",
+     "Thingyan"
+    ],
+    [
+     "2026-04-13",
+     "Thingyan"
+    ],
+    [
+     "2026-04-14",
+     "Thingyan"
+    ],
+    [
+     "2026-04-15",
+     "Thingyan"
+    ],
+    [
+     "2026-04-16",
+     "Thingyan"
+    ],
+    [
+     "2026-04-17",
+     "Myanmar New Year's Day"
+    ],
+    [
+     "2026-04-18",
+     "New Year holiday"
+    ],
+    [
+     "2026-04-19",
+     "New Year holiday"
+    ],
+    [
+     "2026-04-30",
+     "Full moon of Kason"
+    ],
+    [
+     "2026-05-01",
+     "Labour Day"
+    ],
+    [
+     "2026-07-19",
+     "Martyrs' Day"
+    ],
+    [
+     "2026-07-29",
+     "Full moon of Waso"
+    ],
+    [
+     "2026-10-26",
+     "Thadingyut holiday"
+    ],
+    [
+     "2026-10-27",
+     "Thadingyut holiday"
+    ],
+    [
+     "2026-11-23",
+     "Full moon of Tazaungmon"
+    ],
+    [
+     "2026-11-24",
+     "Tazaungmon holiday"
+    ],
+    [
+     "2026-12-04",
+     "National Day"
+    ],
+    [
+     "2026-12-25",
+     "Christmas Day"
+    ]
+   ]
+  },
+  "2027": {
+   "source": "announced 2027 list, as reported by The Star",
+   "url": "https://www.thestar.com.my/aseanplus/aseanplus-news/2026/10/31/myanmar-to-have-34-public-holidays-in-2027-including-nine-day-thingyan-break",
+   "pending": "Eid al-Adha and Deepavali dates are still to be announced.",
+   "days": [
+    [
+     "2027-01-01",
+     "New Year's Day"
+    ],
+    [
+     "2027-01-04",
+     "Independence Day"
+    ],
+    [
+     "2027-01-08",
+     "Karen New Year"
+    ],
+    [
+     "2027-02-07",
+     "Chinese New Year"
+    ],
+    [
+     "2027-02-12",
+     "Union Day"
+    ],
+    [
+     "2027-03-01",
+     "Peasants' Day holiday"
+    ],
+    [
+     "2027-03-02",
+     "Peasants' Day"
+    ],
+    [
+     "2027-03-22",
+     "Full moon of Tabaung"
+    ],
+    [
+     "2027-03-27",
+     "Armed Forces Day"
+    ],
+    [
+     "2027-04-10",
+     "Thingyan and New Year"
+    ],
+    [
+     "2027-04-11",
+     "Thingyan and New Year"
+    ],
+    [
+     "2027-04-12",
+     "Thingyan and New Year"
+    ],
+    [
+     "2027-04-13",
+     "Thingyan and New Year"
+    ],
+    [
+     "2027-04-14",
+     "Thingyan and New Year"
+    ],
+    [
+     "2027-04-15",
+     "Thingyan and New Year"
+    ],
+    [
+     "2027-04-16",
+     "Thingyan and New Year"
+    ],
+    [
+     "2027-04-17",
+     "Thingyan and New Year"
+    ],
+    [
+     "2027-04-18",
+     "Thingyan and New Year"
+    ],
+    [
+     "2027-05-01",
+     "Labour Day"
+    ],
+    [
+     "2027-05-20",
+     "Full moon of Kason"
+    ],
+    [
+     "2027-05-21",
+     "Kason holiday"
+    ],
+    [
+     "2027-07-18",
+     "Full moon of Waso"
+    ],
+    [
+     "2027-07-19",
+     "Martyrs' Day"
+    ],
+    [
+     "2027-10-14",
+     "Thadingyut"
+    ],
+    [
+     "2027-10-15",
+     "Thadingyut"
+    ],
+    [
+     "2027-10-16",
+     "Thadingyut"
+    ],
+    [
+     "2027-11-13",
+     "Full moon of Tazaungmon"
+    ],
+    [
+     "2027-11-22",
+     "National Day"
+    ],
+    [
+     "2027-11-23",
+     "National Day holiday"
+    ],
+    [
+     "2027-12-25",
+     "Christmas Day"
+    ],
+    [
+     "2027-12-27",
+     "Karen New Year"
+    ],
+    [
+     "2027-12-28",
+     "Karen New Year holiday"
+    ]
+   ]
+  }
+ }
+}

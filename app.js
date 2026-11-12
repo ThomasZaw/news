@@ -29,7 +29,23 @@ function wd(d){return new Date(Date.UTC(d[0],d[1]-1,d[2])).getUTCDay()}
 var WDN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
 function mmLine(m){return tr(m.ToMString('&M &P &ff'))}
 function mmNum(n){return tr(String(n))}
-var TODAY=ygn(),calView=[TODAY[0],TODAY[1]],pick=TODAY.slice();
+var TODAY=ygn(),calView=[TODAY[0],TODAY[1]],pick=TODAY.slice(),HOL=null;
+var HMM={"New Year's Day":'နိုင်ငံတကာ နှစ်ဆန်းတစ်ရက်နေ့','New Year holiday':'နှစ်သစ် ရုံးပိတ်ရက်','Independence Day':'လွတ်လပ်ရေးနေ့','Union Day':'ပြည်ထောင်စုနေ့','Union Day holiday':'ပြည်ထောင်စုနေ့ ရုံးပိတ်ရက်','Chinese New Year':'တရုတ်နှစ်သစ်ကူး',"Peasants' Day":'တောင်သူလယ်သမားနေ့',"Peasants' Day holiday":'တောင်သူလယ်သမားနေ့ ရုံးပိတ်ရက်','Armed Forces Day':'တပ်မတော်နေ့','Resistance Day':'တော်လှန်ရေးနေ့','Thingyan':'သင်္ကြန်','Thingyan and New Year':'သင်္ကြန်နှင့် နှစ်သစ်',"Myanmar New Year's Day":'မြန်မာနှစ်ဆန်းတစ်ရက်နေ့','Labour Day':'အလုပ်သမားနေ့',"Martyrs' Day":'အာဇာနည်နေ့','National Day':'အမျိုးသားနေ့','National Day holiday':'အမျိုးသားနေ့ ရုံးပိတ်ရက်','Christmas Day':'ခရစ္စမတ်နေ့','Karen New Year':'ကရင်နှစ်သစ်ကူးနေ့','Karen New Year holiday':'ကရင်နှစ်သစ် ရုံးပိတ်ရက်',"Karen New Year's Day":'ကရင်နှစ်သစ်ကူးနေ့','Full moon of Tabaung':'တပေါင်းလပြည့်နေ့','Full moon of Kason':'ကဆုန်လပြည့်နေ့','Kason holiday':'ကဆုန် ရုံးပိတ်ရက်','Full moon of Waso':'ဝါဆိုလပြည့်နေ့','Thadingyut':'သီတင်းကျွတ်','Thadingyut holiday':'သီတင်းကျွတ် ရုံးပိတ်ရက်','Full moon of Thadingyut':'သီတင်းကျွတ်လပြည့်နေ့','Full moon of Tazaungmon':'တန်ဆောင်မုန်းလပြည့်နေ့','Tazaungmon holiday':'တန်ဆောင်မုန်း ရုံးပိတ်ရက်','Public holiday':'ရုံးပိတ်ရက်','Eid':'အိဒ်နေ့','Diwali':'ဒီပါဝလီနေ့','Buddha Day':'ဗုဒ္ဓနေ့','Start of Buddhist Lent':'ဝါဆိုနေ့','End of Buddhist Lent':'ဝါကျွတ်နေ့','Tazaungdaing':'တန်ဆောင်တိုင်','Sabbath (Uposatha day)':'ဥပုသ်နေ့','Sabbath eve':'အဖိတ်နေ့','Thingyan Akyo':'သင်္ကြန်အကြို','Thingyan Akya':'သင်္ကြန်အကျ','Thingyan Akyat':'သင်္ကြန်အကြတ်','Thingyan Atat':'သင်္ကြန်အတက်'};
+var FMN={Tabaung:'Tabaung pagoda festival',Kason:'Buddha Day, watering the Bodhi tree',Waso:'Start of Buddhist Lent',Thadingyut:'End of Buddhist Lent, festival of lights',Tazaungmon:'Tazaungdaing festival of lights'};
+var HSKIP=/Valentine|April Fool|Halloween|Earth Day|Red Cross|United Nations|Teachers|Easter|Good Friday|^Holiday$|Christmas/;
+var FMNM={'Tabaung pagoda festival':'တပေါင်းပွဲတော်','Buddha Day, watering the Bodhi tree':'ဗုဒ္ဓနေ့၊ ညောင်ရေသွန်းပွဲ','Start of Buddhist Lent':'ဝါဆိုနေ့၊ ဓမ္မစကြာနေ့','End of Buddhist Lent, festival of lights':'ဝါကျွတ်နေ့၊ မီးထွန်းပွဲ','Tazaungdaing festival of lights':'တန်ဆောင်တိုင် မီးထွန်းပွဲ'};
+function hmm(n){if(HMM[n])return HMM[n];if(FMNM[n])return FMNM[n];var m=n.match(/^Full moon of (.+)$/);if(m)return tr(m[1])+'လပြည့်နေ့';m=n.match(/^(.+) full moon holiday$/);if(m)return tr(m[1])+'လပြည့် ရုံးပိတ်ရက်';var t=tr(n);return /[A-Za-z]/.test(t)?'':t}
+function dayInfo(dt){var k=md(dt),off=HOL&&HOL.years[String(dt[0])],key=iso(dt),pub=[],rel=[],lib=k.holidays;
+  if(off)off.days.forEach(function(x){if(x[0]===key){var fm=x[1].match(/^Full moon of (.+)$/);pub.push(fm&&k.mp!==1?fm[1]+' full moon holiday':x[1])}});
+  else lib.forEach(function(n){if(!/^Thingyan A/.test(n)&&!/Buddha Day|Buddhist Lent|Tazaungdaing|Tabaung Pwe/.test(n))pub.push(n==='Holiday'?'Public holiday':n)});
+  lib.forEach(function(n){if(/^Thingyan A/.test(n))rel.push(n)});
+  if(k.mp===1){var mn=k.ToMString('&M').replace(/^(First|Second|Late) /,''),f='Full moon of '+mn;if(pub.indexOf(f)<0)rel.push(f);if(FMN[mn])rel.push(FMN[mn])}
+  if(!off)lib.forEach(function(n){if(/Buddha Day|Buddhist Lent|Tazaungdaing|Tabaung Pwe/.test(n)&&k.mp!==1)rel.push(n)});
+  k.holidays2.forEach(function(n){if(!HSKIP.test(n)&&rel.indexOf(n)<0&&pub.indexOf(n)<0)rel.push(n)});
+  if(k.sabbath)rel.push(k.sabbath==='Sabbath'?'Sabbath (Uposatha day)':'Sabbath eve');
+  return {k:k,pub:pub,rel:rel}}
+function nextHoliday(){for(var i=1;i<400;i++){var t=Date.UTC(TODAY[0],TODAY[1]-1,TODAY[2]+i),d=new Date(t),dt=[d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()],x=dayInfo(dt);if(x.pub.length)return {dt:dt,name:x.pub[0],days:i}}return null}
+get('data/holidays.json').then(function(j){HOL=j;if(view==='calendar')renderDay();renderHome()}).catch(function(){});
 
 function renderDateline(){
   var dl=$('dateline'),w=wd(TODAY),m=md(TODAY);clear(dl);
@@ -58,19 +74,25 @@ function renderDay(){
   for(var d=1;d<=dim;d++)(function(d){
     var dt=[calView[0],calView[1],d],k=md(dt),c=el('button'),s=mmNum(k.mf);
     c.type='button';c.append(el('b',null,d),el('small',null,s));
-    var hol=k.holidays.length>0;
-    c.className=(hol?'hol ':'')+(k.mp===1?'full ':k.mp===3?'newm ':'')+(k.sabbath==='Sabbath'?'sab ':'')+(iso(dt)===iso(TODAY)?'now ':'')+(notes.some(function(x){return x.date===iso(dt)})?'note':'');
+    var inf=dayInfo(dt),hol=inf.pub.length>0,fest=inf.rel.some(function(n){return !/^Sabbath/.test(n)});
+    c.className=(hol?'hol ':'')+(k.mp===1?'full ':k.mp===3?'newm ':'')+(k.sabbath==='Sabbath'?'sab ':'')+(fest?'fest ':'')+(iso(dt)===iso(TODAY)?'now ':'')+(notes.some(function(x){return x.date===iso(dt)})?'note':'');
     c.setAttribute('aria-pressed',iso(dt)===iso(pick)?'true':'false');
-    c.setAttribute('aria-label',d+' '+MON[calView[1]-1]+', '+k.ToMString('&M &P &ff')+(hol?', '+k.holidays.join(', '):''));
+    c.setAttribute('aria-label',d+' '+MON[calView[1]-1]+', '+k.ToMString('&M &P &ff')+(hol?', public holiday: '+inf.pub.join(', '):'')+(fest?', '+inf.rel.join(', '):''));
     c.onclick=function(){pick=dt;renderDay();var f=$('note-date');if(f)f.value=iso(dt)};
     g.append(c);
   })(d);
   var pk=md(pick),det=el('p','cal-detail'),line=pick[2]+' '+MON[pick[1]-1]+': '+pk.ToMString('&M &P &ff');
   det.append(el('strong',null,line),mm('span',mmLine(pk)));
-  var extra=pk.holidays.concat(pk.holidays2);if(pk.sabbath)extra.unshift(pk.sabbath);
-  if(extra.length)det.append(el('span',null,extra.join(', ')));
-  var leg=el('div','cal-leg');[['today','Today'],['full','Full moon'],['newm','New moon'],['sab','Sabbath'],['hol','Holiday']].forEach(function(r){var i=el('span');i.append(el('i',r[0]),r[1]);leg.append(i)});
-  var lay=el('div','cal-lay'),c1=el('div','cal-main'),c2=el('div','cal-side');c1.append(nav,g,leg);c2.append(big,en,f,det);lay.append(c1,c2);b.append(h,lay);
+  var pi=dayInfo(pick);pi.pub.forEach(function(n){var s=el('span','cd-pub');s.append(n+' · public holiday',mm('span',hmm(n)));det.append(s)});pi.rel.forEach(function(n){var s=el('span','cd-rel');s.append(n,mm('span',hmm(n)));det.append(s)});
+  if(pk.yatyaza||pk.pyathada){var s2=el('span','cd-astro','Astrology: '+[pk.yatyaza,pk.pyathada].filter(Boolean).join(', '));det.append(s2)}
+  var ml=el('div','cal-month'),mh=el('h3',null,'Holidays and religious days in '+MON[calView[1]-1]),ul2=el('ul');ml.append(mh);
+  for(var dd=1;dd<=dim;dd++){var dt2=[calView[0],calView[1],dd],x=dayInfo(dt2),rr=x.rel.filter(function(n){return !/^Sabbath eve/.test(n)});if(!x.pub.length&&!rr.length)continue;var li=el('li',x.pub.length?'pub':''),dn=el('b',null,['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][wd(dt2)]+' '+dd),tx=el('div');
+    x.pub.forEach(function(n){var p=el('span','cm-pub');p.append(n,mm('span',hmm(n)));tx.append(p)});rr.forEach(function(n){var p=el('span',/^Sabbath/.test(n)?'cm-sab':'cm-rel');p.append(n,mm('span',hmm(n)));tx.append(p)});li.append(dn,tx);ul2.append(li)}
+  ml.append(ul2);var off=HOL&&HOL.years[String(calView[0])],src=el('p','small-note');
+  if(off){src.append('Public holidays from the '+off.source+'. '+(off.pending||'')+' ');var sa=el('a',null,'Source');sa.href=off.url;sa.target='_blank';sa.rel='noopener';src.append(sa)}else src.append('Public holidays for '+calView[0]+' follow the usual rules. The government announces the official list each year, so some dates may change.');
+  ml.append(src);var nh=nextHoliday();if(nh){var np=el('p','cal-next');np.append(el('b',null,'Next public holiday: '),nh.name+', '+WDN[wd(nh.dt)]+' '+nh.dt[2]+' '+MON[nh.dt[1]-1]+' (in '+nh.days+(nh.days===1?' day)':' days)'));det.prepend(np)}
+  var leg=el('div','cal-leg');[['today','Today'],['full','Full moon'],['newm','New moon'],['sab','Sabbath'],['hol','Public holiday'],['fest','Religious or festival day']].forEach(function(r){var i=el('span');i.append(el('i',r[0]),r[1]);leg.append(i)});
+  var lay=el('div','cal-lay'),c1=el('div','cal-main'),c2=el('div','cal-side');c1.append(nav,g,leg,ml);c2.append(big,en,f,det);lay.append(c1,c2);b.append(h,lay);
 }
 
 /* Reminders */
@@ -464,7 +486,7 @@ function renderHome(){
   if(ENSO&&ENSO.weeks&&ENSO.weeks.length){var L=ENSO.weeks[ENSO.weeks.length-1],P=ensoPhase(L.n34);en.append(el('div','big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p','line',P[0]))}else en.append(el('p','line muted','Loading.'));
   g.append(en);
   var qc=card('','#quakes','Earthquakes','ငလျင်'),qr=QK.filter(function(q){return q.mm})[0];qc.append(el('div','big',qr?'M '+qr.mag.toFixed(1):'None'),el('p','line muted',qr?qAgo(qr.time)+' · '+qr.where:QK_T?'None in Myanmar in 30 days':'Checking'));g.append(qc);
-  var m=md(TODAY),d=card('','#calendar','Burmese date','ပြက္ခဒိန်');d.append(mm('div',mmLine(m)),el('p','line muted','ME '+m.my+' · '+m.ToMString('&M &P &ff')));g.append(d);
+  var m=md(TODAY),d=card('','#calendar','Burmese date','ပြက္ခဒိန်');d.append(mm('div',mmLine(m)),el('p','line muted','ME '+m.my+' · '+m.ToMString('&M &P &ff')));var tdi=dayInfo(TODAY),nh=nextHoliday();if(tdi.pub.length)d.append(el('p','line hol-line','Today: '+tdi.pub.join(', ')));else if(nh)d.append(el('p','line muted','Next holiday: '+nh.name+', '+nh.dt[2]+' '+MON[nh.dt[1]-1].slice(0,3)));g.append(d);
   var ns=loadNotes().sort(function(x,y){return (x.date+x.time).localeCompare(y.date+y.time)}),dc=ns.filter(due).length,rc=card('','#reminders','Reminders','မှတ်စု');
   rc.append(el('div','big',dc?dc+' due':ns.length?String(ns.length):'None'),el('p','line muted',ns.length?ns[0].text:'Tap to add one'));g.append(rc);
   if(E){var nc=card('w6 wide',null,'Top news','သတင်း'),ul=el('ul','hl'),L0=E.lead.sources[0];ul.append(hlRow(E.lead.title,L0.url,L0.name));
