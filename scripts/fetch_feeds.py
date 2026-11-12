@@ -423,7 +423,6 @@ def main(path="data/live.json"):
         hotspots("data/hotspots.json")
     except Exception as e:
         print("skipped hotspots:", e, file=sys.stderr)
-    print("WXNEWS", [(i.get("mm", False), i["source"], i["title"][:60]) for i in by_topic["weather"] if i["source"] != "USGS"][:20])
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 
