@@ -176,10 +176,10 @@ function wxAlerts(){
   var cyclone=LIVE?LIVE.items.filter(function(q){return q.source==='GDACS'&&/cyclone|storm/i.test(q.title)})[0]:null;
   var ob=c._obs,gust=Math.max(c.wind_gusts_10m||0,(D.wind_gusts_10m_max||[0])[0]||0,ob&&ob.gust||0),mm0=(D.precipitation_sum||[0])[0]||0,feel=Math.max(c.apparent_temperature||0,(D.apparent_temperature_max||[0])[0]||0);
   return [
-   {i:'⛈',en:'Storm',mm:'မုန်တိုင်း',l:cyclone||(c._obs&&c._obs.ts)?2:thunder?1:0,msg:cyclone?cyclone.title:c._obs&&c._obs.ts?'Thunderstorm reported at '+c._obs.name+', '+c._obs.mins+' min ago':thunder?'Thunderstorms possible in the next 24 hours':'No storm in the forecast'},
-   {i:'🌧',en:'Heavy rain',mm:'မိုးသည်းထန်',l:Math.max(lvl(mm0,50,100),ob&&ob.heavy?2:ob&&(ob.ts||ob.rain)?1:0),msg:ob&&ob.heavy?'Heavy rain reported at '+ob.name+', '+ob.mins+' min ago':ob&&ob.ts?'Storm rain reported nearby. Downpours can be heavier than the '+Math.round(mm0)+' mm forecast':ob&&ob.rain?'Rain reported at '+ob.name+', '+ob.mins+' min ago':Math.round(mm0)+' mm of rain forecast today'},
-   {i:'💨',en:'Strong wind',mm:'လေပြင်း',l:Math.max(lvl(gust,50,75),ob&&ob.ts?1:0),msg:ob&&ob.gust?'Gusts of '+ob.gust+' km/h reported at '+ob.name:ob&&ob.ts?'Storm winds can rise suddenly, even if the forecast shows '+Math.round(gust)+' km/h':'Gusts up to '+Math.round(gust)+' km/h today'},
-   {i:'🌡',en:'Extreme heat',mm:'အပူလွန်ကဲ',l:lvl(feel,41,46),msg:'Feels like up to '+Math.round(feel)+'° today'}].concat(AQ?[{en:'Air quality',mm:'လေထုအရည်အသွေး',l:lvl(AQ.current.us_aqi,101,151),word:aqiWord(AQ.current.us_aqi),msg:'Index '+AQ.current.us_aqi+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³'}]:[]);
+   {en:'Storm',mm:'မုန်တိုင်း',l:cyclone||(c._obs&&c._obs.ts)?2:thunder?1:0,msg:cyclone?cyclone.title:c._obs&&c._obs.ts?'Thunderstorm reported at '+c._obs.name+', '+c._obs.mins+' min ago':thunder?'Thunderstorms possible in the next 24 hours':'No storm in the forecast'},
+   {en:'Heavy rain',mm:'မိုးသည်းထန်',l:Math.max(lvl(mm0,50,100),ob&&ob.heavy?2:ob&&(ob.ts||ob.rain)?1:0),msg:ob&&ob.heavy?'Heavy rain reported at '+ob.name+', '+ob.mins+' min ago':ob&&ob.ts?'Storm rain reported nearby. Downpours can be heavier than the '+Math.round(mm0)+' mm forecast':ob&&ob.rain?'Rain reported at '+ob.name+', '+ob.mins+' min ago':Math.round(mm0)+' mm of rain forecast today'},
+   {en:'Strong wind',mm:'လေပြင်း',l:Math.max(lvl(gust,50,75),ob&&ob.ts?1:0),msg:ob&&ob.gust?'Gusts of '+ob.gust+' km/h reported at '+ob.name:ob&&ob.ts?'Storm winds can rise suddenly, even if the forecast shows '+Math.round(gust)+' km/h':'Gusts up to '+Math.round(gust)+' km/h today'},
+   {en:'Extreme heat',mm:'အပူလွန်ကဲ',l:lvl(feel,41,46),msg:'Feels like up to '+Math.round(feel)+'° today'}].concat(AQ?[{en:'Air quality',mm:'လေထုအရည်အသွေး',l:lvl(AQ.current.us_aqi,101,151),word:aqiWord(AQ.current.us_aqi),msg:'Index '+AQ.current.us_aqi+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³'}]:[]);
 }
 var LV=['Clear','Watch','Warning'],LVM=['ကင်းရှင်း','သတိထားရန်','သတိပေးချက်'];
 function renderWx(){
@@ -288,7 +288,7 @@ function renderEnsoNews(){var n=$('enso-news');if(!n||!LIVE)return;clear(n);var 
 function renderBreaking(){
   var b=$('breaking'),seen=store('pd-seen')||[],a=(LIVE&&LIVE.alerts||[]).filter(function(x){return seen.indexOf(x.title)<0})[0];clear(b);b.hidden=!a;if(!a)return;
   var row=el('div','breaking-row'),t=el('div'),l=el('a',null,a.title),c=el('button',null,'Dismiss');c.type='button';l.href=safe(a.url);l.target='_blank';l.rel='noopener';
-  t.append(el('b',null,'🚨 Breaking'),l,el('small',null,a.source+' · '+ago(a.published)+' ago'));c.onclick=function(){seen.push(a.title);store('pd-seen',seen.slice(-40));renderBreaking()};row.append(t,c);b.append(row);
+  t.append(el('b',null,'Breaking'),l,el('small',null,a.source+' · '+ago(a.published)+' ago'));c.onclick=function(){seen.push(a.title);store('pd-seen',seen.slice(-40));renderBreaking()};row.append(t,c);b.append(row);
 }
 
 /* Earthquakes */
@@ -407,7 +407,7 @@ function renderSafety(){
   var b=$('safety-box');if(!b)return;var keep=HM?HM.getContainer():null;clear(b);
   var h=el('h2',null,'Safety');h.append(mm('span','ဘေးကင်းရေး'));b.append(h);
   var s1=el('div','week'),ec=el('h3','sec','Emergency contacts');s1.append(ec);var g=el('div','tel');
-  [['Fire','191','🚒'],['Ambulance','192','🚑'],['Police','199','🚓']].forEach(function(r){var a=el('a');a.href='tel:'+r[1];a.append(el('b',null,r[0]),el('strong',null,r[1]));g.append(a)});s1.append(g);
+  [['Fire','191'],['Ambulance','192'],['Police','199']].forEach(function(r){var a=el('a');a.href='tel:'+r[1];a.append(el('b',null,r[0]),el('strong',null,r[1]));g.append(a)});s1.append(g);
   var src=el('p','small-note','These national numbers may not work the same way on every network, so keep your local station number too. ');var q=el('a',null,'Source');q.href='https://naypyidaw.embassy.qa/en/myanmar/important-phones';q.target='_blank';q.rel='noopener';src.append(q);s1.append(src);b.append(s1);
   var s2=el('div','week'),ag=el('div','alerts');s2.append(el('h3','sec','Conditions in '+cn(city)));
   function row(n,sub,word,l){var d=el('div','al l'+l),t=el('div');t.append(el('div','al-n',n));t.firstChild.textContent=n;t.append(el('p',null,sub));d.append(el('i'),t,el('em',null,word));ag.append(d)}
