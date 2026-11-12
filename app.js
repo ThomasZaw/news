@@ -364,7 +364,7 @@ function renderQuakes(){
   var side=el('div','q-side'),ul=el('ul','hl q-list');side.append(el('h3',null,(QK_AREA==='mm'?'Myanmar':'Nearby countries')+', last '+QK_DAYS+' days'));
   if(!shown.length)ul.append(el('li',null,'No earthquakes on the list right now.'));
   shown.slice(0,80).forEach(function(q){var li=el('li','q-row'),g=el('b',q.mag>=5?'q-mag hi':'q-mag',q.mag.toFixed(1)),c=el('div'),a=el('a',null,q.where);a.href=safe(q.url);a.target='_blank';a.rel='noopener';c.append(a,el('small',null,qWord(q.mag)+' · '+qAgo(q.time)+' · '+mmTime(q.time)),el('small',null,'Depth '+Math.round(q.depth)+' km · '+q.dist+' km away · '+q.srcs.join(', ')));li.append(g,c);ul.append(li)});
-  side.append(ul);pair.append(m,side);b.append(pair);qMap(m,top);
+  side.append(ul);pair.append(m,side);b.append(pair);qMap(m,top);requestAnimationFrame(function(){var two=getComputedStyle(pair).gridTemplateColumns.split(' ').length>1;side.style.height=two?m.offsetHeight+'px':''})
   var lg=el('div','q-legend');[['#E0252B','Last 24 hours'],['#F08A24','Last 7 days'],['#F2C14E','Older']].forEach(function(x){var i=el('span');var d=el('i');d.style.background=x[0];i.append(d,x[1]);lg.append(i)});var fl=el('span'),fd=el('i','fault');fl.append(fd,'Sagaing Fault, approximate');lg.append(fl,el('span',null,'Bigger circle, stronger quake'));b.append(lg);
   var act=el('div','q-act'),g1=el('button','btn',GEO?'Location saved':'Use my location'),g2=el('button','btn',store('pd-push')?'Notifications on':'Turn on notifications'),g3=el('button','btn',store('pd-qsound')?'Sound on':'Turn on sound');[g1,g2,g3].forEach(function(x){x.type='button'});
   g1.onclick=function(){if(!navigator.geolocation){g1.textContent='Location not available';return}navigator.geolocation.getCurrentPosition(function(p){GEO={lat:+p.coords.latitude.toFixed(2),lon:+p.coords.longitude.toFixed(2)};store('pd-geo',GEO);qSet([],QK_SRC)},function(){g1.textContent='Location was blocked'})};
@@ -446,12 +446,13 @@ function renderPrivacy(){var b=$('privacy-box');if(!b||b.firstChild)return;var h
  ['No accounts','There is no login, and we do not sell personal data.']].forEach(function(r){var d=el('div');d.append(el('h3','sec',r[0]),el('p',null,r[1]));b.append(d)})}
 
 /* Daily edition */
-function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',(Date.now()-new Date(i.published)<36e5?'fresh ':'')+(i.img?'pic':'')),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source+(i.n>1?' · reported by '+i.n+' outlets':'')));li.append(t,c);if(i.img){var f=el('span','thumb');f.append(newsImg(i.img));li.append(f)}ul.append(li)});return ul}
+function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',(Date.now()-new Date(i.published)<36e5?'fresh ':'')+'pic'),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source+(i.n>1?' · reported by '+i.n+' outlets':'')));li.append(t,c);var f=el('span','thumb');if(i.img)f.append(newsImg(i.img,i));else f.append(phTile(i));li.append(f);ul.append(li)});return ul}
 /* Rotating photo slides: one large story beside two smaller ones */
 var HERO_T=null,MSUB='all',SUBN=[['all','All','အားလုံး'],['politics','Politics','နိုင်ငံရေး'],['business','Business','စီးပွားရေး'],['weather','Weather and disasters','ရာသီဥတုနှင့် ဘေးအန္တရာယ်'],['sports','Sports','အားကစား'],['general','Other','အခြား']];
-function newsImg(src){var im=el('img');im.alt='';im.loading='lazy';im.decoding='async';im.referrerPolicy='no-referrer';im.onerror=function(){var p=im.parentNode;im.remove();if(p)p.classList.add('noimg')};im.src=src;return im}
+function phTile(i){var d=el('span','ph'),w=(i.source||'News').replace(/^The /,'').split(/[\s.]+/).filter(Boolean);d.append(el('b',null,(w[0][0]+(w[1]?w[1][0]:'')).toUpperCase()),el('small',null,i.source||''));return d}
+function newsImg(src,it){var im=el('img');im.alt='';im.loading='lazy';im.decoding='async';im.referrerPolicy='no-referrer';im.onerror=function(){var p=im.parentNode;im.remove();if(p){p.classList.add('noimg');if(p.classList.contains('thumb'))p.append(phTile(it||{source:''}))}};im.src=src;return im}
 function topicName(i){if(i.topic==='myanmar'&&i.sub&&i.sub!=='general'){var s=SUBN.find(function(x){return x[0]===i.sub});return 'Myanmar · '+s[1]}var t=TOPICS.find(function(x){return x.id===i.topic});return t?t.en:i.topic==='weather'?'Weather':''}
-function storyCard(i,big){var a=el('a','st'+(big?' big':''));a.href=safe(i.url);a.target='_blank';a.rel='noopener';var f=el('div','st-img');f.append(newsImg(i.img));var t=el('div','st-tx'),k=topicName(i);if(k)t.append(el('span','st-k',k));t.append(el(big?'h2':'h3',null,i.title),el('small',null,i.source+' · '+ago(i.published)+(ago(i.published)==='now'?'':' ago')+(i.n>1?' · '+i.n+' outlets':'')));a.append(f,t);return a}
+function storyCard(i,big){var a=el('a','st'+(big?' big':''));a.href=safe(i.url);a.target='_blank';a.rel='noopener';var f=el('div','st-img');f.append(newsImg(i.img,i));var t=el('div','st-tx'),k=topicName(i);if(k)t.append(el('span','st-k',k));t.append(el(big?'h2':'h3',null,i.title),el('small',null,i.source+' · '+ago(i.published)+(ago(i.published)==='now'?'':' ago')+(i.n>1?' · '+i.n+' outlets':'')));a.append(f,t);return a}
 function heroPick(rows,order){var pics=rows.filter(function(i){return i.img}).sort(function(x,y){var nx=Math.min(x.n||1,4),ny=Math.min(y.n||1,4);return ny-nx||(y.published>x.published?1:-1)}),out=[],used={};if(order){var by={};pics.forEach(function(i){(by[i.topic]=by[i.topic]||[]).push(i)});for(var r=0;out.length<9&&r<9;r++)order.forEach(function(t){var x=(by[t]||[])[r];if(x&&out.length<9)out.push(x)})}else out=pics.slice(0,9);return out}
 function carousel(rows){
   if(HERO_T){clearInterval(HERO_T);HERO_T=null}
@@ -495,20 +496,32 @@ function ageTool(){
   i.onchange=run;i.value=store('pd-birth')||'';run();b.append(h,l,o);return b;
 }
 function mergeMarkets(){var m=(MK&&MK.items)||{};return E.markets.map(function(r){var x=m[r.name];return x?{name:r.name,value:x.value,change:x.change,when:x.when}:r})}
+function tile(i){var a=el('a','tile');a.href=safe(i.url);a.target='_blank';a.rel='noopener';var f=el('span','tile-img');if(i.img)f.append(newsImg(i.img,i));else f.append(phTile(i));var t=el('span','tile-tx');t.append(el('b',null,i.title),el('small',null,i.source+' · '+ago(i.published)+(ago(i.published)==='now'?'':' ago')+(i.n>1?' · '+i.n+' outlets':'')));a.append(f,t);return a}
+function topicRows(id){if(!LIVE)return [];return id==='myanmar'?mmRows():LIVE.items.filter(function(i){return i.topic===id})}
+function secHead(en,m,href){var h=el('div','sec-head'),t=el('h2');if(href){var l=el('a',null,en);l.href=href;t.append(l)}else t.append(en);h.append(t,mm('span',m));if(href){var mo=el('a','more','More');mo.href=href;h.append(mo)}return h}
 function renderNews(){
   clear(N);var C=$('chips');clear(C);
   [['all','All']].concat(TOPICS.map(function(t){return [t.id,t.en]})).forEach(function(t){var a=el('a',null,t[1]);a.href='#'+t[0];if(t[0]===key)a.setAttribute('aria-current','true');C.append(a)});
-  $('lead').hidden=key!=='all';if(key!=='all'||!LIVE)$('lead').hidden=key!=='all';
   if(HERO_T){clearInterval(HERO_T);HERO_T=null}
-  if(key==='all'){var hc=LIVE?carousel(heroPick(LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'}),['myanmar','world','business','politics','sports','tech','stocks'])):null;if(hc){N.append(hc);$('lead').hidden=true}N.append(liveBox);renderLive();
-    TOPICS.forEach(function(s){var sec=el('section'),h=el('div','sec-head'),l=el('a',null,s.en);l.href='#'+s.id;var t=el('h2');t.append(l);h.append(t,mm('span',s.mm));var ul=el('ul','hl');s.items.slice(0,3).forEach(function(i){ul.append(hlRow(tt(i),i.sources[0].url,i.sources[0].name))});sec.append(h,ul);N.append(sec)});return}
+  $('lead').hidden=true;
+  if(key==='all'){
+    var hc=LIVE?carousel(heroPick(LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'}),['myanmar','world','business','politics','sports','tech','stocks'])):null;
+    if(hc)N.append(hc);else $('lead').hidden=false;
+    N.append(liveBox);renderLive();
+    TOPICS.forEach(function(s){var rows=topicRows(s.id).slice(0,4),sec=el('section','topic');sec.append(secHead(s.en,s.mm,'#'+s.id));
+      if(rows.length){var g=el('div','tiles');rows.forEach(function(i){g.append(tile(i))});sec.append(g)}
+      else{var ul=el('ul','hl');s.items.slice(0,3).forEach(function(i){ul.append(hlRow(tt(i),i.sources[0].url,i.sources[0].name))});sec.append(ul)}
+      N.append(sec)});return}
   var s=E.sections.find(function(x){return x.id===key});if(!s)return;
   if(key==='myanmar'){var sc=el('div','places msub');SUBN.forEach(function(x){var b=el('button','chip',x[1]);b.type='button';b.setAttribute('aria-pressed',String(MSUB===x[0]));b.onclick=function(){MSUB=x[0];renderNews()};sc.append(b)});N.append(sc)}
-  var tc=LIVE?carousel(heroPick(key==='myanmar'?mmRows():LIVE.items.filter(function(i){return i.topic===key}))):null;if(tc)N.append(tc);
-  if(key==='myanmar'&&MSUB!=='all'){var rr=mmRows(),sx2=el('section','live'),hh=el('div','live-head'),sn=SUBN.find(function(x){return x[0]===MSUB});hh.append(el('h2',null,'Myanmar · '+sn[1]),mm('span',sn[2]));sx2.append(hh,rr.length?feedList(rr.slice(0,30)):el('p','empty','No stories in this section from the last few days.'));N.append(sx2);return}
-  var sec=el('section'),h=el('div','sec-head');h.append(el('h2',null,s.en),mm('span',s.mm));sec.append(h);
-  if(s.table){var wr=el('div','mkt-wrap');wr.tabIndex=0;var tb=el('table','mkt');tb.innerHTML='<thead><tr><th scope="col">Market</th><th scope="col">Level</th><th scope="col">Change</th><th scope="col">As of</th></tr></thead>';var b=el('tbody');mergeMarkets().forEach(function(r){var q=el('tr');q.append(el('td',null,r.name),el('td',null,r.value),el('td',dir(r.change),pct(r.change)),el('td','w',r.when));b.append(q)});tb.append(b);wr.append(tb);sec.append(wr,el('p','note',E.marketNote))}
-  var ul=el('ul','items');s.items.forEach(function(i){var li=el('li','item');li.append(el('h3',null,i.title),el('p',null,i.body),srcs(i.sources));ul.append(li)});sec.append(ul);N.append(sec,liveBox);renderLive();
+  var rows=topicRows(key),tc=carousel(heroPick(rows));if(tc)N.append(tc);
+  if(s.table){var sec=el('section','topic');sec.append(secHead('Markets','စျေးကွက်'));var wr=el('div','mkt-wrap');wr.tabIndex=0;var tb=el('table','mkt');tb.innerHTML='<thead><tr><th scope="col">Market</th><th scope="col">Level</th><th scope="col">Change</th><th scope="col">As of</th></tr></thead>';var b=el('tbody');mergeMarkets().forEach(function(r){var q=el('tr');q.append(el('td',null,r.name),el('td',null,r.value),el('td',dir(r.change),pct(r.change)),el('td','w',r.when));b.append(q)});tb.append(b);wr.append(tb);sec.append(wr,el('p','note',E.marketNote));N.append(sec)}
+  var sn=key==='myanmar'?SUBN.find(function(x){return x[0]===MSUB}):null,box=el('section','topic');
+  box.append(secHead(sn&&MSUB!=='all'?'Myanmar · '+sn[1]:'Latest '+s.en.toLowerCase(),sn&&MSUB!=='all'?sn[2]:s.mm));
+  if(rows.length){var g2=el('div','tiles');rows.slice(0,4).forEach(function(i){g2.append(tile(i))});box.append(g2);if(rows.length>4)box.append(feedList(rows.slice(4,40)))}
+  else if(s.items.length){var ul=el('ul','items');s.items.forEach(function(i){var li=el('li','item');li.append(el('h3',null,i.title),el('p',null,i.body),srcs(i.sources));ul.append(li)});box.append(ul)}
+  else box.append(el('p','empty',LIVE?'No stories in this section from the last few days.':'Loading stories.'));
+  N.append(box);
 }
 function renderLive(){
   clear(liveBox);var h=el('div','live-head'),a0=LIVE?ago(LIVE.updated):'';
