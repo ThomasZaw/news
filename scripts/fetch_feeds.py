@@ -407,12 +407,6 @@ def main(path="data/live.json"):
     dmh("data/dmh.json")
     weather("data/weather.json")
     enso("data/enso.json")
-    for h in json.load(open("data/daily.json", encoding="utf-8"))["history"]:
-        try:
-            get(h["source"]["url"])
-            print("LINK ok", h["source"]["url"])
-        except Exception as e:
-            print("LINK BAD", h["source"]["url"], e)
     try:
         hotspots("data/hotspots.json")
     except Exception as e:
