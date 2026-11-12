@@ -29,7 +29,7 @@ jobs:
           FIRMS_KEY: ${{ secrets.FIRMS_KEY }}
       - run: |
           mkdir -p _site
-          cp -r index.html app.js sw.js manifest.webmanifest icon-180.png icon-512.png data lib _site/
+          cp -r index.html app.js sw.js manifest.webmanifest icon-180.png icon-512.png robots.txt sitemap.xml data lib _site/
           V="$(git rev-parse --short HEAD)"
           sed -i "s/__V__/$V/g" _site/index.html
           printf '{"v":"%s"}' "$V" > _site/data/version.json

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://parabaikdaily.com/sitemap.xml
