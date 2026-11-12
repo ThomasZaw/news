@@ -482,3 +482,5 @@ setInterval(loadWx,3e5);loadObs();setInterval(loadObs,3e5);setInterval(drawNotes
 get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();pullMarkets();checkVersion();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);setInterval(pullMarkets,3e5);setInterval(checkVersion,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){loadObs();loadDmh();checkVersion();pullMarkets();pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
 addEventListener('load',function(){scrollTo(0,0)});
 })();
+
+(function(){var b=document.getElementById('kpay-copy');if(!b)return;b.onclick=function(){var n='09944939666';(navigator.clipboard?navigator.clipboard.writeText(n):Promise.reject()).then(function(){b.textContent='Copied'},function(){b.textContent='Number: '+n});setTimeout(function(){b.textContent='Copy number'},2500)}})();

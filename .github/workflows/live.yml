@@ -33,6 +33,7 @@ jobs:
           V="$(git rev-parse --short HEAD)"
           sed -i "s/__V__/$V/g" _site/index.html
           printf '{"v":"%s"}' "$V" > _site/data/version.json
+          python scripts/pages.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
