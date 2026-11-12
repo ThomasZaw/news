@@ -92,7 +92,7 @@ function renderDay(){
   if(off){src.append('Public holidays from the '+off.source+'. '+(off.pending||'')+' ');var sa=el('a',null,'Source');sa.href=off.url;sa.target='_blank';sa.rel='noopener';src.append(sa)}else src.append('Public holidays for '+calView[0]+' follow the usual rules. The government announces the official list each year, so some dates may change.');
   ml.append(src);var nh=nextHoliday();if(nh){var np=el('p','cal-next');np.append(el('b',null,'Next public holiday: '),nh.name+', '+WDN[wd(nh.dt)]+' '+nh.dt[2]+' '+MON[nh.dt[1]-1]+' (in '+nh.days+(nh.days===1?' day)':' days)'));det.prepend(np)}
   var leg=el('div','cal-leg');[['today','Today'],['full','Full moon'],['newm','New moon'],['sab','Sabbath'],['hol','Public holiday'],['fest','Religious or festival day']].forEach(function(r){var i=el('span');i.append(el('i',r[0]),r[1]);leg.append(i)});
-  var lay=el('div','cal-lay'),c1=el('div','cal-main'),c2=el('div','cal-side');c1.append(nav,g,leg,ml);c2.append(big,en,f,det);lay.append(c1,c2);b.append(h,lay);
+  var lay=el('div','cal-lay'),c1=el('div','cal-main'),c2=el('div','cal-side');c1.append(nav,g,leg);c2.append(big,en,f,det);lay.append(c1,c2,ml);b.append(h,lay);
 }
 
 /* Reminders */
@@ -235,7 +235,7 @@ var RT;addEventListener('resize',function(){clearTimeout(RT);RT=setTimeout(funct
 function ensoColor(v){return v>=2?'#B3202A':v>=1?'#D8532B':v>=.5?'#E8A04A':v<=-1?'#2B6CB0':v<=-.5?'#6FA8DC':'#8E8A82'}
 function ensoPhase(v){return v>=2?['Very strong El Niño','အလွန်ပြင်းထန်သော အယ်လ်နီညို']:v>=1.5?['Strong El Niño','ပြင်းထန်သော အယ်လ်နီညို']:v>=.5?['El Niño','အယ်လ်နီညို']:v<=-.5?['La Niña','လာနီညာ']:['Neutral','ပုံမှန်']}
 function renderEnso(d){
-  var b=$('enso-box');clear(b);var h=el('div','enso-head'),t=el('h2',null,'El Niño tracker');h.append(t,mm('span','အယ်လ်နီညို'));b.append(h);
+  var b=$('enso-box');clear(b);var h=el('div','enso-head'),t=el('h2',null,'El Niño tracker');t.append(mm('span','အယ်လ်နီညို'));h.append(t);b.append(h);
   if(!d||!d.weeks||!d.weeks.length){b.append(el('p',null,'El Niño data is loading. It updates every week from NOAA.'));return}
   var L=d.weeks[d.weeks.length-1],P=ensoPhase(L.n34),s=el('div','enso-state');
   var sign=function(v){return (v>0?'+':'')+v.toFixed(1)+'°C'};
@@ -302,7 +302,7 @@ function qAlert(){
   var q=QK.filter(function(x){return x.time>=lim&&seen.indexOf(x.id)<0&&((x.dist<=300&&x.mag>=4)||(x.mm&&x.mag>=4))})[0];
   var b=$('qalert');clear(b);b.hidden=!q;if(!q)return;
   var row=el('div','breaking-row'),t=el('div'),l=el('a',null,'Magnitude '+q.mag.toFixed(1)+': '+q.where),c=el('button',null,'Dismiss');c.type='button';l.href='#quakes';
-  t.append(el('b',null,'⚠️ Earthquake reported'),l,el('small',null,q.dist+' km from '+o.name+' · '+qAgo(q.time)));
+  t.append(el('b',null,'Earthquake reported'),l,el('small',null,q.dist+' km from '+o.name+' · '+qAgo(q.time)));
   c.onclick=function(){seen.push(q.id);store('pd-qseen',seen.slice(-60));qAlert()};row.append(t,c);b.append(row);
   if(window.__qLast!==q.id){window.__qLast=q.id;beep();try{if('Notification' in window&&Notification.permission==='granted')new Notification('Earthquake: magnitude '+q.mag.toFixed(1),{body:q.where+', '+q.dist+' km from '+o.name})}catch(e){}}
 }
@@ -317,12 +317,13 @@ function enablePush(){
 function syncReminder(r){if(!store('pd-push'))return;var at=Date.parse(r.date+'T'+(r.time||'08:00')+':00+06:30');if(!(at>Date.now()))return;pushSub().then(function(s){return post('/reminder',{sub:s,id:r.id,at:at,text:r.text})}).catch(function(){})}
 function testPush(){return pushSub().then(function(s){return post('/test',s)})}
 var QM=null,QL=null,EOX='s2cloudless-2024_3857';
-function baseMap(m){var G='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/';L.imageOverlay('lib/myanmar.jpg',[[4,86],[32,108]]).addTo(m);L.tileLayer('https://tiles.maps.eox.at/wmts/1.0.0/'+EOX+'/default/g/{z}/{y}/{x}.jpg',{maxNativeZoom:14,maxZoom:15,attribution:'Sentinel-2 cloudless by EOX · NASA'}).addTo(m);L.tileLayer(G+'Reference_Labels_15m/default//GoogleMapsCompatible_Level13/{z}/{y}/{x}.png',{maxNativeZoom:13,maxZoom:15,opacity:.9}).addTo(m);L.geoJSON({type:'Feature',geometry:MM_GEO},{style:{color:'#FFD24A',weight:1.6,fill:false},interactive:false}).addTo(m)}
+function baseMap(m,fitMM){m.options.zoomSnap=.25;m.options.zoomDelta=.5;if(fitMM){var done=false;function fit(){if(done||!m.getSize().x)return;done=true;m.fitBounds([[9.6,92.2],[28.6,101.2]],{padding:[8,8]})}m.on('resize',fit);setTimeout(fit,60)}
+  var G='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/';L.imageOverlay('lib/myanmar.jpg',[[4,86],[32,108]]).addTo(m);L.tileLayer('https://tiles.maps.eox.at/wmts/1.0.0/'+EOX+'/default/g/{z}/{y}/{x}.jpg',{maxNativeZoom:14,maxZoom:15,attribution:'Sentinel-2 cloudless by EOX · NASA'}).addTo(m);L.tileLayer(G+'Reference_Labels_15m/default//GoogleMapsCompatible_Level13/{z}/{y}/{x}.png',{maxNativeZoom:13,maxZoom:15,opacity:.9}).addTo(m);L.geoJSON({type:'Feature',geometry:MM_GEO},{style:{color:'#FFD24A',weight:1.6,fill:false},interactive:false}).addTo(m)}
 function qMap(box,top){
   if(!window.L)return;
   if(!QM){var e=el('div','qmap');e.id='qmap';box.append(e);
     QM=L.map(e,{attributionControl:true,minZoom:4,maxZoom:15,worldCopyJump:false,scrollWheelZoom:false}).setView([20,96.5],5);
-    baseMap(QM);
+    baseMap(QM,true);
     QL=L.layerGroup().addTo(QM);
   }else box.append(QM.getContainer());
   setTimeout(function(){QM.invalidateSize()},0);
@@ -336,7 +337,7 @@ function renderQuakes(){
   var all=qShown(),shown=all.filter(function(q){return QK_AREA==='mm'?q.mm:!q.mm}),reg=shown,top=reg[0],o=place(),s=el('div','enso-state');
   var at=el('div','places q-area');[['mm','Myanmar','မြန်မာ'],['near','Nearby countries','အိမ်နီးချင်း']].forEach(function(x){var t=el('button','chip',x[1]+' ');t.type='button';t.append(mm('span',x[2]));t.setAttribute('aria-pressed',String(QK_AREA===x[0]));t.onclick=function(){QK_AREA=x[0];store('pd-qarea',x[0]);renderQuakes()};at.append(t)});b.append(at);
   if(top){s.append(el('div','enso-big','M '+top.mag.toFixed(1)),el('p','enso-phase',qWord(top.mag)+' · '+top.where),el('p',null,qAgo(top.time)+' · '+mmTime(top.time)+' Myanmar time · '+top.dist+' km from '+o.name))}
-  else s.append(el('p','enso-phase',QK_T?(QK_AREA==='mm'?'No earthquakes reported in Myanmar':'No earthquakes reported in nearby countries')+' in the last '+QK_DAYS+' days':'Checking USGS'));b.append(s);
+  else s.append(el('p','enso-phase',QK_T?(QK_AREA==='mm'?'No earthquakes reported in Myanmar':'No earthquakes reported in nearby countries')+' in the last '+QK_DAYS+' days':'Checking for earthquakes'));b.append(s);
   var tg=el('div','places q-tog');[7,30].forEach(function(d){var x=el('button','chip',d+' days');x.type='button';if(d===QK_DAYS)x.setAttribute('aria-pressed','true');x.onclick=function(){QK_DAYS=d;store('pd-qdays',d);renderQuakes()};tg.append(x)});
   var big=reg.slice().sort(function(x,y){return y.mag-x.mag})[0];tg.append(el('span','q-sum',reg.length?reg.length+(QK_AREA==='mm'?' in Myanmar':' in nearby countries')+' · strongest M '+big.mag.toFixed(1):''));b.append(tg);
   var pair=el('div','q-pair'),m=el('div');
@@ -352,7 +353,7 @@ function renderQuakes(){
   g3.onclick=function(){var v=!store('pd-qsound');store('pd-qsound',v);if(v)beep();g3.textContent=v?'Sound on':'Turn on sound'};
   act.append(g1,g2,g3,g4);b.append(act);
   b.append(el('p','small-note','Data from USGS, EMSC and GEOFON, checked every minute. Most quakes near Myanmar appear within 5 to 15 minutes, and the first magnitude can change. Alerts show for magnitude 4.0+ in or near Myanmar. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
-  b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
+  if(QK_SRC)b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
 }
 
 /* Live airport reports */
@@ -386,7 +387,7 @@ function renderSafety(){
   var b=$('safety-box');if(!b)return;var keep=HM?HM.getContainer():null;clear(b);
   var h=el('h2',null,'Safety');h.append(mm('span','ဘေးကင်းရေး'));b.append(h);
   var s1=el('div','week'),ec=el('h3','sec','Emergency contacts');s1.append(ec);var g=el('div','tel');
-  [['Fire','191','🚒'],['Ambulance','192','🚑'],['Police','199','🚓']].forEach(function(r){var a=el('a');a.href='tel:'+r[1];a.append(el('span',null,r[2]),el('b',null,r[0]),el('strong',null,r[1]));g.append(a)});s1.append(g);
+  [['Fire','191','🚒'],['Ambulance','192','🚑'],['Police','199','🚓']].forEach(function(r){var a=el('a');a.href='tel:'+r[1];a.append(el('b',null,r[0]),el('strong',null,r[1]));g.append(a)});s1.append(g);
   var src=el('p','small-note','These national numbers may not work the same way on every network, so keep your local station number too. ');var q=el('a',null,'Source');q.href='https://naypyidaw.embassy.qa/en/myanmar/important-phones';q.target='_blank';q.rel='noopener';src.append(q);s1.append(src);b.append(s1);
   var s2=el('div','week'),ag=el('div','alerts');s2.append(el('h3','sec','Conditions in '+city));
   function row(n,sub,word,l){var d=el('div','al l'+l),t=el('div');t.append(el('div','al-n',n));t.firstChild.textContent=n;t.append(el('p',null,sub));d.append(el('i'),t,el('em',null,word));ag.append(d)}
@@ -395,7 +396,7 @@ function renderSafety(){
   s2.append(ag);b.append(s2);
   var s3=el('div','week'),m=el('div');m.id='hot-holder';s3.append(el('h3','sec','Fire hotspots'),m,el('p','hot-sum',HS?(HS.points.filter(function(p){return p[2]}).length+(HS.detail?' heat detections':' heat areas')+' in Myanmar, '+HS.points.length+' including nearby countries. Latest data date: '+HS.date+' (UTC)'):'Loading the latest NASA heat detections'),el('p','small-note','Tap a dot for details. Some are farm burning or factories, and cloud can hide fires, so no dot does not prove there is no fire.'));b.append(s3);
   var fb=el('div','places');[['all','All'],['mm','Myanmar only']].concat(HS&&HS.detail?[['high','High confidence']]:[]).forEach(function(r){var c=el('button','chip',r[1]);c.type='button';if(r[0]===HF)c.setAttribute('aria-pressed','true');c.onclick=function(){HF=r[0];HM._f=null;renderSafety()};fb.append(c)});m.parentNode.insertBefore(fb,m);
-  if(window.L){if(!HM){var e=el('div','qmap');m.append(e);HM=L.map(e,{minZoom:4,maxZoom:15,scrollWheelZoom:false}).setView([20,96.5],5);baseMap(HM);HM._g=L.layerGroup().addTo(HM)}else{m.append(keep)}
+  if(window.L){if(!HM){var e=el('div','qmap');m.append(e);HM=L.map(e,{minZoom:4,maxZoom:15,scrollWheelZoom:false}).setView([20,96.5],5);baseMap(HM,true);HM._g=L.layerGroup().addTo(HM)}else{m.append(keep)}
    if(HS&&HM._f!==HF){HM._f=HF;HM._g.clearLayers();hotRows().forEach(function(p){var inM=p[2],hi=p[3]==='h'||p[3]==='high',col=!HS.detail?(inM?'#FF5A1F':'#FFB347'):hi?'#E0252B':p[3]==='l'||p[3]==='low'?'#FFD24A':'#FF8A1F';var c=L.circleMarker([p[0],p[1]],{radius:inM?5:3.5,color:'#fff',weight:inM?1:.5,fillColor:col,fillOpacity:.95}).addTo(HM._g);c.bindPopup(function(){return hotPopup(p)})})}
    setTimeout(function(){HM.invalidateSize()},0)}
 }
