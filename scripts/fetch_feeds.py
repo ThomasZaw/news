@@ -402,6 +402,11 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
+    try:
+        j = json.loads(get("https://parabaikdaily.com/quakes?days=7"))
+        print("PROBE", j["sources"], len(j["features"]), [(f["properties"]["mag"], f["properties"]["place"], f["properties"]["srcs"]) for f in j["features"][:8]])
+    except Exception as e:
+        print("PROBE FAIL", e)
     markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")
