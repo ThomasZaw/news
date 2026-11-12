@@ -19,21 +19,37 @@ FEEDS = {
                 ("Shan News", "https://english.shannews.org/feed"),
                 ("Irrawaddy", "https://www.irrawaddy.com/feed"),
                 ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
+                ("DVB", "https://english.dvb.no/feed/"),
+                ("Global New Light of Myanmar", "https://www.gnlm.com.mm/feed/"),
+                ("ReliefWeb", "https://reliefweb.int/updates/rss.xml?search=country.exact%3A%22Myanmar%22"),
+                ("Google News", G + "Bangladesh+OR+Thailand+OR+Andaman+cyclone+OR+storm+OR+depression+when:3d"),
                 ("GDACS", "https://www.gdacs.org/xml/rss.xml")],
     "myanmar": [("The Irrawaddy", "https://www.irrawaddy.com/feed"), ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
+                ("DVB", "https://english.dvb.no/feed/"), ("Frontier Myanmar", "https://www.frontiermyanmar.net/en/feed/"),
+                ("BNI", "https://www.bnionline.net/en/rss.xml"), ("Global New Light of Myanmar", "https://www.gnlm.com.mm/feed/"),
+                ("The Diplomat", "https://thediplomat.com/regions/southeast-asia/feed/"),
                 ("Mizzima", "https://eng.mizzima.com/feed"), ("Google News", G + "Myanmar+when:2d"),
                 ("Google News", G + "Myanmar+(economy+OR+business+OR+kyat+OR+trade+OR+investment+OR+fuel+OR+gold+price)+when:3d"),
                 ("Google News", G + "Myanmar+(football+OR+sports+OR+SEA+Games+OR+lethwei+OR+athlete)+when:5d")],
-    "sports": [("BBC Sport", "https://feeds.bbci.co.uk/sport/rss.xml"), ("The Guardian", "https://www.theguardian.com/sport/rss")],
+    "sports": [("BBC Sport", "https://feeds.bbci.co.uk/sport/rss.xml"), ("The Guardian", "https://www.theguardian.com/sport/rss"),
+               ("Sky Sports", "https://www.skysports.com/rss/12040"), ("CBS Sports", "https://www.cbssports.com/rss/headlines/"), ("Google News", G + "football+OR+soccer+when:1d")],
     "world": [("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml"), ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
-              ("The Guardian", "https://www.theguardian.com/world/rss")],
+              ("The Guardian", "https://www.theguardian.com/world/rss"),
+              ("NPR", "https://feeds.npr.org/1004/rss.xml"), ("DW", "https://rss.dw.com/rdf/rss-en-world"), ("France 24", "https://www.france24.com/en/rss"),
+              ("CNA", "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511"), ("Google News", G + "world+news+when:1d")],
     "politics": [("NPR", "https://feeds.npr.org/1014/rss.xml"), ("BBC", "https://feeds.bbci.co.uk/news/politics/rss.xml"),
-                 ("The Guardian", "https://www.theguardian.com/politics/rss")],
+                 ("The Guardian", "https://www.theguardian.com/politics/rss"),
+                 ("Politico", "https://rss.politico.com/politics-news.xml"), ("The Hill", "https://thehill.com/news/feed/"), ("Google News", G + "politics+when:1d")],
     "business": [("BBC", "https://feeds.bbci.co.uk/news/business/rss.xml"), ("CNBC", "https://www.cnbc.com/id/10001147/device/rss/rss.html"),
-                 ("The Guardian", "https://www.theguardian.com/uk/business/rss")],
-    "stocks": [("CNBC", "https://www.cnbc.com/id/20910258/device/rss/rss.html"), ("Google News", G + "stock+market+when:1d")],
+                 ("The Guardian", "https://www.theguardian.com/uk/business/rss"),
+                 ("NPR", "https://feeds.npr.org/1006/rss.xml"), ("DW", "https://rss.dw.com/rdf/rss-en-bus"), ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories/"),
+                 ("CNA", "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6936")],
+    "stocks": [("CNBC", "https://www.cnbc.com/id/20910258/device/rss/rss.html"), ("Google News", G + "stock+market+when:1d"),
+               ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/marketpulse/"), ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex"),
+               ("Investing.com", "https://www.investing.com/rss/news_25.rss")],
     "tech": [("The Verge", "https://www.theverge.com/rss/index.xml"), ("TechCrunch", "https://techcrunch.com/feed/"),
-             ("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index")],
+             ("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index"),
+             ("Wired", "https://www.wired.com/feed/rss"), ("Engadget", "https://www.engadget.com/rss.xml"), ("MIT Technology Review", "https://www.technologyreview.com/feed/")],
 }
 SITE = "https://thomaszaw.github.io/news/"
 MAX_AGE = timedelta(hours=48)
@@ -154,9 +170,10 @@ def fetch(job):
         if source == "GDACS":
             rows = [i for i in rows if REGION.search(i["title"])]
         if topic == "weather" and source != "GDACS":
-            rows = [i for i in rows if WXWORD.search(i["title"]) and (LOCAL.search(i["title"]) or source in ("BNI", "Shan News", "Irrawaddy", "Myanmar Now"))]
+            MMOUT = ("BNI", "Shan News", "Irrawaddy", "Myanmar Now", "DVB", "Global New Light of Myanmar", "ReliefWeb")
+            rows = [i for i in rows if WXWORD.search(i["title"]) and (LOCAL.search(i["title"]) or source in MMOUT)]
             for i in rows:
-                if source in ("BNI", "Shan News", "Irrawaddy", "Myanmar Now") or MMONLY.search(i["title"]):
+                if source in MMOUT or MMONLY.search(i["title"]):
                     i["mm"] = True
             for i in rows:
                 if re.search(r"\bred\b", i["title"], re.I) or (re.search(r"\borange\b", i["title"], re.I) and re.search("myanmar|burma", i["title"], re.I)):
@@ -436,6 +453,137 @@ def dmh(path):
     print("DMH", [(i["kind"], i["issued"], i["active"]) for i in out])
 
 
+RCAP = {"Rakhine": (20.15, 92.90), "Chin": (22.64, 93.61), "Kachin": (25.38, 97.40), "Sagaing": (22.11, 95.14), "Shan": (20.78, 97.04),
+        "Kayah": (19.67, 97.21), "Kayin": (16.89, 97.63), "Mon": (16.49, 97.63), "Tanintharyi": (14.08, 98.20), "Ayeyarwady": (16.78, 94.73),
+        "Yangon": (16.87, 96.20), "Bago": (17.34, 96.48), "Magway": (20.15, 94.93), "Mandalay": (21.97, 96.08)}
+RWORDS = {"Rakhine": r"rakhine|arakan|sittwe|kyaukphyu|thandwe|maungdaw|ရခိုင်", "Chin": r"\bchin\b|hakha|falam|tedim|mindat|ချင်း",
+          "Kachin": r"kachin|myitkyina|bhamo|putao|hpakant|ကချင်", "Sagaing": r"sagaing|monywa|shwebo|kalay|kale|tamu|homalin|katha|စစ်ကိုင်း",
+          "Shan": r"\bshan\b|taunggyi|inle|lashio|hsipaw|kengtung|tachileik|pekon|nyaungshwe|kalaw|ရှမ်း", "Kayah": r"kayah|karenni|loikaw|ကယား",
+          "Kayin": r"kayin|karen state|hpa-an|myawaddy|ကရင်", "Mon": r"\bmon state|mawlamyine|thaton|kyaikto|မွန်",
+          "Tanintharyi": r"tanintharyi|dawei|myeik|kawthaung|တနင်္သာရီ", "Ayeyarwady": r"ayeyarwady|irrawaddy delta|pathein|hinthada|labutta|pyapon|ဧရာဝတီ",
+          "Yangon": r"yangon|rangoon|thanlyin|ရန်ကုန်", "Bago": r"\bbago\b|taungoo|toungoo|pyay|ပဲခူး", "Magway": r"magway|pakokku|minbu|chauk|gangaw|မကွေး",
+          "Mandalay": r"mandalay|naypyi|nay pyi|meiktila|myingyan|kyaukse|pyin oo lwin|မန္တလေး|နေပြည်တော်"}
+HAZ = r"flood|flooding|landslide|storm|cyclone|heavy rain|downpour|inundat|evacuat|earthquake|wildfire|forest fire|heatwave|ရေကြီး|ရေလွှမ်း|မြေပြို|မုန်တိုင်း"
+SEVERE = r"dead|death|killed|died|missing|evacuat|destroy|swept|ပျက်စီး|သေဆုံး"
+
+
+def risk(path, items):
+    """Give each state and region a level: 0 safe, 1 be aware, 2 danger, with the reasons."""
+    regs = json.load(open("data/regions.geojson", encoding="utf-8"))["features"]
+    out = {n: {"level": 0, "why": []} for n in RCAP}
+
+    def bump(n, lvl, why):
+        r = out[n]
+        r["level"] = max(r["level"], lvl)
+        if why not in r["why"]:
+            r["why"].append(why)
+
+    def region_at(lat, lon):
+        for f in regs:
+            if any(in_poly(lon, lat, poly[0]) for poly in f["geometry"]["coordinates"]):
+                return f["properties"]["name"]
+        return None
+
+    names = list(RCAP)
+    try:
+        url = ("https://api.open-meteo.com/v1/forecast?latitude=" + ",".join(str(RCAP[n][0]) for n in names) + "&longitude=" + ",".join(str(RCAP[n][1]) for n in names)
+               + "&daily=precipitation_sum,wind_gusts_10m_max,apparent_temperature_max&timezone=Asia%2FYangon&forecast_days=2")
+        data = json.loads(get(url))
+        for n, d in zip(names, data if isinstance(data, list) else [data]):
+            day = d["daily"]
+            rain, gust, feel = max(day["precipitation_sum"]), max(day["wind_gusts_10m_max"]), max(day["apparent_temperature_max"])
+            if rain >= 100: bump(n, 2, f"Very heavy rain forecast, {round(rain)} mm in a day")
+            elif rain >= 50: bump(n, 1, f"Heavy rain forecast, {round(rain)} mm in a day")
+            if gust >= 75: bump(n, 2, f"Damaging wind gusts forecast, {round(gust)} km/h")
+            elif gust >= 50: bump(n, 1, f"Strong wind gusts forecast, {round(gust)} km/h")
+            if feel >= 46: bump(n, 2, f"Dangerous heat, feels like {round(feel)}°")
+            elif feel >= 41: bump(n, 1, f"High heat, feels like {round(feel)}°")
+    except Exception as e:
+        print("risk weather skipped:", e, file=sys.stderr)
+    try:
+        q = json.loads(get("https://parabaikdaily.com/quakes?days=1"))
+        for f in q["features"]:
+            p, (lon, lat, _) = f["properties"], f["geometry"]["coordinates"]
+            n = region_at(lat, lon)
+            if n and p["mag"] >= 5: bump(n, 2, f"Magnitude {p['mag']:.1f} earthquake in the last day")
+            elif n and p["mag"] >= 4: bump(n, 1, f"Magnitude {p['mag']:.1f} earthquake in the last day")
+    except Exception as e:
+        print("risk quakes skipped:", e, file=sys.stderr)
+    now = datetime.now(timezone.utc)
+    for i in items:
+        if i["topic"] not in ("weather", "myanmar") or now - datetime.fromisoformat(i["published"]) > timedelta(hours=72) or not re.search(HAZ, i["title"], re.I):
+            continue
+        for n, pat in RWORDS.items():
+            if re.search(pat, i["title"], re.I):
+                bump(n, 2 if re.search(SEVERE, i["title"], re.I) else 1, "Reported: " + i["title"])
+    try:
+        for w in json.load(open("data/dmh.json", encoding="utf-8"))["items"]:
+            if not w.get("active"):
+                continue
+            hit = [n for n, pat in RWORDS.items() if re.search(pat, w["title"] + " " + w.get("body", ""), re.I)]
+            for n in hit or names:
+                bump(n, 2 if hit else 1, "Official " + w["kind"].lower() + " warning")
+    except Exception as e:
+        print("risk warnings skipped:", e, file=sys.stderr)
+    try:
+        pts = json.load(open("data/hotspots.json", encoding="utf-8")).get("points", [])
+        count = {}
+        for p in pts:
+            if len(p) > 2 and p[2]:
+                n = region_at(p[0], p[1])
+                if n:
+                    count[n] = count.get(n, 0) + 1
+        for n, c in count.items():
+            if c >= 40: bump(n, 1, f"{c} fire hotspots seen by satellite")
+    except Exception as e:
+        print("risk fires skipped:", e, file=sys.stderr)
+    for r in out.values():
+        r["why"] = r["why"][:5]
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"updated": now.isoformat(timespec="seconds"), "regions": out}, f, ensure_ascii=False, indent=1)
+    print("RISK", {n: r["level"] for n, r in out.items() if r["level"]})
+
+
+STOP = set("a an the of in on at to for and or but with from by as is are was were be been after over amid into new says say said will its it his her their than that this what who how why more most out up off about against".split())
+TRUST = {"BBC": 9, "BBC Sport": 9, "Reuters": 9, "Associated Press": 9, "AP News": 9, "The Guardian": 8, "Al Jazeera": 8, "NPR": 8, "DW": 8, "France 24": 7,
+         "The Irrawaddy": 9, "Irrawaddy": 9, "Myanmar Now": 9, "Frontier Myanmar": 9, "DVB": 8, "BNI": 8, "Mizzima": 8, "Shan News": 7, "Global New Light Of Myanmar": 7,
+         "Global New Light of Myanmar": 7, "Eleven Myanmar": 7, "elevenmyanmar.com": 7, "Nikkei Asia": 8, "CNA": 8, "The Diplomat": 7, "CNBC": 8, "MarketWatch": 7,
+         "Bloomberg": 9, "Financial Times": 9, "The Verge": 8, "Ars Technica": 8, "TechCrunch": 7, "Wired": 7, "Politico": 8, "The Hill": 7, "Sky Sports": 8,
+         "ReliefWeb": 9, "GDACS": 9, "USGS": 10, "DMH Myanmar": 10}
+
+
+def toks(t):
+    return {w for w in re.findall(r"[a-z0-9က-႟]+", t.lower()) if w not in STOP and len(w) > 2}
+
+
+def cluster(rows, now):
+    """Group stories about the same event from different outlets, keep the best version, and count how many outlets reported it."""
+    groups = []
+    for i in rows:
+        tk = toks(i["title"])
+        for g in groups:
+            common = len(tk & g["tk"])
+            if tk and common / len(tk | g["tk"]) >= 0.4 or common >= 5:
+                g["rows"].append(i)
+                break
+        else:
+            groups.append({"tk": tk, "rows": [i]})
+    out = []
+    for g in groups:
+        rs = g["rows"]
+        best = max(rs, key=lambda i: (TRUST.get(i["source"], 5) + (2 if "img" in i else 0) - (1 if i.get("_g") else 0), i["published"]))
+        srcs = []
+        for i in rs:
+            if i["source"] != best["source"] and i["source"] not in [s["name"] for s in srcs]:
+                srcs.append({"name": i["source"], "url": i["url"]})
+        best["n"] = 1 + len(srcs)
+        if srcs:
+            best["also"] = srcs[:4]
+        best["published"] = max(i["published"] for i in rs)
+        out.append(best)
+    return sorted(out, key=lambda i: i["published"], reverse=True)
+
+
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -444,24 +592,30 @@ def main(path="data/live.json"):
         if err:
             print("skipped", err, file=sys.stderr)
     now = datetime.now(timezone.utc)
-    seen, by_topic = set(), {t: [] for t in FEEDS}
+    seen, pool = set(), {t: [] for t in FEEDS}
     for (t, src, u), (r, _) in zip(jobs, results):
         for i in r:
             i["_g"] = src == "Google News"
     rows = sorted([i for r, _ in results for i in r] + quakes(), key=lambda i: i["published"], reverse=True)
-    gcount = {}
     for i in rows:
         key = re.sub(r"[^a-z0-9]+", "", i["title"].lower())[:70]
         age = now - datetime.fromisoformat(i["published"])
-        cap = 45 if i["topic"] == "myanmar" else PER_TOPIC
-        if key in seen or age > (timedelta(days=7) if i["topic"] == "weather" else MAX_AGE) or age < timedelta(minutes=-10) or len(by_topic[i["topic"]]) >= cap:
+        if key in seen or age > (timedelta(days=7) if i["topic"] == "weather" else MAX_AGE) or age < timedelta(minutes=-10):
             continue
-        if i.get("_g") and i["topic"] == "myanmar":
-            gcount[i["topic"]] = gcount.get(i["topic"], 0) + 1
-            if gcount[i["topic"]] > 25:
-                continue
         seen.add(key)
-        by_topic[i["topic"]].append(i)
+        pool[i["topic"]].append(i)
+    by_topic = {}
+    for t, v in pool.items():
+        best = cluster(v, now)
+        cap, out, g = (45 if t == "myanmar" else PER_TOPIC), [], 0
+        for i in best:
+            if i.get("_g") and t == "myanmar" and i.get("n", 1) < 2:
+                g += 1
+                if g > 25:
+                    continue
+            if len(out) < cap:
+                out.append(i)
+        by_topic[t] = out
     items = sorted((i for v in by_topic.values() for i in v), key=lambda i: i["published"], reverse=True)
     for i in items:
         i.pop("_g", None)
@@ -491,6 +645,12 @@ def main(path="data/live.json"):
         hotspots("data/hotspots.json")
     except Exception as e:
         print("skipped hotspots:", e, file=sys.stderr)
+    try:
+        risk("data/risk.json", items)
+    except Exception as e:
+        print("skipped risk:", e, file=sys.stderr)
+    print("SRC", sorted({(j[0], j[1]): len(r[0]) for j, r in zip(jobs, results)}.items()))
+    print("CROSS", {t: sum(1 for i in v if i.get("n", 1) > 1) for t, v in by_topic.items()})
     print("PHOTOS", {t: sum(1 for i in v if "img" in i) for t, v in by_topic.items()}, "SUBS", {k: sum(1 for i in items if i.get("sub") == k) for k in ("politics", "business", "weather", "sports", "general")})
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
