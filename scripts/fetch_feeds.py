@@ -21,14 +21,13 @@ FEEDS = {
                 ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
                 ("DVB", "https://english.dvb.no/feed/"),
                 ("Global New Light of Myanmar", "https://www.gnlm.com.mm/feed/"),
-                ("ReliefWeb", "https://reliefweb.int/country/mmr/rss.xml"),
                 ("Google News", G + "Bangladesh+OR+Thailand+OR+Andaman+cyclone+OR+storm+OR+depression+when:3d"),
                 ("GDACS", "https://www.gdacs.org/xml/rss.xml")],
     "myanmar": [("The Irrawaddy", "https://www.irrawaddy.com/feed"), ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
-                ("DVB", "https://english.dvb.no/feed/"), ("Frontier Myanmar", "https://www.frontiermyanmar.net/en/feed/"),
+                ("DVB", "https://english.dvb.no/feed/"),
                 ("BNI", "https://www.bnionline.net/en/rss.xml"), ("Global New Light of Myanmar", "https://www.gnlm.com.mm/feed/"),
                 ("The Diplomat", "https://thediplomat.com/regions/southeast-asia/feed/"),
-                ("Mizzima", "https://eng.mizzima.com/feed"), ("Google News", G + "Myanmar+when:2d"),
+                ("Google News", G + "Myanmar+when:2d"),
                 ("Google News", G + "Myanmar+(economy+OR+business+OR+kyat+OR+trade+OR+investment+OR+fuel+OR+gold+price)+when:3d"),
                 ("Google News", G + "Myanmar+(football+OR+sports+OR+SEA+Games+OR+lethwei+OR+athlete)+when:5d")],
     "sports": [("BBC Sport", "https://feeds.bbci.co.uk/sport/rss.xml"), ("The Guardian", "https://www.theguardian.com/sport/rss"),
@@ -45,7 +44,7 @@ FEEDS = {
                  ("NPR", "https://feeds.npr.org/1006/rss.xml"), ("DW", "https://rss.dw.com/rdf/rss-en-bus"), ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories/"),
                  ("CNA", "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6936")],
     "stocks": [("CNBC", "https://www.cnbc.com/id/20910258/device/rss/rss.html"), ("Google News", G + "stock+market+when:1d"),
-               ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/marketpulse/"), ("Yahoo Finance", "https://finance.yahoo.com/rss/topstories"),
+               ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/marketpulse/"),
                ("Investing.com", "https://www.investing.com/rss/news_25.rss")],
     "tech": [("The Verge", "https://www.theverge.com/rss/index.xml"), ("TechCrunch", "https://techcrunch.com/feed/"),
              ("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index"),
@@ -651,9 +650,6 @@ def main(path="data/live.json"):
         risk("data/risk.json", items)
     except Exception as e:
         print("skipped risk:", e, file=sys.stderr)
-    print("SRC", sorted({(j[0], j[1]): len(r[0]) for j, r in zip(jobs, results)}.items()))
-    print("CROSS", {t: sum(1 for i in v if i.get("n", 1) > 1) for t, v in by_topic.items()})
-    print("PHOTOS", {t: sum(1 for i in v if "img" in i) for t, v in by_topic.items()}, "SUBS", {k: sum(1 for i in items if i.get("sub") == k) for k in ("politics", "business", "weather", "sports", "general")})
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 
