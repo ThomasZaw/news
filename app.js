@@ -124,16 +124,36 @@ function drawNotes(){
 var CITIES=[['Yangon',16.87,96.2,'ရန်ကုန်'],['Mandalay',21.97,96.08,'မန္တလေး'],['Naypyitaw',19.75,96.12,'နေပြည်တော်'],['Hpa-An',16.89,97.63,'ဘားအံ'],['Mawlamyine',16.49,97.63,'မော်လမြိုင်'],['Pathein',16.78,94.73,'ပုသိမ်'],['Bago',17.34,96.48,'ပဲခူး'],['Taunggyi',20.79,97.04,'တောင်ကြီး'],['Sittwe',20.15,92.9,'စစ်တွေ'],['Myitkyina',25.38,97.4,'မြစ်ကြီးနား'],['Monywa',22.11,95.14,'မုံရွာ'],['Kawthaung',9.98,98.55,'ကော့သောင်း']];
 var city=store('pd-city')||'Yangon',WX=null,wxSource='';
 function code(c,day){
-  if(c===0)return [day?'☀️':'🌙','Clear','ကြည်လင်'];
-  if(c<=2)return [day?'⛅':'☁️','Partly cloudy','တိမ်အနည်းငယ်'];
-  if(c===3)return ['☁️','Cloudy','တိမ်ထူ'];
-  if(c===45||c===48)return ['🌫️','Fog','မြူဆိုင်း'];
-  if(c>=51&&c<=57)return ['🌦️','Light rain','မိုးဖွဲ'];
-  if(c===65||c===82)return ['🌧️','Heavy rain','မိုးသည်းထန်'];
-  if((c>=61&&c<=67)||(c>=80&&c<=82))return ['🌧️','Rain','မိုးရွာ'];
-  if(c>=95)return ['⛈️','Thunderstorm','မိုးကြိုးမုန်တိုင်း'];
-  return ['🌥️','Unsettled','မတည်ငြိမ်'];
+  if(c===0)return [day?'sun':'moon','Clear','ကြည်လင်'];
+  if(c<=2)return [day?'pc-day':'pc-night','Partly cloudy','တိမ်အနည်းငယ်'];
+  if(c===3)return ['cloud','Cloudy','တိမ်ထူ'];
+  if(c===45||c===48)return ['fog','Fog','မြူဆိုင်း'];
+  if(c>=51&&c<=57)return ['drizzle','Light rain','မိုးဖွဲ'];
+  if(c===65||c===82)return ['heavy','Heavy rain','မိုးသည်းထန်'];
+  if((c>=61&&c<=67)||(c>=80&&c<=82))return ['rain','Rain','မိုးရွာ'];
+  if(c>=95)return ['storm','Thunderstorm','မိုးကြိုးမုန်တိုင်း'];
+  return ['cloud','Unsettled','မတည်ငြိမ်'];
 }
+// Weather icons drawn as SVG, in place of emoji.
+var WI=(function(){
+  var cl='M20 46H46A9 9 0 0 0 47.5 28.1A13 13 0 0 0 23 25A10.5 10.5 0 0 0 20 46Z';
+  function cloud(f,s,t){return '<path d="'+cl+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.5" stroke-linejoin="round"'+(t?' transform="'+t+'"':'')+'/>'}
+  function sun(x,y,r){var o='<g stroke="#F2A900" stroke-width="2.6" stroke-linecap="round">';for(var k=0;k<8;k++){var an=k*Math.PI/4,c=Math.cos(an),s=Math.sin(an);o+='<line x1="'+(x+c*(r+4)).toFixed(1)+'" y1="'+(y+s*(r+4)).toFixed(1)+'" x2="'+(x+c*(r+9)).toFixed(1)+'" y2="'+(y+s*(r+9)).toFixed(1)+'"/>'}return o+'</g><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#FDB813" stroke="#F2A900" stroke-width="1.5"/>'}
+  function moon(x,y,r){return '<path d="M'+(x+r*.35)+' '+(y-r)+'A'+r+' '+r+' 0 1 0 '+(x+r)+' '+(y+r*.45)+'A'+(r*.85)+' '+(r*.85)+' 0 0 1 '+(x+r*.35)+' '+(y-r)+'Z" fill="#F3DFA2" stroke="#D9BC6A" stroke-width="1.5"/>'}
+  function drops(n,col){var o='<g stroke="'+(col||'#2F80C8')+'" stroke-width="3" stroke-linecap="round">',xs=n===2?[26,38]:n===3?[22,32,42]:[19,28,37,46];xs.forEach(function(x,k){var y=k%2?52:49;o+='<line x1="'+x+'" y1="'+y+'" x2="'+(x-3)+'" y2="'+(y+7)+'"/>'});return o+'</g>'}
+  var W='#FBFCFD',WS='#AEB7C1',G='#C5CDD6',GS='#8E99A5',D='#8A95A1',DS='#5F6B77',up='translate(0 -7)';
+  var S={sun:sun(32,32,12),moon:moon(30,32,14),
+    'pc-day':sun(24,22,9)+cloud(W,WS,'translate(2 4)'),
+    'pc-night':moon(22,20,10)+cloud(W,WS,'translate(2 4)'),
+    cloud:cloud(G,GS,'translate(-7 -6) scale(.9)')+cloud(W,WS,'translate(3 4)'),
+    fog:cloud(G,GS,up)+'<g stroke="#9AA4AE" stroke-width="3" stroke-linecap="round"><line x1="14" y1="47" x2="44" y2="47"/><line x1="20" y1="54" x2="50" y2="54"/></g>',
+    drizzle:cloud(W,WS,up)+drops(2),
+    rain:cloud(G,GS,up)+drops(3),
+    heavy:cloud(D,DS,up)+drops(4,'#1F6FB5'),
+    storm:cloud(D,DS,up)+'<path d="M34 36L26 49H32L28 60L40 45H33L37 36Z" fill="#F7C20E" stroke="#D99A00" stroke-width="1.2" stroke-linejoin="round"/>'+'<g stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"><line x1="20" y1="48" x2="17" y2="55"/><line x1="46" y1="48" x2="43" y2="55"/></g>'};
+  return function(k,cls){var s=document.createElement('span');s.className='wi'+(cls?' '+cls:'');s.setAttribute('aria-hidden','true');s.innerHTML='<svg viewBox="0 0 64 64">'+(S[k]||S.cloud)+'</svg>';return s};
+})();
+function cn(n){return n==='Naypyitaw'?'Nay Pyi Taw':n}
 var FIRE=[[50,'Low','နည်း','#3FA66A','Normal care. Keep exits clear and check wiring.','ပုံမှန်ဂရုစိုက်ပါ။'],
 [75,'Moderate','အသင့်အတင့်','#C79A1E','Fires can start more easily. Avoid open burning.','မီးရှို့ခြင်းကို ရှောင်ပါ။'],
 [90,'High','မြင့်','#E07A1F','Fires can spread fast. Keep water and extinguishers ready.','ရေနှင့် မီးသတ်ဆေးဘူး အသင့်ထားပါ။'],
@@ -166,28 +186,28 @@ function renderWx(){
   var b=$('wx');clear(b);
   var top=el('div','wx-top'),h=el('h2',null,'Weather');h.append(' ',mm('span','ရာသီဥတု'));
   var s=el('select','field');s.id='city';s.setAttribute('aria-label','Choose a city');
-  CITIES.forEach(function(c){var o=el('option',null,c[0]+'  '+c[3]);o.value=c[0];o.selected=c[0]===city;s.append(o)});
+  CITIES.forEach(function(c){var o=el('option',null,cn(c[0])+'  '+c[3]);o.value=c[0];o.selected=c[0]===city;s.append(o)});
   s.onchange=function(){city=s.value;store('pd-city',city);loadWx();loadObs();loadAir();loadRiver()};top.append(h,s);b.append(top);
   if(!WX){renderHome();b.append(el('p',null,'Weather is loading. If it does not appear, check your internet connection.'));return}
   var c=WX.current,k=code(c.weather_code,c.is_day),i=nowIdx(WX),H=WX.hourly,D=WX.daily;
   var now=el('div','wx-now'),main=el('div','wx-main'),cond=el('div','wx-cond'),tx=el('div');
-  tx.append(el('div','wx-temp',Math.round(c.temperature_2m)+'°'));cond.append(k[1],mm('span',k[2]));tx.append(cond);main.append(el('div','wx-emoji',k[0]),tx);
+  tx.append(el('div','wx-temp',Math.round(c.temperature_2m)+'°'));cond.append(k[1],mm('span',k[2]));tx.append(cond);main.append(WI(k[0],'wx-emoji'),tx);
   var st=el('div','stats');
   [['Feels like',Math.round(c.apparent_temperature)+'°'],['Chance of rain',(H.precipitation_probability[i]||0)+'%'],['Wind',(c._obs&&c._obs.wind!=null?c._obs.wind:Math.round(c.wind_speed_10m))+' km/h'],['Humidity',c.relative_humidity_2m+'%']].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   if(D.sunrise)[['Sunrise',D.sunrise[0].slice(11,16)],['Sunset',D.sunset[0].slice(11,16)]].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   now.append(main,st);b.append(now);
   b.append(el('p','small-note',c._obs?'Live report from '+c._obs.name+', '+c._obs.mins+' min ago. Rain can differ across the city.':'Forecast estimate. No recent airport report for this area, so local rain may be missed.'));
-  var pl=el('div','places'),saved=places();saved.forEach(function(n){var q=el('button','chip',n);q.type='button';if(n===city)q.setAttribute('aria-pressed','true');q.onclick=function(){city=n;store('pd-city',city);loadWx();loadObs();loadAir();loadRiver()};pl.append(q)});
+  var pl=el('div','places'),saved=places();saved.forEach(function(n){var q=el('button','chip',cn(n));q.type='button';if(n===city)q.setAttribute('aria-pressed','true');q.onclick=function(){city=n;store('pd-city',city);loadWx();loadObs();loadAir();loadRiver()};pl.append(q)});
   if(saved.indexOf(city)<0){var sv=el('button','chip add','Save this city');sv.type='button';sv.onclick=function(){store('pd-places',saved.concat(city));renderWx()};pl.append(sv)}b.append(pl);
   var ah=el('h3','sec',"Today's alerts");ah.append(mm('span','သတိပေးချက်'));
   var asec=el('div','week');asec.append(ah);var ag=el('div','alerts'),lv=fireLevel(H,i),F=FIRE[lv],fl=lv>=3?2:lv>=1?1:0;
   var act=dmhActive();if(DMH){var off=el('a','al l'+(act.length?2:0)),ot=el('div'),on=el('div','al-n');off.href=act.length?act[0].url:'https://www.moezala.gov.mm/en';off.target='_blank';off.rel='noopener';on.append(el('b',null,'Official warnings'),mm('span','တရားဝင်'));ot.append(on,el('p',null,act.length?act[0].kind+': '+act[0].title+', issued '+act[0].issued:'No active warning from Myanmar\'s weather department. Checked '+DMH.checked));off.append(el('i'),ot,el('em',null,act.length?'Warning':'None'));ag.append(off)}
   wxAlerts().concat([{en:'Fire danger',mm:'မီးဘေး',l:fl,word:F[1],msg:F[4]}]).forEach(function(x){var d=el('div','al l'+x.l),t=el('div'),n=el('div','al-n');n.append(el('b',null,x.en),mm('span',x.mm));t.append(n,el('p',null,x.msg));d.append(el('i'),t,el('em',null,x.word||LV[x.l]));ag.append(d)});asec.append(ag);b.append(asec);
   var hsec=el('div','week'),hh=el('h3','sec','Next 24 hours'),hs=el('div','week-scroll'),hr=el('div','hours');hsec.append(hh);
-  for(var q=0;q<=24&&i+q<H.time.length;q+=3){var ck=code(H.weather_code[i+q],(function(t){var n=+t.slice(11,13);return n>=6&&n<18})(H.time[i+q])),d=el('div');d.append(el('b',null,q?hhmm(H.time[i+q]):'Now'),el('em',null,ck[0]),el('span',null,Math.round(H.temperature_2m[i+q])+'°'),el('small',null,(H.precipitation_probability[i+q]||0)+'%'));hr.append(d)}
+  for(var q=0;q<=24&&i+q<H.time.length;q+=3){var ck=code(H.weather_code[i+q],(function(t){var n=+t.slice(11,13);return n>=6&&n<18})(H.time[i+q])),d=el('div');d.append(el('b',null,q?hhmm(H.time[i+q]):'Now'),WI(ck[0],'wi-s'),el('span',null,Math.round(H.temperature_2m[i+q])+'°'),el('small',null,(H.precipitation_probability[i+q]||0)+'%'));hr.append(d)}
   hs.append(hr);hsec.append(hs);b.append(hsec);
   var w=el('div','week'),wr=el('div','week-scroll'),row=el('div','week-row');w.append(el('h3','sec','Next 7 days'));
-  D.time.forEach(function(t,n){var p=t.split('-').map(Number),cd=code(D.weather_code[n],1),d=el('div');d.append(el('b',null,n===0?'Today':n===1?'Tomorrow':WDN[wd(p)].slice(0,3)),el('em',null,cd[0]),el('span',null,Math.round(D.temperature_2m_max[n])+'° / '+Math.round(D.temperature_2m_min[n])+'°'),el('small',null,'Rain '+D.precipitation_probability_max[n]+'%'));row.append(d)});
+  D.time.forEach(function(t,n){var p=t.split('-').map(Number),cd=code(D.weather_code[n],1),d=el('div');d.append(el('b',null,n===0?'Today':n===1?'Tomorrow':WDN[wd(p)].slice(0,3)),WI(cd[0],'wi-s'),el('span',null,Math.round(D.temperature_2m_max[n])+'° / '+Math.round(D.temperature_2m_min[n])+'°'),el('small',null,'Rain '+D.precipitation_probability_max[n]+'%'));row.append(d)});
   wr.append(row);w.append(wr);b.append(w);
   var sd=el('details','enso-more'),sb=el('div');sd.append(el('summary',null,'Live storm map'),sb,el('p','small-note','Satellite cloud image from Himawari with rain radar where it is available. Rain radar coverage in Myanmar is limited, so bright cold clouds may be the best storm sign. The map opens on your chosen city.'));sd.addEventListener('toggle',function(){if(sd.open)stormMap(sb)});b.append(sd);
   var det=el('details','enso-more'),sm=el('summary',null,'View full details'),ch=el('div','chart');ch.id='chart';det.append(sm,ch);
@@ -274,7 +294,7 @@ function renderBreaking(){
 /* Earthquakes */
 var QK=[],QK_T=0,QK_SRC='',GEO=store('pd-geo'),USGS='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/';
 function km(a,b,c,d){var r=Math.PI/180,x=Math.sin((c-a)*r/2),y=Math.sin((d-b)*r/2),h=x*x+Math.cos(a*r)*Math.cos(c*r)*y*y;return Math.round(12742*Math.asin(Math.sqrt(h)))}
-function place(){if(GEO)return {name:'your location',lat:GEO.lat,lon:GEO.lon};var c=CITIES.find(function(x){return x[0]===city})||CITIES[0];return {name:c[0],lat:c[1],lon:c[2]}}
+function place(){if(GEO)return {name:'your location',lat:GEO.lat,lon:GEO.lon};var c=CITIES.find(function(x){return x[0]===city})||CITIES[0];return {name:cn(c[0]),lat:c[1],lon:c[2]}}
 function qRow(f){var c=f.geometry.coordinates,p=f.properties,o=place();var lat=c[1],lon=c[0],nr=window.mmNear?mmNear(lat,lon):null,inm=inMM(lat,lon)||(nr&&nr.km<=60);return {mm:inm,near:nr,id:f.id,src:p.src||'USGS',srcs:p.srcs||[p.src||'USGS'],mag:p.mag,src0:p.place||'Unknown place',where:inm&&nr?nr.label:(p.place||'Unknown place')+(nr&&nr.km<=250?' · '+nr.km+' km '+nr.dir+' of '+nr.town+', Myanmar':''),time:p.time,url:p.url,lon:c[0],lat:c[1],depth:c[2],dist:km(o.lat,o.lon,c[1],c[0])}}
 var QK_DAYS=store('pd-qdays')||7,FAULT=[[14.8,96.3],[16.2,96.55],[17.3,96.55],[18.9,96.45],[19.75,96.2],[20.6,96.1],[21.4,96],[21.9,96.02],[22.6,95.98],[23.5,96],[24.3,96.1],[25.1,96.4],[25.8,97]];
 function qShown(){var c=Date.now()-QK_DAYS*864e5;return QK.filter(function(q){return q.time>=c})}
@@ -378,7 +398,7 @@ function stormMap(box){
 
 /* Safety */
 var AQ=null,RV=null,HM=null,HS=null;
-function places(){return store('pd-places')||['Yangon','Hpa-An','Kawthaung']}
+function places(){var s=store('pd-places')||[],d=['Yangon','Naypyitaw','Mandalay'];return d.concat(s.filter(function(n){return d.indexOf(n)<0&&n!=='Hpa-An'&&n!=='Kawthaung'}))}
 function aqiWord(v){return v<=50?'Good':v<=100?'Moderate':v<=150?'Unhealthy for some':v<=200?'Unhealthy':'Very unhealthy'}
 function curCity(){return CITIES.find(function(x){return x[0]===city})||CITIES[0]}
 function loadAir(){var c=curCity();return fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+c[1]+'&longitude='+c[2]+'&current=us_aqi,pm2_5&timezone=Asia%2FYangon').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){AQ=j;if(view==='weather')renderWx();if(view==='safety')renderSafety();renderHome()}).catch(function(){})}
@@ -389,7 +409,7 @@ function renderSafety(){
   var s1=el('div','week'),ec=el('h3','sec','Emergency contacts');s1.append(ec);var g=el('div','tel');
   [['Fire','191','🚒'],['Ambulance','192','🚑'],['Police','199','🚓']].forEach(function(r){var a=el('a');a.href='tel:'+r[1];a.append(el('b',null,r[0]),el('strong',null,r[1]));g.append(a)});s1.append(g);
   var src=el('p','small-note','These national numbers may not work the same way on every network, so keep your local station number too. ');var q=el('a',null,'Source');q.href='https://naypyidaw.embassy.qa/en/myanmar/important-phones';q.target='_blank';q.rel='noopener';src.append(q);s1.append(src);b.append(s1);
-  var s2=el('div','week'),ag=el('div','alerts');s2.append(el('h3','sec','Conditions in '+city));
+  var s2=el('div','week'),ag=el('div','alerts');s2.append(el('h3','sec','Conditions in '+cn(city)));
   function row(n,sub,word,l){var d=el('div','al l'+l),t=el('div');t.append(el('div','al-n',n));t.firstChild.textContent=n;t.append(el('p',null,sub));d.append(el('i'),t,el('em',null,word));ag.append(d)}
   if(AQ){var v=AQ.current.us_aqi;row('Air quality','Index '+v+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³',aqiWord(v),v>150?2:v>100?1:0)}else row('Air quality','Loading','Checking',0);
   if(RV&&RV.daily&&RV.daily.river_discharge){var d=RV.daily.river_discharge,n=d.length,i=7,now=d[i],pk=Math.max.apply(null,d.slice(i)),tr2=pk>now*1.15?'Rising':d[Math.min(n-1,i+3)]<now*.85?'Falling':'Steady';row('River level','Flood model estimate near '+city+': '+Math.round(now)+' m³/s now, peak '+Math.round(pk)+' m³/s this week',tr2,tr2==='Rising'?1:0)}else row('River level','No river data for this place','Unknown',0);
@@ -475,9 +495,9 @@ function redraw(){if(view==='quakes')renderQuakes();if(view==='safety')renderSaf
 function card(cls,href,title,m){var c=el(href?'a':'section','card '+cls);if(href)c.href=href;var t=el('div','card-t');t.append(title);if(m)t.append(mm('span',m));if(href)t.append(el('i',null,'→'));c.append(t);return c}
 function renderHome(){
   var g=$('hgrid');if(!g||view!=='home')return;clear(g);
-  var c=card('w6','#weather','Weather · '+city,'ရာသီဥတု');
+  var c=card('w6','#weather','Weather · '+cn(city),'ရာသီဥတု');
   if(WX){var w=WX.current,k=code(w.weather_code,w.is_day),i=nowIdx(WX),F=FIRE[fireLevel(WX.hourly,i)],row=el('div','h-row'),r=el('div','h-wx'),tx=el('div','c'),st=el('div','h-stats');
-    tx.append(k[1],mm('span',k[2]));r.append(el('span','e',k[0]),el('span','t',Math.round(w.temperature_2m)+'°'),tx);
+    tx.append(k[1],mm('span',k[2]));r.append(WI(k[0],'e'),el('span','t',Math.round(w.temperature_2m)+'°'),tx);
     [['Feels like',Math.round(w.apparent_temperature)+'°'],['Rain',(WX.hourly.precipitation_probability[i]||0)+'%'],['Wind',(w._obs&&w._obs.wind!=null?w._obs.wind:Math.round(w.wind_speed_10m))+' km/h']].forEach(function(x){var d=el('div');d.append(el('b',null,x[0]),el('span',null,x[1]));st.append(d)});row.append(r,st);c.append(row);
     dmhActive().forEach(function(x){c.append(el('div','h-off','Official warning: '+x.kind))});
     var sg=el('div','h-status');[{en:'Fire danger',word:F[1],col:FIRE.indexOf(F)?F[3]:'var(--jade)'}].concat(wxAlerts()).forEach(function(x){var d=el('div','h-st'),v=el('span');v.style.setProperty('--st',x.col||['var(--jade)','var(--amber)','var(--red)'][x.l]);v.textContent=x.word||LV[x.l];d.append(el('b',null,x.en),v);sg.append(d)});c.append(sg)
