@@ -457,7 +457,10 @@ def main(path="data/live.json"):
     for i in items:
         if i["topic"] == "myanmar" or (i["topic"] == "weather" and i.get("mm")):
             i["sub"] = "weather" if i["topic"] == "weather" else sub_of(i["title"])
-    og_images([i for v in by_topic.values() for i in v[:10]])
+    picks = [i for v in by_topic.values() for i in v[:10]]
+    picks += [i for i in by_topic["myanmar"][10:] + by_topic["weather"] if "news.google.com" not in i["url"] and i not in picks]
+    og_images(picks, limit=90)
+    print("MMSRC", {s: sum(1 for i in by_topic["myanmar"] if i["source"] == s) for s in set(i["source"] for i in by_topic["myanmar"])})
     if not items:
         sys.exit("No headlines fetched")
     found = alerts(rows, now)
