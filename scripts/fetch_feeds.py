@@ -7,11 +7,18 @@ from datetime import datetime, timedelta, timezone
 from html import unescape
 
 G = "https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US:en&q="
+GMM = "https://news.google.com/rss/search?hl=my&gl=MM&ceid=MM:my&q="
 FEEDS = {
     "enso": [("Google News", G + "El+Nino+when:7d")],
     "weather": [("Google News", G + "Myanmar+weather+OR+storm+OR+flood+OR+cyclone+when:3d"),
                 ("Google News", G + "Bay+of+Bengal+cyclone+when:3d"),
                 ("Google News", G + "Myanmar+fire+breaks+out+when:3d"),
+                ("Google News", G + "(Shan+OR+Inle+OR+Taunggyi+OR+Kachin+OR+Sagaing+OR+Ayeyarwady+OR+Rakhine)+flood+OR+flooding+OR+landslide+when:7d"),
+                ("Google News", GMM + "%E1%80%9B%E1%80%B1%E1%80%80%E1%80%BC%E1%80%AE%E1%80%B8+OR+%E1%80%99%E1%80%AD%E1%80%AF%E1%80%B8%E1%80%9E%E1%80%8A%E1%80%BA%E1%80%B8%E1%80%91%E1%80%94%E1%80%BA+OR+%E1%80%99%E1%80%AF%E1%80%94%E1%80%BA%E1%80%90%E1%80%AD%E1%80%AF%E1%80%84%E1%80%BA%E1%80%B8+OR+%E1%80%99%E1%80%AE%E1%80%B8%E1%80%9C%E1%80%B1%E1%80%AC%E1%80%84%E1%80%BA+when:3d"),
+                ("BNI", "https://www.bnionline.net/en/rss.xml"),
+                ("Shan News", "https://english.shannews.org/feed"),
+                ("Irrawaddy", "https://www.irrawaddy.com/feed"),
+                ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
                 ("GDACS", "https://www.gdacs.org/xml/rss.xml")],
     "myanmar": [("The Irrawaddy", "https://www.irrawaddy.com/feed"), ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
                 ("Mizzima", "https://eng.mizzima.com/feed"), ("Google News", G + "Myanmar+when:2d")],
@@ -29,7 +36,8 @@ SITE = "https://thomaszaw.github.io/news/"
 MAX_AGE = timedelta(hours=48)
 PER_TOPIC = 30
 UA = {"User-Agent": "ParabaikDaily/1.0 (personal news reader)"}
-LOCAL = re.compile(r"myanmar|burma|yangon|mandalay|naypyi|sagaing|magway|bago|ayeyarwady|irrawaddy|rakhine|shan state|kachin|kayin|karen|kayah|chin state|mon state|tanintharyi|hpa-an|bay of bengal|andaman", re.I)
+LOCAL = re.compile(r"myanmar|burma|yangon|mandalay|naypyi|sagaing|magway|bago|ayeyarwady|irrawaddy|rakhine|shan|inle|taunggyi|lashio|hsipaw|kengtung|tachileik|\bmuse\b|pekon|kachin|myitkyina|kayin|karen|kayah|loikaw|chin state|hakha|mon state|mawlamyine|tanintharyi|dawei|myeik|hpa-an|bay of bengal|andaman|[\u1000-\u109f]", re.I)
+WXWORD = re.compile(r"flood|flooding|landslide|storm|cyclone|heavy rain|downpour|monsoon|drought|heatwave|heat wave|lightning|thunderstorm|strong wind|fire breaks|blaze|wildfire|forest fire|earthquake|tremor|\bdam\b|river level|water level|ရေကြီး|ရေလွှမ်း|မိုးသည်း|မုန်တိုင်း|မြေပြို|မီးလောင်|ငလျင်|လေပြင်း|မိုးကြိုး|ရေဘေး", re.I)
 REGION = re.compile(r"myanmar|burma|bay of bengal|andaman|bangladesh|thailand", re.I)
 CITIES = [("Yangon", 16.87, 96.20), ("Mandalay", 21.97, 96.08), ("Naypyitaw", 19.75, 96.12), ("Hpa-An", 16.89, 97.63),
           ("Mawlamyine", 16.49, 97.63), ("Pathein", 16.78, 94.73), ("Bago", 17.34, 96.48), ("Taunggyi", 20.79, 97.04),
@@ -93,8 +101,10 @@ def fetch(job):
             rows = parse(r.read(), source, topic)
         if source == "GDACS":
             rows = [i for i in rows if REGION.search(i["title"])]
-        if topic == "weather" and source == "Google News":
-            rows = [i for i in rows if LOCAL.search(i["title"])]
+        if topic == "weather" and source != "GDACS":
+            rows = [i for i in rows if LOCAL.search(i["title"]) or source in ("BNI", "Shan News", "Irrawaddy", "Myanmar Now")]
+            if source != "Google News" or "hl=my" in url:
+                rows = [i for i in rows if WXWORD.search(i["title"])]
             for i in rows:
                 if re.search(r"\bred\b", i["title"], re.I) or (re.search(r"\borange\b", i["title"], re.I) and re.search("myanmar|burma", i["title"], re.I)):
                     i["level"] = "red"
@@ -386,7 +396,7 @@ def main(path="data/live.json"):
     for i in rows:
         key = re.sub(r"[^a-z0-9]+", "", i["title"].lower())[:70]
         age = now - datetime.fromisoformat(i["published"])
-        if key in seen or age > MAX_AGE or age < timedelta(minutes=-10) or len(by_topic[i["topic"]]) >= PER_TOPIC:
+        if key in seen or age > (timedelta(days=7) if i["topic"] == "weather" else MAX_AGE) or age < timedelta(minutes=-10) or len(by_topic[i["topic"]]) >= PER_TOPIC:
             continue
         seen.add(key)
         by_topic[i["topic"]].append(i)
@@ -411,6 +421,7 @@ def main(path="data/live.json"):
         hotspots("data/hotspots.json")
     except Exception as e:
         print("skipped hotspots:", e, file=sys.stderr)
+    print("WXNEWS", [(i["source"], i["title"][:70]) for i in by_topic["weather"][:15]])
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 

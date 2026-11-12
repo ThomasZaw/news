@@ -244,7 +244,7 @@ function renderWeatherNews(){
   var b=$('wn');if(!b||!E)return;clear(b);
   var s=E.sections.find(function(x){return x.id==='weather'}),h=el('h3',null,'Weather and fire news ');h.append(mm('span','သတင်း'));b.append(h);
   var ul=el('ul','hl');if(s)s.items.slice(0,3).forEach(function(i){ul.append(hlRow(tt(i),i.sources[0].url,i.sources[0].name))});
-  if(LIVE)LIVE.items.filter(function(i){return i.topic==='weather'}).slice(0,5).forEach(function(i){ul.append(hlRow(i.title,i.url,ago(i.published)+' ago · '+i.source))});
+  if(LIVE)LIVE.items.filter(function(i){return i.topic==='weather'}).slice(0,8).forEach(function(i){ul.append(hlRow(i.title,i.url,ago(i.published)+' ago · '+i.source))});
   b.append(ul);
 }
 function tt(i){return window.PD_LANG==='mm'&&i.title_mm?i.title_mm:i.title}
