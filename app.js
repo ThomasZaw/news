@@ -253,12 +253,14 @@ function renderBreaking(){
 var QK=[],QK_T=0,QK_SRC='',GEO=store('pd-geo'),USGS='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/';
 function km(a,b,c,d){var r=Math.PI/180,x=Math.sin((c-a)*r/2),y=Math.sin((d-b)*r/2),h=x*x+Math.cos(a*r)*Math.cos(c*r)*y*y;return Math.round(12742*Math.asin(Math.sqrt(h)))}
 function place(){if(GEO)return {name:'your location',lat:GEO.lat,lon:GEO.lon};var c=CITIES.find(function(x){return x[0]===city})||CITIES[0];return {name:c[0],lat:c[1],lon:c[2]}}
-function qRow(f){var c=f.geometry.coordinates,p=f.properties,o=place();return {id:f.id,src:p.src||'USGS',srcs:p.srcs||[p.src||'USGS'],mag:p.mag,where:p.place||'Unknown place',time:p.time,url:p.url,lon:c[0],lat:c[1],depth:c[2],dist:km(o.lat,o.lon,c[1],c[0])}}
+function qRow(f){var c=f.geometry.coordinates,p=f.properties,o=place();var lat=c[1],lon=c[0],nr=window.mmNear?mmNear(lat,lon):null,inm=inMM(lat,lon)||(nr&&nr.km<=60);return {mm:inm,near:nr,id:f.id,src:p.src||'USGS',srcs:p.srcs||[p.src||'USGS'],mag:p.mag,src0:p.place||'Unknown place',where:inm&&nr?nr.label:(p.place||'Unknown place')+(nr&&nr.km<=250?' · '+nr.km+' km '+nr.dir+' of '+nr.town+', Myanmar':''),time:p.time,url:p.url,lon:c[0],lat:c[1],depth:c[2],dist:km(o.lat,o.lon,c[1],c[0])}}
 var QK_DAYS=store('pd-qdays')||7,FAULT=[[14.8,96.3],[16.2,96.55],[17.3,96.55],[18.9,96.45],[19.75,96.2],[20.6,96.1],[21.4,96],[21.9,96.02],[22.6,95.98],[23.5,96],[24.3,96.1],[25.1,96.4],[25.8,97]];
 function qShown(){var c=Date.now()-QK_DAYS*864e5;return QK.filter(function(q){return q.time>=c})}
 function qWord(m){return m<4?'Minor':m<5?'Light':m<6?'Moderate':m<7?'Strong':'Major'}
 function qCol(t){var h=(Date.now()-t)/36e5;return h<24?'#E0252B':h<168?'#F08A24':'#F2C14E'}
 function mmTime(t){var d=new Date(t+234e5);return d.getUTCDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]+', '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')}
+function inMM(lat,lon){if(!window.MM_GEO)return false;var hit=false;MM_GEO.coordinates.forEach(function(poly){var ring=poly[0],ins=false;for(var i=0,j=ring.length-1;i<ring.length;j=i++){var a=ring[i],b=ring[j];if((a[1]>lat)!==(b[1]>lat)&&lon<(b[0]-a[0])*(lat-a[1])/(b[1]-a[1])+a[0])ins=!ins}if(ins)hit=true});return hit}
+var QK_AREA=store('pd-qarea')||'mm';
 function inRegion(q){return q.lat>=9&&q.lat<=29&&q.lon>=91&&q.lon<=102}
 function qAgo(t){var m=Math.max(0,Math.round((Date.now()-t)/6e4));return m<60?m+' min ago':m<1440?plural(Math.round(m/60),'hour'):plural(Math.round(m/1440),'day')}
 function plural(n,w){return n+' '+w+(n===1?'':'s')+' ago'}
@@ -275,7 +277,7 @@ function pullUsgs(first){
 }
 function qAlert(){
   var seen=store('pd-qseen')||[],lim=Date.now()-6*36e5,o=place();
-  var q=QK.filter(function(x){return x.time>=lim&&seen.indexOf(x.id)<0&&((x.dist<=300&&x.mag>=4)||(inRegion(x)&&x.mag>=4))})[0];
+  var q=QK.filter(function(x){return x.time>=lim&&seen.indexOf(x.id)<0&&((x.dist<=300&&x.mag>=4)||(x.mm&&x.mag>=4))})[0];
   var b=$('qalert');clear(b);b.hidden=!q;if(!q)return;
   var row=el('div','breaking-row'),t=el('div'),l=el('a',null,'Magnitude '+q.mag.toFixed(1)+': '+q.where),c=el('button',null,'Dismiss');c.type='button';l.href='#quakes';
   t.append(el('b',null,'⚠️ Earthquake reported'),l,el('small',null,q.dist+' km from '+o.name+' · '+qAgo(q.time)));
@@ -303,19 +305,20 @@ function qMap(box,top){
   }else box.append(QM.getContainer());
   setTimeout(function(){QM.invalidateSize()},0);
   QL.clearLayers();L.polyline(FAULT,{color:'#FF7A59',weight:2,dashArray:'6 6',opacity:.9,interactive:false}).addTo(QL);
-  qShown().reverse().forEach(function(q){var r=Math.max(6,(q.mag-3)*7),last=q===top;var c=L.circleMarker([q.lat,q.lon],{radius:r,color:'#fff',weight:last?2.5:1.5,fillColor:qCol(q.time),fillOpacity:last?.95:.75}).addTo(QL);c.bindPopup('<b>M '+q.mag.toFixed(1)+' · '+qWord(q.mag)+'</b><br>'+q.where.replace(/</g,'&lt;')+'<br>'+mmTime(q.time)+' Myanmar time ('+qAgo(q.time)+')<br>Depth '+Math.round(q.depth)+' km · '+q.dist+' km from '+place().name+'<br>Reported by '+q.srcs.join(', '))});
+  qShown().filter(function(q){return QK_AREA==='mm'?q.mm:!q.mm}).reverse().forEach(function(q){var r=Math.max(6,(q.mag-3)*7),last=q===top;var c=L.circleMarker([q.lat,q.lon],{radius:r,color:'#fff',weight:last?2.5:1.5,fillColor:qCol(q.time),fillOpacity:last?.95:.75}).addTo(QL);c.bindPopup('<b>M '+q.mag.toFixed(1)+' · '+qWord(q.mag)+'</b><br>'+q.where.replace(/</g,'&lt;')+'<br>'+mmTime(q.time)+' Myanmar time ('+qAgo(q.time)+')<br>Depth '+Math.round(q.depth)+' km · '+q.dist+' km from '+place().name+'<br>Reported by '+q.srcs.join(', '))});
   if(GEO&&GEO.lat>=4&&GEO.lat<=32&&GEO.lon>=86&&GEO.lon<=108)L.circleMarker([GEO.lat,GEO.lon],{radius:7,color:'#fff',weight:2,fillColor:'#FFD24A',fillOpacity:1}).addTo(QL).bindPopup('Your location');
 }
 function renderQuakes(){
   var b=$('quake-box');if(!b||view!=='quakes')return;clear(b);
   var h=el('h2',null,'Earthquakes ');h.className='q-title';h.append(mm('span','ငလျင်'));b.append(h);
-  var shown=qShown(),reg=shown.filter(inRegion),top=reg[0],o=place(),s=el('div','enso-state');
+  var all=qShown(),shown=all.filter(function(q){return QK_AREA==='mm'?q.mm:!q.mm}),reg=shown,top=reg[0],o=place(),s=el('div','enso-state');
+  var at=el('div','places q-area');[['mm','Myanmar','မြန်မာ'],['near','Nearby countries','အိမ်နီးချင်း']].forEach(function(x){var t=el('button','chip',x[1]+' ');t.type='button';t.append(mm('span',x[2]));t.setAttribute('aria-pressed',String(QK_AREA===x[0]));t.onclick=function(){QK_AREA=x[0];store('pd-qarea',x[0]);renderQuakes()};at.append(t)});b.append(at);
   if(top){s.append(el('div','enso-big','M '+top.mag.toFixed(1)),el('p','enso-phase',qWord(top.mag)+' · '+top.where),el('p',null,qAgo(top.time)+' · '+mmTime(top.time)+' Myanmar time · '+top.dist+' km from '+o.name))}
-  else s.append(el('p','enso-phase',QK_T?'No earthquakes reported in or near Myanmar in the last '+QK_DAYS+' days':'Checking USGS'));b.append(s);
+  else s.append(el('p','enso-phase',QK_T?(QK_AREA==='mm'?'No earthquakes reported in Myanmar':'No earthquakes reported in nearby countries')+' in the last '+QK_DAYS+' days':'Checking USGS'));b.append(s);
   var tg=el('div','places q-tog');[7,30].forEach(function(d){var x=el('button','chip',d+' days');x.type='button';if(d===QK_DAYS)x.setAttribute('aria-pressed','true');x.onclick=function(){QK_DAYS=d;store('pd-qdays',d);renderQuakes()};tg.append(x)});
-  var big=reg.slice().sort(function(x,y){return y.mag-x.mag})[0];tg.append(el('span','q-sum',reg.length?reg.length+' in or near Myanmar · strongest M '+big.mag.toFixed(1):''));b.append(tg);
+  var big=reg.slice().sort(function(x,y){return y.mag-x.mag})[0];tg.append(el('span','q-sum',reg.length?reg.length+(QK_AREA==='mm'?' in Myanmar':' in nearby countries')+' · strongest M '+big.mag.toFixed(1):''));b.append(tg);
   var pair=el('div','q-pair'),m=el('div');
-  var side=el('div'),ul=el('ul','hl');side.append(el('h3',null,'Last '+QK_DAYS+' days'));
+  var side=el('div'),ul=el('ul','hl');side.append(el('h3',null,(QK_AREA==='mm'?'Myanmar':'Nearby countries')+', last '+QK_DAYS+' days'));
   if(!shown.length)ul.append(el('li',null,'No earthquakes on the list right now.'));
   shown.slice(0,15).forEach(function(q){var li=el('li','q-row'),g=el('b',q.mag>=5?'q-mag hi':'q-mag',q.mag.toFixed(1)),c=el('div'),a=el('a',null,q.where);a.href=safe(q.url);a.target='_blank';a.rel='noopener';c.append(a,el('small',null,qWord(q.mag)+' · '+qAgo(q.time)+' · '+mmTime(q.time)),el('small',null,'Depth '+Math.round(q.depth)+' km · '+q.dist+' km away · '+q.srcs.join(', ')));li.append(g,c);ul.append(li)});
   side.append(ul);pair.append(m,side);b.append(pair);qMap(m,top);
@@ -460,7 +463,7 @@ function renderHome(){
   var en=card('','#enso','El Niño','အယ်လ်နီညို');
   if(ENSO&&ENSO.weeks&&ENSO.weeks.length){var L=ENSO.weeks[ENSO.weeks.length-1],P=ensoPhase(L.n34);en.append(el('div','big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p','line',P[0]))}else en.append(el('p','line muted','Loading.'));
   g.append(en);
-  var qc=card('','#quakes','Earthquakes','ငလျင်'),qr=QK.filter(inRegion)[0];qc.append(el('div','big',qr?'M '+qr.mag.toFixed(1):'None'),el('p','line muted',qr?qAgo(qr.time)+' · '+qr.where:QK_T?'None near Myanmar in 7 days':'Checking'));g.append(qc);
+  var qc=card('','#quakes','Earthquakes','ငလျင်'),qr=QK.filter(function(q){return q.mm})[0];qc.append(el('div','big',qr?'M '+qr.mag.toFixed(1):'None'),el('p','line muted',qr?qAgo(qr.time)+' · '+qr.where:QK_T?'None in Myanmar in 30 days':'Checking'));g.append(qc);
   var m=md(TODAY),d=card('','#calendar','Burmese date','ပြက္ခဒိန်');d.append(mm('div',mmLine(m)),el('p','line muted','ME '+m.my+' · '+m.ToMString('&M &P &ff')));g.append(d);
   var ns=loadNotes().sort(function(x,y){return (x.date+x.time).localeCompare(y.date+y.time)}),dc=ns.filter(due).length,rc=card('','#reminders','Reminders','မှတ်စု');
   rc.append(el('div','big',dc?dc+' due':ns.length?String(ns.length):'None'),el('p','line muted',ns.length?ns[0].text:'Tap to add one'));g.append(rc);
@@ -483,4 +486,9 @@ get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive()
 addEventListener('load',function(){scrollTo(0,0)});
 })();
 
-(function(){var b=document.getElementById('kpay-copy');if(!b)return;b.onclick=function(){var n='09944939666';(navigator.clipboard?navigator.clipboard.writeText(n):Promise.reject()).then(function(){b.textContent='Copied'},function(){b.textContent='Number: '+n});setTimeout(function(){b.textContent='Copy number'},2500)}})();
+(function(){var P=document.getElementById('give-pop');if(!P)return;
+  function close(){P.hidden=true}
+  Array.prototype.forEach.call(document.querySelectorAll('.give-btn'),function(g){g.onclick=function(e){e.stopPropagation();if(!P.hidden){close();return}P.hidden=false;var r=g.getBoundingClientRect(),w=P.offsetWidth,h=P.offsetHeight,x=Math.min(Math.max(8,r.right-w),innerWidth-w-8),y=r.bottom+8+h>innerHeight?r.top-h-8:r.bottom+8;P.style.left=x+'px';P.style.top=Math.max(8,y)+'px'}});
+  document.getElementById('give-x').onclick=close;document.addEventListener('click',function(e){if(!P.hidden&&!P.contains(e.target))close()});document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});addEventListener('resize',close);
+})();
+(function(){var b=document.getElementById('kpay-copy');if(!b)return;b.onclick=function(){var n='09944939666';(navigator.clipboard?navigator.clipboard.writeText(n):Promise.reject()).then(function(){b.textContent='Copied'},function(){b.textContent='Number: '+n});setTimeout(function(){b.textContent='Copy'},2500)}})();

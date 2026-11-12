@@ -151,7 +151,7 @@ a.card:hover{box-shadow:inset 0 0 0 1px var(--gold)}
 .places{display:flex;flex-wrap:wrap;gap:8px}.chip{min-height:40px;padding:0 14px;background:var(--panel);border:1px solid var(--line);cursor:pointer;font-weight:600}.chip[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}.chip.add{background:transparent;color:var(--muted)}
 .tel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.tel a{display:grid;justify-items:center;gap:4px;padding:16px 8px;background:var(--panel);text-decoration:none}.tel span{font-size:1.5rem}.tel b{font-weight:600}.tel strong{font:600 1.7rem/1.1 var(--display);color:var(--red)}
 .off{color:var(--jade);font-weight:700;margin-right:4px}
-.hot-sum{font-weight:600}a.al{text-decoration:none;color:inherit}.q-tog{margin-top:0}.q-sum{align-self:center;color:var(--muted);font-size:.9rem;margin-left:8px}.q-legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:12px 0 0;font-size:.86rem;color:var(--muted)}.q-legend span{display:inline-flex;align-items:center;gap:8px}.q-legend i{width:12px;height:12px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px var(--line)}.q-legend i.fault{width:22px;height:0;border-radius:0;border:0;border-top:2px dashed #FF7A59;box-shadow:none}.q-row small{display:block}.give{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px 32px;margin-top:48px;padding:24px;background:var(--panel);border-top:3px solid var(--gold)}.give h2{font-size:1.1rem;margin:0 0 4px}.give h2 .mm{color:var(--gold);font-weight:400;margin-left:8px}.give p{margin:0;color:var(--muted)}.give-pay{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}.give-k{font-size:.86rem;color:var(--muted)}.give-pay b{font:600 1.35rem/1.2 var(--display);letter-spacing:.02em}.offline{padding:8px 16px;background:var(--panel);text-align:center;font-weight:600;color:var(--red)}
+.hot-sum{font-weight:600}a.al{text-decoration:none;color:inherit}.q-tog{margin-top:0}.q-area{margin:0 0 24px}.q-area .mm{margin-left:6px;font-size:.85em}.q-sum{align-self:center;color:var(--muted);font-size:.9rem;margin-left:8px}.q-legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:12px 0 0;font-size:.86rem;color:var(--muted)}.q-legend span{display:inline-flex;align-items:center;gap:8px}.q-legend i{width:12px;height:12px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px var(--line)}.q-legend i.fault{width:22px;height:0;border-radius:0;border:0;border-top:2px dashed #FF7A59;box-shadow:none}.q-row small{display:block}.give-btn{color:var(--gold)}.size-bottom{flex-wrap:wrap}.size-bottom .give-btn{flex-basis:100%;min-height:36px}@media (max-width:759px){.brand-row .size{gap:4px}.brand-row .size .btn{min-height:36px;padding:0 8px;font-size:.9rem}.home-link b{white-space:nowrap}}@media (max-width:420px){.home-link{gap:8px}.home-link svg{width:24px}.home-link b{font-size:.9rem}.brand-row{gap:8px}.brand-row .size .btn{padding:0 7px}}@media (max-width:380px){.home-link b{white-space:normal;line-height:1.15}}.give-pop{position:fixed;z-index:60;width:248px;padding:16px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.18)}.give-pop .mm{display:block;color:var(--gold);font-size:.86rem}.give-pop p{margin:12px 0 4px;font-size:.84rem;color:var(--muted)}.give-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.give-row b{font-size:1.2rem;letter-spacing:.02em}.give-row .btn{min-height:36px;padding:0 12px}.give-x{position:absolute;top:6px;right:8px;border:0;background:none;font-size:1.3rem;line-height:1;color:var(--muted);cursor:pointer;padding:4px}.offline{padding:8px 16px;background:var(--panel);text-align:center;font-weight:600;color:var(--red)}
 </style>
 </head>
 <body>
@@ -162,11 +162,12 @@ a.card:hover{box-shadow:inset 0 0 0 1px var(--gold)}
       <svg viewBox="0 0 120 150" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M60 4v20M54 12h12"/><path d="M60 24C54 40 50 52 38 66h44C70 52 66 40 60 24Z"/><path d="M30 66h60v10H30zM22 76h76v12H22zM12 88h96v14H12zM2 102h116v14H2z"/><path class="t" d="M36 116v14l-14 10M60 116v28M84 116v14l14 10"/></svg>
       <span><b>Parabaik Daily</b><span class="mm" lang="my">ပုရပိုက်</span></span>
     </a>
-    <div class="size" role="group" aria-label="Text size"><button class="btn lang" id="lang1" type="button">မြန်မာ</button><button class="btn" id="size-down" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up" type="button" aria-label="Larger text">A+</button></div>
+    <div class="size" role="group" aria-label="Text size"><button class="btn lang" id="lang1" type="button">မြန်မာ</button><button class="btn" id="size-down" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up" type="button" aria-label="Larger text">A+</button><button class="btn give-btn" type="button" aria-haspopup="dialog">Donate</button></div>
   </div>
   <nav class="nav" id="nav" aria-label="Main"></nav>
-  <div class="size size-bottom" role="group" aria-label="Text size"><button class="btn lang" id="lang2" type="button">မြန်မာ</button><button class="btn" id="size-down2" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up2" type="button" aria-label="Larger text">A+</button></div>
+  <div class="size size-bottom" role="group" aria-label="Text size"><button class="btn lang" id="lang2" type="button">မြန်မာ</button><button class="btn" id="size-down2" type="button" aria-label="Smaller text">A−</button><button class="btn" id="size-up2" type="button" aria-label="Larger text">A+</button><button class="btn give-btn" type="button" aria-haspopup="dialog">Donate</button></div>
 </aside>
+<div class="give-pop" id="give-pop" role="dialog" aria-label="Donate" hidden><b>Support Parabaik Daily</b><span class="mm">ပံ့ပိုးကူညီရန်</span><p>KBZPay (KPay)</p><div class="give-row"><b id="kpay">09944939666</b><button type="button" class="btn" id="kpay-copy">Copy</button></div><button type="button" class="give-x" id="give-x" aria-label="Close">×</button></div>
 <div class="main">
   <div class="offline" id="offline" hidden>You are offline. Showing the last saved information.</div>
   <div class="breaking" data-nosnippet id="qalert" hidden></div>
@@ -189,11 +190,6 @@ a.card:hover{box-shadow:inset 0 0 0 1px var(--gold)}
       </section>
       <section class="view" data-nosnippet id="v-learn" aria-label="Learn" hidden><div id="rail"></div></section>
     </main>
-    <section class="give" aria-labelledby="give-h">
-      <div><h2 id="give-h">Support Parabaik Daily <span class="mm">ပံ့ပိုးကူညီရန်</span></h2>
-      <p>The site is free. A small donation helps pay for the data, alerts and domain.</p></div>
-      <div class="give-pay"><span class="give-k">KBZPay (KPay)</span><b id="kpay">09944939666</b><button type="button" class="btn" id="kpay-copy">Copy number</button></div>
-    </section>
     <footer class="foot"><p id="foot"></p><p><a href="#privacy">Privacy</a></p></footer>
   </div>
 </div>
@@ -201,6 +197,7 @@ a.card:hover{box-shadow:inset 0 0 0 1px var(--gold)}
 <script src="lib/i18n.js?v=__V__"></script>
 <script src="lib/leaflet.js?v=__V__"></script>
 <script src="lib/myanmar.js?v=__V__"></script>
+<script src="lib/towns.js?v=__V__"></script>
 <script src="lib/ceMmDateTime.js?v=__V__"></script>
 <script src="app.js?v=__V__"></script>
 </body>

@@ -9,6 +9,7 @@ export function inRegion(lat, lon) {
   return lat >= 9 && lat <= 29 && lon >= 91 && lon <= 102;
 }
 
+import { mmNear } from "./towns.js";
 const BOX = "minlat=4&maxlat=32&minlon=86&maxlon=108";
 function km(a, b, c, d) {
   const r = Math.PI / 180, x = Math.sin(((c - a) * r) / 2), y = Math.sin(((d - b) * r) / 2);
@@ -55,7 +56,7 @@ export async function quakeAlerts(env, quakes, now) {
     if (sent.some((s) => Math.abs(s.t - q.time) < 90e3 && km(s.lat, s.lon, q.lat, q.lon) < 150)) continue;
     sent.push({ t: q.time, lat: q.lat, lon: q.lon });
     const t = new Date(q.time + 6.5 * 3600e3).toISOString().slice(11, 16);
-    out.push({ key: "q:" + q.id, title: "Earthquake M" + q.mag.toFixed(1) + (q.mag >= 5 ? ", strong" : ""), body: `${q.place || "In or near Myanmar"} at ${t} Myanmar time. Depth ${Math.round(q.depth)} km. Source ${q.src}.`, click: SITE + "#quakes" });
+    out.push({ key: "q:" + q.id, title: "Earthquake M" + q.mag.toFixed(1) + (q.mag >= 5 ? ", strong" : ""), body: `${mmNear(q.lat, q.lon).km <= 60 ? mmNear(q.lat, q.lon).label : q.place || "Near Myanmar"} at ${t} Myanmar time. Depth ${Math.round(q.depth)} km. Source ${q.src}.`, click: SITE + "#quakes" });
   }
   if (out.length) await env.SEEN.put("qsent", JSON.stringify(sent.slice(-200)));
   return out;
