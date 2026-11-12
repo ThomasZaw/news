@@ -24,8 +24,7 @@ FEEDS = {
                 ("Mizzima", "https://eng.mizzima.com/feed"), ("Google News", G + "Myanmar+when:2d"),
                 ("Google News", G + "Myanmar+(economy+OR+business+OR+kyat+OR+trade+OR+investment+OR+fuel+OR+gold+price)+when:3d"),
                 ("Google News", G + "Myanmar+(football+OR+sports+OR+SEA+Games+OR+lethwei+OR+athlete)+when:5d")],
-    "sports": [("BBC Sport", "https://feeds.bbci.co.uk/sport/rss.xml"), ("The Guardian", "https://www.theguardian.com/sport/rss"),
-               ("ESPN", "https://www.espn.com/espn/rss/news")],
+    "sports": [("BBC Sport", "https://feeds.bbci.co.uk/sport/rss.xml"), ("The Guardian", "https://www.theguardian.com/sport/rss")],
     "world": [("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml"), ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
               ("The Guardian", "https://www.theguardian.com/world/rss")],
     "politics": [("NPR", "https://feeds.npr.org/1014/rss.xml"), ("BBC", "https://feeds.bbci.co.uk/news/politics/rss.xml"),
@@ -479,6 +478,7 @@ def main(path="data/live.json"):
         hotspots("data/hotspots.json")
     except Exception as e:
         print("skipped hotspots:", e, file=sys.stderr)
+    print("PHOTOS", {t: sum(1 for i in v if "img" in i) for t, v in by_topic.items()}, "SUBS", {k: sum(1 for i in items if i.get("sub") == k) for k in ("politics", "business", "weather", "sports", "general")})
     print(len(items), "headlines", {t: len(v) for t, v in by_topic.items()})
 
 
