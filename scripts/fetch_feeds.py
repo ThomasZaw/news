@@ -440,28 +440,37 @@ def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
         results = list(pool.map(fetch, jobs))
-    print("JOBS", [(j[0], j[1], len(r[0]), (r[0][0]["published"] if r[0] else "")) for j, r in zip(jobs, results) if j[0] in ("myanmar", "weather")])
     for _, err in results:
         if err:
             print("skipped", err, file=sys.stderr)
     now = datetime.now(timezone.utc)
     seen, by_topic = set(), {t: [] for t in FEEDS}
+    for (t, src, u), (r, _) in zip(jobs, results):
+        for i in r:
+            i["_g"] = src == "Google News"
     rows = sorted([i for r, _ in results for i in r] + quakes(), key=lambda i: i["published"], reverse=True)
+    gcount = {}
     for i in rows:
         key = re.sub(r"[^a-z0-9]+", "", i["title"].lower())[:70]
         age = now - datetime.fromisoformat(i["published"])
-        if key in seen or age > (timedelta(days=7) if i["topic"] == "weather" else MAX_AGE) or age < timedelta(minutes=-10) or len(by_topic[i["topic"]]) >= PER_TOPIC:
+        cap = 45 if i["topic"] == "myanmar" else PER_TOPIC
+        if key in seen or age > (timedelta(days=7) if i["topic"] == "weather" else MAX_AGE) or age < timedelta(minutes=-10) or len(by_topic[i["topic"]]) >= cap:
             continue
+        if i.get("_g") and i["topic"] == "myanmar":
+            gcount[i["topic"]] = gcount.get(i["topic"], 0) + 1
+            if gcount[i["topic"]] > 25:
+                continue
         seen.add(key)
         by_topic[i["topic"]].append(i)
     items = sorted((i for v in by_topic.values() for i in v), key=lambda i: i["published"], reverse=True)
+    for i in items:
+        i.pop("_g", None)
     for i in items:
         if i["topic"] == "myanmar" or (i["topic"] == "weather" and i.get("mm")):
             i["sub"] = "weather" if i["topic"] == "weather" else sub_of(i["title"])
     picks = [i for v in by_topic.values() for i in v[:10]]
     picks += [i for i in by_topic["myanmar"][10:] + by_topic["weather"] if "news.google.com" not in i["url"] and i not in picks]
     og_images(picks, limit=90)
-    print("MMSRC", {s: sum(1 for i in by_topic["myanmar"] if i["source"] == s) for s in set(i["source"] for i in by_topic["myanmar"])})
     if not items:
         sys.exit("No headlines fetched")
     found = alerts(rows, now)
