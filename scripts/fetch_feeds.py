@@ -440,6 +440,7 @@ def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
         results = list(pool.map(fetch, jobs))
+    print("JOBS", [(j[0], j[1], len(r[0]), (r[0][0]["published"] if r[0] else "")) for j, r in zip(jobs, results) if j[0] in ("myanmar", "weather")])
     for _, err in results:
         if err:
             print("skipped", err, file=sys.stderr)
