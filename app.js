@@ -433,7 +433,30 @@ function renderPrivacy(){var b=$('privacy-box');if(!b||b.firstChild)return;var h
  ['No accounts','There is no login, and we do not sell personal data.']].forEach(function(r){var d=el('div');d.append(el('h3','sec',r[0]),el('p',null,r[1]));b.append(d)})}
 
 /* Daily edition */
-function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',Date.now()-new Date(i.published)<36e5?'fresh':null),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source));li.append(t,c);ul.append(li)});return ul}
+function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',(Date.now()-new Date(i.published)<36e5?'fresh ':'')+(i.img?'pic':'')),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source));li.append(t,c);if(i.img){var f=el('span','thumb');f.append(newsImg(i.img));li.append(f)}ul.append(li)});return ul}
+/* Rotating photo slides: one large story beside two smaller ones */
+var HERO_T=null,MSUB='all',SUBN=[['all','All','အားလုံး'],['politics','Politics','နိုင်ငံရေး'],['business','Business','စီးပွားရေး'],['weather','Weather and disasters','ရာသီဥတုနှင့် ဘေးအန္တရာယ်'],['sports','Sports','အားကစား'],['general','Other','အခြား']];
+function newsImg(src){var im=el('img');im.alt='';im.loading='lazy';im.decoding='async';im.referrerPolicy='no-referrer';im.onerror=function(){var p=im.parentNode;im.remove();if(p)p.classList.add('noimg')};im.src=src;return im}
+function topicName(i){if(i.topic==='myanmar'&&i.sub&&i.sub!=='general'){var s=SUBN.find(function(x){return x[0]===i.sub});return 'Myanmar · '+s[1]}var t=TOPICS.find(function(x){return x.id===i.topic});return t?t.en:i.topic==='weather'?'Weather':''}
+function storyCard(i,big){var a=el('a','st'+(big?' big':''));a.href=safe(i.url);a.target='_blank';a.rel='noopener';var f=el('div','st-img');f.append(newsImg(i.img));var t=el('div','st-tx'),k=topicName(i);if(k)t.append(el('span','st-k',k));t.append(el(big?'h2':'h3',null,i.title),el('small',null,i.source+' · '+ago(i.published)+(ago(i.published)==='now'?'':' ago')));a.append(f,t);return a}
+function heroPick(rows,order){var pics=rows.filter(function(i){return i.img}),out=[],used={};if(order){var by={};pics.forEach(function(i){(by[i.topic]=by[i.topic]||[]).push(i)});for(var r=0;out.length<9&&r<9;r++)order.forEach(function(t){var x=(by[t]||[])[r];if(x&&out.length<9)out.push(x)})}else out=pics.slice(0,9);return out}
+function carousel(rows){
+  if(HERO_T){clearInterval(HERO_T);HERO_T=null}
+  var n=Math.floor(rows.length/3);if(!n)return null;
+  var wrap=el('section','hero'),vp=el('div','hero-vp'),track=el('div','hero-track'),bar=el('div','hero-bar'),dots=el('div','hero-dots'),cur=0,ds=[];
+  wrap.setAttribute('aria-roledescription','carousel');wrap.setAttribute('aria-label','Top stories with photos');
+  for(var k=0;k<n;k++){var sl=el('div','hero-slide'),side=el('div','hero-side');sl.setAttribute('aria-label','Slide '+(k+1)+' of '+n);side.append(storyCard(rows[k*3+1]),storyCard(rows[k*3+2]));sl.append(storyCard(rows[k*3],true),side);track.append(sl);
+    (function(k){var d=el('button');d.type='button';d.setAttribute('aria-label','Show slide '+(k+1));d.onclick=function(){go(k);stop()};ds.push(d);dots.append(d)})(k)}
+  function go(x){cur=(x+n)%n;track.style.transform='translateX('+(-cur*100)+'%)';ds.forEach(function(d,j){d.setAttribute('aria-current',String(j===cur))});Array.prototype.forEach.call(track.children,function(s,j){s.inert=j!==cur})}
+  function stop(){if(HERO_T){clearInterval(HERO_T);HERO_T=null}}
+  function start(){stop();if(n>1&&!matchMedia('(prefers-reduced-motion: reduce)').matches)HERO_T=setInterval(function(){if(!document.hidden)go(cur+1)},7000)}
+  var pv=el('button','hero-arr','‹'),nx=el('button','hero-arr','›');pv.type=nx.type='button';pv.setAttribute('aria-label','Previous stories');nx.setAttribute('aria-label','Next stories');pv.onclick=function(){go(cur-1);start()};nx.onclick=function(){go(cur+1);start()};
+  if(n>1)bar.append(pv,dots,nx);vp.append(track);wrap.append(vp,bar);
+  wrap.addEventListener('mouseenter',stop);wrap.addEventListener('mouseleave',start);wrap.addEventListener('focusin',stop);
+  var sx=null;vp.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;stop()},{passive:true});vp.addEventListener('touchend',function(e){if(sx==null)return;var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>40)go(cur+(dx<0?1:-1));sx=null;start()});
+  go(0);start();return wrap}
+function mmRows(){if(!LIVE)return [];return LIVE.items.filter(function(i){return i.topic==='myanmar'||(i.topic==='weather'&&i.mm)}).filter(function(i){return MSUB==='all'||i.sub===MSUB})}
+
 var N=$('news'),liveBox=el('section','live');liveBox.id='live';
 function renderEdition(){
   var y=ygn(),p=E.date.split('-').map(Number),age=Math.floor((Date.UTC(y[0],y[1]-1,y[2])-Date.UTC(p[0],p[1]-1,p[2]))/864e5),dl=$('dateline');
@@ -462,10 +485,14 @@ function mergeMarkets(){var m=(MK&&MK.items)||{};return E.markets.map(function(r
 function renderNews(){
   clear(N);var C=$('chips');clear(C);
   [['all','All']].concat(TOPICS.map(function(t){return [t.id,t.en]})).forEach(function(t){var a=el('a',null,t[1]);a.href='#'+t[0];if(t[0]===key)a.setAttribute('aria-current','true');C.append(a)});
-  $('lead').hidden=key!=='all';
-  if(key==='all'){N.append(liveBox);renderLive();
+  $('lead').hidden=key!=='all';if(key!=='all'||!LIVE)$('lead').hidden=key!=='all';
+  if(HERO_T){clearInterval(HERO_T);HERO_T=null}
+  if(key==='all'){var hc=LIVE?carousel(heroPick(LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'}),['myanmar','world','business','politics','sports','tech','stocks'])):null;if(hc){N.append(hc);$('lead').hidden=true}N.append(liveBox);renderLive();
     TOPICS.forEach(function(s){var sec=el('section'),h=el('div','sec-head'),l=el('a',null,s.en);l.href='#'+s.id;var t=el('h2');t.append(l);h.append(t,mm('span',s.mm));var ul=el('ul','hl');s.items.slice(0,3).forEach(function(i){ul.append(hlRow(tt(i),i.sources[0].url,i.sources[0].name))});sec.append(h,ul);N.append(sec)});return}
   var s=E.sections.find(function(x){return x.id===key});if(!s)return;
+  if(key==='myanmar'){var sc=el('div','places msub');SUBN.forEach(function(x){var b=el('button','chip',x[1]);b.type='button';b.setAttribute('aria-pressed',String(MSUB===x[0]));b.onclick=function(){MSUB=x[0];renderNews()};sc.append(b)});N.append(sc)}
+  var tc=LIVE?carousel(heroPick(key==='myanmar'?mmRows():LIVE.items.filter(function(i){return i.topic===key}))):null;if(tc)N.append(tc);
+  if(key==='myanmar'&&MSUB!=='all'){var rr=mmRows(),sx2=el('section','live'),hh=el('div','live-head'),sn=SUBN.find(function(x){return x[0]===MSUB});hh.append(el('h2',null,'Myanmar · '+sn[1]),mm('span',sn[2]));sx2.append(hh,rr.length?feedList(rr.slice(0,30)):el('p','empty','No stories in this section from the last few days.'));N.append(sx2);return}
   var sec=el('section'),h=el('div','sec-head');h.append(el('h2',null,s.en),mm('span',s.mm));sec.append(h);
   if(s.table){var wr=el('div','mkt-wrap');wr.tabIndex=0;var tb=el('table','mkt');tb.innerHTML='<thead><tr><th scope="col">Market</th><th scope="col">Level</th><th scope="col">Change</th><th scope="col">As of</th></tr></thead>';var b=el('tbody');mergeMarkets().forEach(function(r){var q=el('tr');q.append(el('td',null,r.name),el('td',null,r.value),el('td',dir(r.change),pct(r.change)),el('td','w',r.when));b.append(q)});tb.append(b);wr.append(tb);sec.append(wr,el('p','note',E.marketNote))}
   var ul=el('ul','items');s.items.forEach(function(i){var li=el('li','item');li.append(el('h3',null,i.title),el('p',null,i.body),srcs(i.sources));ul.append(li)});sec.append(ul);N.append(sec,liveBox);renderLive();
@@ -480,7 +507,7 @@ function renderLive(){
 }
 var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['enso','El Niño','အယ်လ်နီညို'],['quakes','Earthquakes','ငလျင်'],['safety','Safety','ဘေးကင်းရေး'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['all','News','သတင်း'],['learn','Learn','လေ့လာရန်']];
 (function(){var n=$('nav');NAV.forEach(function(x){var a=el('a');a.href='#'+x[0];a.dataset.key=x[0];a.append(x[1],mm('span',x[2]));n.append(a)})})();
-var VIEWS=['home','weather','enso','quakes','safety','privacy','calendar','reminders','learn'],NEWS=['all','myanmar','world','politics','business','stocks','tech'];
+var VIEWS=['home','weather','enso','quakes','safety','privacy','calendar','reminders','learn'],NEWS=['all','myanmar','world','politics','business','stocks','sports','tech'];
 function route(jump){
   var k=location.hash.slice(1);if(VIEWS.indexOf(k)<0&&NEWS.indexOf(k)<0)k='home';
   var v=NEWS.indexOf(k)>=0?'news':k;view=v;if(v==='news')key=k;
@@ -517,7 +544,7 @@ function renderHome(){
 function checkVersion(){get('data/version.json').then(function(j){var cur=document.documentElement.dataset.v;if(j.v&&cur!=='__V__'&&j.v!==cur&&store('pd-tried')!==j.v){store('pd-tried',j.v);location.reload()}}).catch(function(){})}
 function pullMarkets(){return get('data/markets.json').then(function(j){MK=j;if(view==='news'&&key==='stocks')renderNews()}).catch(function(){})}
 function get(p){return fetch(p+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
-function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderHome();renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
+function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderHome();if(view==='news'&&E)renderNews();else renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
 
 pullQuakes(true);setInterval(pullQuakes,6e4);get('data/hotspots.json').then(function(j){HS=j;if(view==='safety')renderSafety()}).catch(function(){});loadAir();loadRiver();loadDmh();setInterval(loadAir,18e5);setInterval(loadDmh,6e5);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});

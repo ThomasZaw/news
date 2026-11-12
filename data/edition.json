@@ -503,6 +503,12 @@
    "table": true
   },
   {
+   "id": "sports",
+   "en": "Sports",
+   "mm": "အားကစား",
+   "items": []
+  },
+  {
    "id": "tech",
    "en": "Tech & AI",
    "mm": "နည်းပညာ",

@@ -21,7 +21,11 @@ FEEDS = {
                 ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
                 ("GDACS", "https://www.gdacs.org/xml/rss.xml")],
     "myanmar": [("The Irrawaddy", "https://www.irrawaddy.com/feed"), ("Myanmar Now", "https://myanmar-now.org/en/feed/"),
-                ("Mizzima", "https://eng.mizzima.com/feed"), ("Google News", G + "Myanmar+when:2d")],
+                ("Mizzima", "https://eng.mizzima.com/feed"), ("Google News", G + "Myanmar+when:2d"),
+                ("Google News", G + "Myanmar+(economy+OR+business+OR+kyat+OR+trade+OR+investment+OR+fuel+OR+gold+price)+when:3d"),
+                ("Google News", G + "Myanmar+(football+OR+sports+OR+SEA+Games+OR+lethwei+OR+athlete)+when:5d")],
+    "sports": [("BBC Sport", "https://feeds.bbci.co.uk/sport/rss.xml"), ("The Guardian", "https://www.theguardian.com/sport/rss"),
+               ("ESPN", "https://www.espn.com/espn/rss/news")],
     "world": [("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml"), ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
               ("The Guardian", "https://www.theguardian.com/world/rss")],
     "politics": [("NPR", "https://feeds.npr.org/1014/rss.xml"), ("BBC", "https://feeds.bbci.co.uk/news/politics/rss.xml"),
@@ -74,6 +78,7 @@ def parse(raw, source, topic):
             continue
         title = link = date = None
         origin = source
+        img, best = None, -1
         for c in node:
             name = local(c.tag)
             if name == "title":
@@ -84,14 +89,61 @@ def parse(raw, source, topic):
                 date = c.text
             elif name == "source" and c.text:
                 origin = c.text.strip()
+            elif name in ("content", "thumbnail") and c.get("url") and (c.get("medium", "image") == "image" or re.search(r"\.(jpe?g|png|webp)", c.get("url"), re.I)):
+                w = int(c.get("width") or 0)
+                if w > best:
+                    img, best = c.get("url"), w
+            elif name == "enclosure" and (c.get("type") or "").startswith("image") and not img:
+                img = c.get("url")
+            elif name in ("description", "encoded", "summary") and c.text and not img:
+                m = re.search(r"<img[^>]+src=[\"']([^\"']+)", c.text)
+                if m and not re.search(r"feedburner|pixel|1x1|gravatar", m.group(1)):
+                    img = unescape(m.group(1))
         d = when(date)
         if not (title and link and d) or not link.strip().startswith(("https://", "http://")):
             continue
         title = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", unescape(title))).strip()
         if source == "Google News":
             title = re.sub(r"\s+-\s+[^-]{2,60}$", "", title)
-        out.append({"title": title, "url": link.strip(), "source": origin, "topic": topic, "published": d.astimezone(timezone.utc).isoformat(timespec="seconds")})
+        row = {"title": title, "url": link.strip(), "source": origin, "topic": topic, "published": d.astimezone(timezone.utc).isoformat(timespec="seconds")}
+        if img and img.startswith("https://"):
+            row["img"] = re.sub(r"/ace/standard/\d+/", "/ace/standard/800/", img)
+        out.append(row)
     return out
+
+
+SUBS = [("weather", r"flood|flooding|landslide|storm|cyclone|heavy rain|monsoon|drought|heat|earthquake|tremor|fire breaks|blaze|lightning|ရေကြီး|မိုး|မုန်တိုင်း|ငလျင်|မီးလောင်"),
+        ("sports", r"football|soccer|sea games|asian games|olympic|lethwei|chinlone|boxing|athlete|\bcup\b|league|tournament|medal|coach|striker|match"),
+        ("business", r"econom|business|trade|kyat|invest|market|price|bank|fuel|gold|export|import|company|tariff|inflation|rice|tourism|factory|garment|jobs|workers|wage|currency|dollar"),
+        ("politics", r"election|vote|junta|military|regime|government|parliament|party|minister|asean|talks|ceasefire|coup|sanction|resistance|nug|court|law|president|general|army|airstrike|attack|fighting|rebels|troops|un |united nations|diplomat|envoy")]
+
+
+def sub_of(title):
+    for name, pat in SUBS:
+        if re.search(pat, title, re.I):
+            return name
+    return "general"
+
+
+def og_images(items, limit=60):
+    """Find the main photo for articles whose feed gave none. Google News links are skipped because they are redirects."""
+    todo = [i for i in items if "img" not in i and "news.google.com" not in i["url"] and i["source"] not in ("USGS", "GDACS")][:limit]
+
+    def one(i):
+        try:
+            req = urllib.request.Request(i["url"], headers={"User-Agent": "Mozilla/5.0 (compatible; ParabaikDaily/1.0)"})
+            with urllib.request.urlopen(req, timeout=12) as r:
+                html = r.read(300000).decode("utf-8", "replace")
+            m = re.search(r'<meta[^>]+(?:property|name)=["\'](?:og:image|twitter:image)["\'][^>]+content=["\']([^"\']+)', html, re.I) or re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\'](?:og:image|twitter:image)', html, re.I)
+            if m and unescape(m.group(1)).startswith("https://"):
+                i["img"] = unescape(m.group(1))
+        except Exception:
+            pass
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(12) as ex:
+        list(ex.map(one, todo))
+    print(sum(1 for i in items if "img" in i), "of", len(items), "headlines have photos")
 
 
 def fetch(job):
@@ -403,6 +455,10 @@ def main(path="data/live.json"):
         seen.add(key)
         by_topic[i["topic"]].append(i)
     items = sorted((i for v in by_topic.values() for i in v), key=lambda i: i["published"], reverse=True)
+    for i in items:
+        if i["topic"] == "myanmar" or (i["topic"] == "weather" and i.get("mm")):
+            i["sub"] = "weather" if i["topic"] == "weather" else sub_of(i["title"])
+    og_images([i for v in by_topic.values() for i in v[:10]])
     if not items:
         sys.exit("No headlines fetched")
     found = alerts(rows, now)
