@@ -838,6 +838,12 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
+    for u in ("https://parabaikdaily.com/health", "https://parabaikdaily.com/"):
+        try:
+            t = get(u)
+            print("PROBE", u, t[:200] if "health" in u else ("cloudflareinsights" in t, "beacon" in t))
+        except Exception as e:
+            print("PROBE FAIL", u, e)
     markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")

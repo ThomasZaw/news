@@ -306,7 +306,7 @@ export default {
         const b = await request.json().catch(() => null);
         if (!env.ADMIN_KEY || !b || b.key !== env.ADMIN_KEY) return new Response("Wrong key", { status: 403, headers: cors });
         const v = {};
-        for (const f of ["gold_ygea", "gold_15", "usd_market", "octane92", "octane95", "diesel", "premium_diesel"]) if (b.prices && b.prices[f] !== "" && b.prices[f] != null && isFinite(+b.prices[f])) v[f] = +b.prices[f];
+        for (const f of ["gold_ygea", "gold_15", "usd_market", "octane92", "octane95", "octane97", "diesel", "premium_diesel"]) if (b.prices && b.prices[f] !== "" && b.prices[f] != null && isFinite(+b.prices[f])) v[f] = +b.prices[f];
         v.note = String((b.prices && b.prices.note) || "").slice(0, 200);
         v.updated = new Date().toISOString();
         await env.SEEN.put("prices", JSON.stringify(v));
@@ -323,7 +323,7 @@ export default {
       const d = await getQuakes(days);
       return new Response(JSON.stringify({ updated: new Date().toISOString(), sources: d.sources, features: d.quakes.map((q) => ({ id: q.id, properties: { mag: q.mag, place: q.place, time: q.time, url: q.url, src: q.src, srcs: q.srcs }, geometry: { coordinates: [q.lon, q.lat, q.depth] } })) }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "max-age=30" } });
     }
-    if (path === "/health") return new Response("Parabaik alert checker is running", { headers: cors });
+    if (path === "/health") return new Response(JSON.stringify({ running: true, owner_key_set: !!env.ADMIN_KEY, github_token_set: !!env.GH_TOKEN, notifications_key_set: !!env.VAPID_PRIVATE }), { headers: { ...cors, "Content-Type": "application/json" } });
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405, headers: cors });
     return fetch(ORIGIN + path + url.search, { method: request.method, headers: { "User-Agent": "ParabaikDaily/1.0" } });
   },
