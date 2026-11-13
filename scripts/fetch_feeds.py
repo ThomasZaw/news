@@ -797,6 +797,17 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
+    for name, u in [("cbm", "https://forex.cbm.gov.mm/api/latest"), ("bbcmy", "https://feeds.bbci.co.uk/burmese/rss.xml"), ("voamy", "https://burmese.voanews.com/api/zmgqoe$moq"),
+                    ("dvbmy", "https://burmese.dvb.no/feed"), ("mnowmy", "https://myanmar-now.org/mm/feed/"), ("irrmy", "https://burma.irrawaddy.com/feed"),
+                    ("khitthit", "https://yktnews.com/feed/"), ("elevenmy", "https://news-eleven.com/rss"), ("mizzimamy", "https://bur.mizzima.com/feed"),
+                    ("gnmm", "https://news.google.com/rss/search?hl=my&gl=MM&ceid=MM:my&q=%E1%80%99%E1%80%BC%E1%80%94%E1%80%BA%E1%80%99%E1%80%AC"),
+                    ("gnen", G + "Myanmar+gold+price+OR+fuel+price+OR+kyat+dollar+when:7d"), ("goldpricez", "https://goldpricez.com/mm"),
+                    ("cbmhtml", "https://forex.cbm.gov.mm/index.php/fxrate")]:
+        try:
+            t = get(u)
+            print("PROBE", name, len(t), re.sub(r"\s+", " ", t[:300]) if name in ("cbm", "goldpricez", "cbmhtml") else len(re.findall(r"<item", t)), re.findall(r"<title>([^<]{0,90})", t)[1:3])
+        except Exception as e:
+            print("PROBE FAIL", name, e)
     markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")
