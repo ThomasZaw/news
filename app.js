@@ -342,7 +342,8 @@ function enablePush(){
 function syncReminder(r){if(!store('pd-push'))return;var at=Date.parse(r.date+'T'+(r.time||'08:00')+':00+06:30');if(!(at>Date.now()))return;pushSub().then(function(s){return post('/reminder',{sub:s,id:r.id,at:at,text:r.text})}).catch(function(){})}
 function testPush(){return pushSub().then(function(s){return post('/test',s)})}
 var QM=null,QL=null,EOX='s2cloudless-2024_3857';
-function baseMap(m,fitMM){m.options.zoomSnap=.25;m.options.zoomDelta=.5;if(fitMM){var done=false;function fit(){if(done||!m.getSize().x)return;done=true;m.fitBounds([[9.6,92.2],[28.6,101.2]],{padding:[8,8]})}m.on('resize',fit);setTimeout(fit,60)}
+function wxPane(m){if(!m.getPane('wx')){var p=m.createPane('wx');p.style.zIndex=450;p.classList.add('wx-pane');p.style.pointerEvents='none'}return 'wx'}
+function baseMap(m,fitMM){m.options.zoomSnap=.25;m.options.zoomDelta=.5;if(fitMM){var done=false;function fit(){var s=m.getSize();if(done||s.x<50||s.y<50)return;done=true;m.fitBounds([[9.6,92.2],[28.6,101.2]],{padding:[8,8]})}m.on('resize',fit);[60,300,1000].forEach(function(t){setTimeout(function(){m.invalidateSize();fit()},t)})}
   var G='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/';L.imageOverlay('lib/myanmar.jpg',[[4,86],[32,108]]).addTo(m);L.tileLayer('https://tiles.maps.eox.at/wmts/1.0.0/'+EOX+'/default/g/{z}/{y}/{x}.jpg',{maxNativeZoom:14,maxZoom:15,attribution:'Sentinel-2 cloudless by EOX · NASA'}).addTo(m);L.tileLayer(G+'Reference_Labels_15m/default//GoogleMapsCompatible_Level13/{z}/{y}/{x}.png',{maxNativeZoom:13,maxZoom:15,opacity:.9}).addTo(m);L.geoJSON({type:'Feature',geometry:MM_GEO},{style:{color:'#FFD24A',weight:1.6,fill:false},interactive:false}).addTo(m)}
 function qMap(box,top){
   if(!window.L)return;
@@ -398,10 +399,10 @@ function loadObs(){var u=location.hostname==='parabaikdaily.com'?'/obs':PUSH_API
 /* Weather station map with NASA GPM satellite rain */
 var STM=null;
 function gpmWhen(){var d=new Date(new Date(GPM.time).getTime()+234e5);return d.getUTCDate()+' '+MON[d.getUTCMonth()].slice(0,3)+', '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')}
-function gpmLayer(){return L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'IMERG_Precipitation_Rate_30min',format:'image/png',transparent:true,version:'1.3.0',opacity:.75,time:GPM.time,attribution:'Rain: NASA GPM IMERG'})}
+function gpmLayer(m){return L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'IMERG_Precipitation_Rate_30min',format:'image/png',transparent:true,version:'1.3.0',opacity:.85,time:GPM.time,pane:wxPane(m),attribution:'Rain: NASA GPM IMERG'})}
 function stnMap(box){if(!window.L||!STN)return;
   if(STM){STM.remove();STM=null}var e=el('div','qmap');box.append(e);STM=L.map(e,{minZoom:4,maxZoom:10,scrollWheelZoom:false}).setView([20,96.5],5);baseMap(STM,true);
-  var over={};if(GPM){var gl=gpmLayer().addTo(STM);over['NASA satellite rain ('+gpmWhen()+')']=gl}
+  var over={};if(GPM){var gl=gpmLayer(STM).addTo(STM);over['NASA satellite rain ('+gpmWhen()+')']=gl}
   STN.stations.forEach(function(s){var mins=Math.round((Date.now()-new Date(s.time))/6e4),old=mins>360,cls=s.storm?'storm':/Rain|Showers|Drizzle/.test(s.cond||'')?'wet':'dry';
     var ic=L.divIcon({className:'',html:'<span class="stn-pin '+cls+(old?' old':'')+'">'+(s.temp!=null?Math.round(s.temp)+'°':'–')+'</span>',iconSize:null});
     var rows=['<b>'+s.name+'</b>','<span class="pp-t">'+mmTime(new Date(s.time).getTime())+' Myanmar time ('+agoMin(mins)+')</span>'];
@@ -419,9 +420,9 @@ function dmhActive(){return DMH?DMH.items.filter(function(x){return x.active}):[
 function stormMap(box){
   if(!window.L)return;
   if(!SM){var e=el('div','qmap');box.append(e);var cc=curCity();SM=L.map(e,{minZoom:4,maxZoom:8,scrollWheelZoom:false}).setView([cc[1],cc[2]],6);baseMap(SM);
-    L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'Himawari_AHI_Band13_Clean_Infrared',format:'image/png',transparent:true,version:'1.3.0',opacity:.55,attribution:'Himawari satellite via NASA'}).addTo(SM);
-    if(GPM)L.control.layers(null,{'NASA satellite rain':gpmLayer()},{collapsed:false,position:'bottomleft'}).addTo(SM);
-    fetch('https://api.rainviewer.com/public/weather-maps.json').then(function(r){return r.json()}).then(function(j){var p=j.radar.past[j.radar.past.length-1];L.tileLayer(j.host+p.path+'/256/{z}/{x}/{y}/2/1_1.png',{maxNativeZoom:7,maxZoom:8,opacity:.75,attribution:'Radar by RainViewer'}).addTo(SM)}).catch(function(){})
+    L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'Himawari_AHI_Band13_Clean_Infrared',format:'image/png',transparent:true,version:'1.3.0',opacity:.55,pane:wxPane(SM),attribution:'Himawari satellite via NASA'}).addTo(SM);
+    if(GPM)L.control.layers(null,{'NASA satellite rain':gpmLayer(SM)},{collapsed:false,position:'bottomleft'}).addTo(SM);
+    fetch('https://api.rainviewer.com/public/weather-maps.json').then(function(r){return r.json()}).then(function(j){var p=j.radar.past[j.radar.past.length-1];L.tileLayer(j.host+p.path+'/256/{z}/{x}/{y}/2/1_1.png',{maxNativeZoom:7,maxZoom:8,opacity:.75,pane:wxPane(SM),attribution:'Radar by RainViewer'}).addTo(SM)}).catch(function(){})
   }else box.append(SM.getContainer());
   setTimeout(function(){SM.invalidateSize()},0);
 }
@@ -626,3 +627,7 @@ addEventListener('load',function(){scrollTo(0,0)});
   document.getElementById('give-x').onclick=close;document.addEventListener('click',function(e){if(!P.hidden&&!P.contains(e.target))close()});document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});addEventListener('resize',close);
 })();
 (function(){var b=document.getElementById('kpay-copy');if(!b)return;b.onclick=function(){var n='09944939666';(navigator.clipboard?navigator.clipboard.writeText(n):Promise.reject()).then(function(){b.textContent='Copied'},function(){b.textContent='Number: '+n});setTimeout(function(){b.textContent='Copy'},2500)}})();
+
+(function(){function dark(){var t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
+  function sync(){var d=dark();Array.prototype.forEach.call(document.querySelectorAll('.theme-btn'),function(b){b.setAttribute('aria-label',d?'Light mode':'Dark mode');b.title=d?'Light mode':'Dark mode'});var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=d?'#14100E':'#F3EADB'}
+  Array.prototype.forEach.call(document.querySelectorAll('.theme-btn'),function(b){b.onclick=function(){var t=dark()?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('pd-theme',JSON.stringify(t))}catch(e){}sync()}});sync()})();
