@@ -7,6 +7,7 @@ PAGES = [
     ("el-nino", "enso", "El Niño tracker for Myanmar", "Live El Niño reading from NOAA and what it means for heat, drought and fire risk in Myanmar."),
     ("safety", "safety", "Myanmar fire hotspots and emergency numbers", "NASA fire hotspot map for Myanmar, air quality, river levels and emergency numbers."),
     ("calendar", "calendar", "Myanmar calendar with full moon days and holidays", "Burmese calendar with Myanmar dates, full moon and new moon days, and public holidays. မြန်မာ ပြက္ခဒိန်။"),
+    ("prices", "prices", "Myanmar gold price, dollar rate and fuel prices today", "Gold price per kyattha, the US dollar rate and fuel prices in Myanmar, with official Central Bank rates. ရွှေဈေး၊ ဒေါ်လာဈေးနှင့် ဆီဈေး။"),
     ("news", "all", "Myanmar news today and world headlines", "Latest Myanmar news and world, business, stock and tech headlines, updated every 15 minutes. မြန်မာ သတင်း နောက်ဆုံးရ။"),
 ]
 

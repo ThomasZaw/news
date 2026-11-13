@@ -50,6 +50,7 @@ get('data/holidays.json').then(function(j){HOL=j;if(view==='calendar')renderDay(
 function renderDateline(){
   var dl=$('dateline'),w=wd(TODAY),m=md(TODAY);clear(dl);
   dl.append(mm('span',tr(WDN[w])+'နေ့'),el('span',null,WDN[w]+', '+TODAY[2]+' '+MON[TODAY[1]-1]+' '+TODAY[0]));
+  if(window.speechSynthesis){var lb=el('button','btn listen','Listen');lb.type='button';lb.setAttribute('aria-label','Read the weather and top news aloud');lb.onclick=function(){readAloud(lb)};dl.append(lb)}
 }
 function renderDay(){
   var b=$('daybox'),m=md(TODAY),w=wd(TODAY),h=el('h2',null,'Burmese calendar');h.append(' ',mm('span','ပြက္ခဒိန်'));clear(b);
@@ -472,8 +473,12 @@ function hotPopup(p){var n=CITIES.map(function(c){return [km(p[0],p[1],c[1],c[2]
 function renderPrivacy(){var b=$('privacy-box');if(!b||b.firstChild)return;var h=el('h2',null,'Privacy');b.append(h);[
  ['Your location','It stays on your device and is only used to measure earthquake distance.'],
  ['Reminders','They are saved on your device. If notifications are on, the reminder text and your notification address are also stored on Cloudflare until the reminder is sent or removed.'],
- ['Notifications','Cloudflare stores your device notification address so alerts can reach you. Turn notifications off in your device settings to stop them.'],
- ['Services used','GitHub, Cloudflare, Open-Meteo, USGS, NASA, NOAA and news publishers. Fonts load from Google Fonts. Each service may see basic connection details.'],
+ ['Notifications','Cloudflare stores your device notification address and the alert types and cities you chose, so alerts can reach you. Turn notifications off in your device settings to stop them.'],
+ ['Settings on your device','Your city, language, text size, light or dark mode, alert choices and reminders are saved in your browser on this device.'],
+ ['Read aloud','Listen uses your device\'s own voice. The text is not sent to us.'],
+ ['Visitor counts','We may count visits with Cloudflare Web Analytics, which uses no cookies and does not identify you.'],
+ ['News photos','Story photos load directly from each news outlet\'s website, so that outlet can see your connection.'],
+ ['Services used','GitHub, Cloudflare, Open-Meteo, USGS, EMSC, GEOFON, NASA, NOAA, Ogimet, the Central Bank of Myanmar, Yahoo Finance and news publishers. Fonts load from Google Fonts. Each service may see basic connection details.'],
  ['No accounts','There is no login, and we do not sell personal data.']].forEach(function(r){var d=el('div');d.append(el('h3','sec',r[0]),el('p',null,r[1]));b.append(d)})}
 
 /* Daily edition */
@@ -536,7 +541,7 @@ function renderNews(){
   if(HERO_T){clearInterval(HERO_T);HERO_T=null}
   $('lead').hidden=true;
   if(key==='all'){
-    var hc=LIVE?carousel(heroPick(LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'}),['myanmar','world','business','politics','sports','tech','stocks'])):null;
+    var hc=LIVE?carousel(heroPick(LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'}),(window.PD_LANG==='mm'?['burmese','myanmar','world','business','politics','sports','tech','stocks']:['myanmar','world','business','politics','sports','tech','stocks']))):null;
     if(hc)N.append(hc);else $('lead').hidden=false;
     N.append(liveBox);renderLive();
     TOPICS.forEach(function(s){var rows=topicRows(s.id).slice(0,4),sec=el('section','topic');sec.append(secHead(s.en,s.mm,'#'+s.id));
@@ -562,16 +567,16 @@ function renderLive(){
   if(!rows.length){liveBox.append(el('p','empty','No headlines from the last two days in this topic.'));return}
   liveBox.append(feedList(rows));
 }
-var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['all','News','သတင်း'],['quakes','Earthquakes','ငလျင်'],['safety','Safety','ဘေးကင်းရေး'],['enso','El Niño','အယ်လ်နီညို'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['learn','Learn','လေ့လာရန်']];
+var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['all','News','သတင်း'],['prices','Prices','ဈေးနှုန်း'],['quakes','Earthquakes','ငလျင်'],['safety','Safety','ဘေးကင်းရေး'],['enso','El Niño','အယ်လ်နီညို'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['learn','Learn','လေ့လာရန်']];
 (function(){var n=$('nav');NAV.forEach(function(x){var a=el('a');a.href='#'+x[0];a.dataset.key=x[0];a.append(x[1],mm('span',x[2]));n.append(a)})})();
-var VIEWS=['home','weather','enso','quakes','safety','privacy','calendar','reminders','learn'],NEWS=['all','myanmar','world','politics','business','stocks','sports','tech'];
+var VIEWS=['home','weather','enso','quakes','safety','privacy','calendar','reminders','learn','prices','admin'],NEWS=['all','myanmar','burmese','world','politics','business','stocks','sports','tech'];
 function route(jump){
   var k=location.hash.slice(1);if(VIEWS.indexOf(k)<0&&NEWS.indexOf(k)<0)k='home';
   var v=NEWS.indexOf(k)>=0?'news':k;view=v;if(v==='news')key=k;
   VIEWS.concat('news').forEach(function(x){$('v-'+x).hidden=x!==v});$('band').hidden=v!=='home';
   Array.prototype.forEach.call($('nav').querySelectorAll('a'),function(a){var on=a.dataset.key===(v==='news'?'all':k);if(on){a.setAttribute('aria-current','page');var nv=$('nav');if(nv.scrollWidth>nv.clientWidth)nv.scrollLeft=a.offsetLeft-40}else a.removeAttribute('aria-current')});
   if(E&&v==='news')renderNews();
-  if(v==='home')renderHome();if(v==='privacy')renderPrivacy();
+  if(v==='home')renderHome();if(v==='privacy')renderPrivacy();if(v==='prices')renderPrices();if(v==='admin')renderAdmin();if(v==='reminders')renderAlertPrefs();
   redraw();
   if(jump===true)scrollTo(0,0);
 }
@@ -581,7 +586,7 @@ function homeNews(){
   var c=el('section','card w12 hnews'),hd=el('div','hn-head'),t=el('h2',null,'Top news');t.append(mm('span','သတင်း'));var all=el('a','more','All news');all.href='#all';hd.append(t,all);c.append(hd);
   var rows=LIVE?LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'}):[];
   if(!rows.length){if(E){var ul=el('ul','hl'),L0=E.lead.sources[0];ul.append(hlRow(E.lead.title,L0.url,L0.name));['myanmar','world','tech'].forEach(function(id){var s=E.sections.find(function(x){return x.id===id}),i0=s&&s.items[0];if(i0)ul.append(hlRow(i0.title,i0.sources[0].url,s.en+' · '+i0.sources[0].name))});c.append(ul)}else c.append(el('p','line muted','News is loading.'));return c}
-  var pick=heroPick(rows,['myanmar','world','business','politics','sports','tech','stocks']),lead=pick[0],used={};used[lead.url]=1;
+  var pick=heroPick(rows,(window.PD_LANG==='mm'?['burmese','myanmar','world','business','politics','sports','tech','stocks']:['myanmar','world','business','politics','sports','tech','stocks'])),lead=pick[0],used={};used[lead.url]=1;
   var body=el('div','hn-body'),side=el('ul','feed hn-list');
   rows.filter(function(i){return !used[i.url]}).sort(function(x,y){return (Math.min(y.n||1,3)-Math.min(x.n||1,3))||(y.published>x.published?1:-1)}).slice(0,4).forEach(function(i){used[i.url]=1;side.append(feedList([i]).firstChild)});
   body.append(storyCard(lead,true),side);c.append(body);
@@ -605,6 +610,7 @@ function renderHome(){
   var m=md(TODAY),d=card('','#calendar','Burmese date','ပြက္ခဒိန်');d.append(mm('div',mmLine(m)),el('p','line muted','ME '+m.my+' · '+m.ToMString('&M &P &ff')));var tdi=dayInfo(TODAY),nh=nextHoliday();if(tdi.pub.length)d.append(el('p','line hol-line','Today: '+tdi.pub.join(', ')));else if(nh)d.append(el('p','line muted','Next holiday: '+nh.name+', '+nh.dt[2]+' '+MON[nh.dt[1]-1].slice(0,3)));g.append(d);
   var ns=loadNotes().sort(function(x,y){return (x.date+x.time).localeCompare(y.date+y.time)}),dc=ns.filter(due).length,rc=card('','#reminders','Reminders','မှတ်စု');
   rc.append(el('div','big',dc?dc+' due':ns.length?String(ns.length):'None'),el('p','line muted',ns.length?ns[0].text:'Tap to add one'));g.append(rc);
+  var pc=card('w12 prices-strip','#prices','Prices','ဈေးနှုန်း'),P=PRICES||{},L0=LOCALP||{},ps=el('div','h-status');[['Gold, 1 kyattha',L0.gold_ygea!=null?ks(L0.gold_ygea):P.gold_kyattha?ks(P.gold_kyattha):'–',L0.gold_ygea!=null?'Yangon market':'World price'],['US dollar',L0.usd_market!=null?ks(L0.usd_market):P.cbm&&P.cbm[0]?ks(P.cbm[0][1]):'–',L0.usd_market!=null?'Market rate':'Official rate'],['Octane 92, 1 litre',L0.octane92!=null?ks(L0.octane92):'–','Yangon'],['Diesel, 1 litre',L0.diesel!=null?ks(L0.diesel):'–','Yangon'],['Brent oil',P.brent?'$'+P.brent:'–','World price']].forEach(function(x){var d=el('div','h-st'),v=el('span');v.textContent=x[1];v.style.setProperty('--st','var(--chalk)');d.append(el('b',null,x[0]),v,el('small',null,x[2]));ps.append(d)});pc.append(ps);g.append(pc);
 }
 function checkVersion(){get('data/version.json').then(function(j){var cur=document.documentElement.dataset.v;if(j.v&&cur!=='__V__'&&j.v!==cur&&store('pd-tried')!==j.v){store('pd-tried',j.v);location.reload()}}).catch(function(){})}
 function pullMarkets(){return get('data/markets.json').then(function(j){MK=j;if(view==='news'&&key==='stocks')renderNews()}).catch(function(){})}
@@ -619,6 +625,60 @@ renderDateline();renderDay();renderNotes();route();loadWx();
 setInterval(loadWx,3e5);loadObs();setInterval(loadObs,3e5);setInterval(drawNotes,3e4);
 get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();pullMarkets();checkVersion();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);setInterval(pullMarkets,3e5);setInterval(checkVersion,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){loadObs();loadDmh();checkVersion();pullMarkets();pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
 addEventListener('load',function(){scrollTo(0,0)});
+/* Phone alert settings: choose which alerts and which cities */
+function prefCities(){return ['Yangon','Naypyitaw','Mandalay','Bago','Mawlamyine','Hpa-An','Pathein','Taunggyi','Sittwe','Myitkyina','Monywa','Magway','Dawei','Myeik','Kawthaung','Loikaw','Hakha','Lashio']}
+var PREF_CITIES_OLD=['Yangon','Naypyitaw','Mandalay','Bago','Mawlamyine','Hpa-An','Pathein','Taunggyi','Sittwe','Myitkyina','Monywa','Magway','Dawei','Myeik','Kawthaung','Loikaw','Hakha','Lashio'];
+function getPrefs(){return store('pd-prefs')||{quakes:true,weather:true,official:true,news:true,cities:[]}}
+function loadPricesSafe(){if(typeof loadPrices==='function')loadPrices()}
+function savePrefs(p,admin){store('pd-prefs',p);return pushSub().then(function(s){return fetch(PUSH_API+'/prefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sub:s,prefs:p,admin:admin})})}).then(function(r){if(!r.ok)throw new Error('Could not save. Try again later.');return r.json()})}
+function renderAlertPrefs(){var box=$('alert-prefs');if(!box)return;clear(box);var p=getPrefs();
+  var h=el('h3','sec','Phone alerts');box.append(h);
+  var on=!!store('pd-push');box.append(el('p','small-note',on?'Choose which alerts this device receives.':'Turn on notifications first, then choose which alerts you want.'));
+  var f=el('form','prefs');[['quakes','Earthquakes in or near Myanmar','ငလျင်'],['weather','Weather and storm warnings','ရာသီဥတု'],['official','Official warnings from the weather department','တရားဝင်သတိပေးချက်'],['news','Breaking news','သတင်းထူး']].forEach(function(x){var l=el('label','pref'),c=el('input');c.type='checkbox';c.name=x[0];c.checked=p[x[0]]!==false;l.append(c,el('span',null,x[1]),mm('span',x[2]));f.append(l)});
+  var ct=el('fieldset','pref-cities'),lg=el('legend',null,'Weather alerts for these cities only');ct.append(lg,el('p','small-note','Leave all unticked to get weather alerts for every city.'));var cw=el('div','places');
+  prefCities().forEach(function(n){var l=el('label','chip pc'),c=el('input');c.type='checkbox';c.value=n;c.checked=(p.cities||[]).indexOf(n)>=0;l.append(c,cn(n));cw.append(l)});ct.append(cw);f.append(ct);
+  var row=el('div','prefs-row'),sv=el('button','btn','Save alert settings'),msg=el('span','small-note');sv.type='submit';if(!on){var en=el('button','btn','Turn on notifications');en.type='button';en.onclick=function(){en.disabled=true;enablePush().then(function(){renderAlertPrefs()}).catch(function(e){msg.textContent=e.message;en.disabled=false})};row.append(en)}row.append(sv,msg);f.append(row);
+  f.onsubmit=function(e){e.preventDefault();var np={cities:[]};['quakes','weather','official','news'].forEach(function(k){np[k]=f.elements[k].checked});Array.prototype.forEach.call(cw.querySelectorAll('input:checked'),function(c){np.cities.push(c.value)});
+    if(!store('pd-push')){store('pd-prefs',np);msg.textContent='Saved on this device. Turn on notifications to start receiving them.';return}
+    sv.disabled=true;msg.textContent='Saving';savePrefs(np).then(function(){msg.textContent='Saved.'}).catch(function(x){msg.textContent=x.message}).then(function(){sv.disabled=false})};
+  box.append(f)}
+
+/* Read aloud: weather and top headlines */
+function speakText(){var w=WX&&WX.current,parts=[];if(w){var k=code(w.weather_code,w.is_day);parts.push('Weather in '+cn(city)+'. '+Math.round(w.temperature_2m)+' degrees, '+k[1].toLowerCase()+'.');wxAlerts().filter(function(x){return x.l>0}).forEach(function(x){parts.push(x.en+': '+x.word+'.')})}
+  var rows=LIVE?LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'}):[];var top=heroPick(rows,(window.PD_LANG==='mm'?['burmese','myanmar','world','business','politics','sports','tech','stocks']:['myanmar','world','business','politics','sports','tech','stocks'])).slice(0,5);if(top.length){parts.push('Top news.');top.forEach(function(i){parts.push(i.title+'.')})}
+  return parts.join(' ')}
+function readAloud(btn){var S=window.speechSynthesis;if(!S){btn.textContent='Not supported here';return}if(S.speaking){S.cancel();btn.textContent='Listen';return}
+  var u=new SpeechSynthesisUtterance(speakText()),vs=S.getVoices(),mmv=vs.find(function(v){return /^my/i.test(v.lang)});if(window.PD_LANG==='mm'&&mmv)u.voice=mmv;else{var en=vs.find(function(v){return /^en(-|_)(GB|AU|US)/i.test(v.lang)});if(en)u.voice=en}u.rate=.92;u.onend=u.onerror=function(){btn.textContent='Listen'};btn.textContent='Stop';S.speak(u)}
+
+/* Prices: gold, dollar and fuel */
+var PRICES=null,LOCALP=null;
+function loadPrices(){return Promise.all([get('data/prices.json').then(function(j){PRICES=j}).catch(function(){}),fetch((location.hostname==='parabaikdaily.com'?'':PUSH_API)+'/prices').then(function(r){return r.ok?r.json():null}).then(function(j){LOCALP=j&&j.updated&&Date.now()-new Date(j.updated)<4*864e5?j:null}).catch(function(){})]).then(function(){if(view==='prices')renderPrices();if(view==='home')renderHome()})}
+function ks(n){return n==null?'–':Math.round(n).toLocaleString('en-US')+' Ks'}
+function priceRow(label,val,sub){var r=el('div','pr-row');r.append(el('b',null,label),el('strong',null,val));if(sub)r.append(el('small',null,sub));return r}
+function renderPrices(){var b=$('prices-box');if(!b)return;clear(b);var h=el('h2','q-title','Prices');h.append(mm('span','ဈေးနှုန်း'));b.append(h);
+  b.append(el('p','small-note','Market prices in Myanmar change during the day and differ between shops and towns. Official and world prices are shown for comparison.'));
+  var g=el('div','pr-grid'),P=PRICES||{},L0=LOCALP||{};
+  function card(t,m,rows,note){var c=el('section','pr-card'),hd=el('h3','sec',t);hd.append(mm('span',m));c.append(hd);rows.forEach(function(r){if(r)c.append(r)});if(note)c.append(el('p','small-note',note));return c}
+  var when=LOCALP?'Market price entered '+ago(LOCALP.updated)+' ago':null;
+  g.append(card('Gold','ရွှေ',[L0.gold_ygea!=null?priceRow('Yangon market, 1 kyattha',ks(L0.gold_ygea),when):null,L0.gold_15!=null?priceRow('15-pe gold, 1 kyattha',ks(L0.gold_15),when):null,P.gold_kyattha?priceRow('World gold price, 1 kyattha',ks(P.gold_kyattha),'Pure gold at $'+P.gold_usd_oz.toLocaleString('en-US')+' an ounce, converted at the official rate'):null,P.gold_usd_oz?priceRow('World gold, 1 ounce','$'+P.gold_usd_oz.toLocaleString('en-US'),P.gold_when||''):null],LOCALP?null:'The Yangon shop price is usually much higher than the world price converted at the official rate.'));
+  g.append(card('Dollar','ငွေလဲနှုန်း',[L0.usd_market!=null?priceRow('US dollar, market rate',ks(L0.usd_market),when):null].concat((P.cbm||[]).map(function(x){return priceRow(x[0]+', official rate',ks(x[1]),'Central Bank of Myanmar'+(P.cbm_date?', '+P.cbm_date:''))})),'The official rate is set by the Central Bank. The market rate people actually pay is often higher.'));
+  g.append(card('Fuel','လောင်စာဆီ',[L0.octane92!=null?priceRow('Octane 92, 1 litre',ks(L0.octane92),when):null,L0.octane95!=null?priceRow('Octane 95, 1 litre',ks(L0.octane95),when):null,L0.diesel!=null?priceRow('Diesel, 1 litre',ks(L0.diesel),when):null,L0.premium_diesel!=null?priceRow('Premium diesel, 1 litre',ks(L0.premium_diesel),when):null,P.brent?priceRow('Brent crude oil, 1 barrel','$'+P.brent,P.brent_when||''):null],LOCALP?'Yangon pump prices.':'Yangon pump prices will appear here when they are entered. World oil prices drive local fuel prices.'));
+  b.append(g);if(LOCALP&&LOCALP.note)b.append(el('p','small-note',LOCALP.note));
+  var news=(LIVE?LIVE.items:[]).filter(function(i){return /gold|ရွှေ|kyat|dollar|ဒေါ်လာ|fuel|petrol|diesel|octane|ဆီဈေး|ငွေလဲ|exchange rate|price/i.test(i.title)&&(i.topic==='myanmar'||i.topic==='burmese'||/myanmar|burma|yangon|kyat|[က-႟]/i.test(i.title))}).slice(0,10);
+  var ns=el('section','topic');ns.append(secHead('Price news','ဈေးနှုန်းသတင်း'));ns.append(news.length?feedList(news):el('p','empty','No price stories in the last few days.'));b.append(ns);
+  if(P.cbm_date)b.append(el('p','small-note','Official rates from the Central Bank of Myanmar. World gold and oil prices from Yahoo Finance.'))}
+
+/* Owner page: enter market prices and receive system alerts */
+function renderAdmin(){var b=$('admin-box');if(!b)return;clear(b);var h=el('h2','q-title','Owner tools');b.append(h);
+  var f=el('form','prices-form');f.innerHTML='<label>Owner key<input name="key" type="password" autocomplete="current-password" required></label><fieldset><legend>Today\'s market prices in Kyat</legend><label>Gold, Yangon market, 1 kyattha<input name="gold_ygea" inputmode="numeric"></label><label>15-pe gold, 1 kyattha<input name="gold_15" inputmode="numeric"></label><label>US dollar, market rate<input name="usd_market" inputmode="numeric"></label><label>Octane 92, 1 litre<input name="octane92" inputmode="numeric"></label><label>Octane 95, 1 litre<input name="octane95" inputmode="numeric"></label><label>Diesel, 1 litre<input name="diesel" inputmode="numeric"></label><label>Premium diesel, 1 litre<input name="premium_diesel" inputmode="numeric"></label><label>Note, such as the source<input name="note" maxlength="200"></label></fieldset>';
+  if(LOCALP)['gold_ygea','gold_15','usd_market','octane92','octane95','diesel','premium_diesel','note'].forEach(function(k){if(LOCALP[k]!=null)f.elements[k].value=LOCALP[k]});
+  var row=el('div','prefs-row'),sv=el('button','btn','Save prices'),own=el('button','btn','Send system alerts to this device'),msg=el('span','small-note');sv.type='submit';own.type='button';row.append(sv,own,msg);f.append(row);
+  f.onsubmit=function(e){e.preventDefault();var p={};['gold_ygea','gold_15','usd_market','octane92','octane95','diesel','premium_diesel','note'].forEach(function(k){p[k]=f.elements[k].value.replace(/,/g,'').trim()});msg.textContent='Saving';
+    fetch(PUSH_API+'/prices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:f.elements.key.value,prices:p})}).then(function(r){msg.textContent=r.ok?'Saved. The Prices page now shows them.':r.status===403?'Wrong owner key.':'Could not save.';if(r.ok)loadPrices()}).catch(function(){msg.textContent='Could not save.'})};
+  own.onclick=function(){msg.textContent='Saving';(store('pd-push')?Promise.resolve():enablePush()).then(function(){return savePrefs(getPrefs(),f.elements.key.value)}).then(function(j){msg.textContent=j.owner?'This device will get system alerts.':'Wrong owner key.'}).catch(function(x){msg.textContent=x.message})};
+  b.append(f,el('p','small-note','This page is not linked from the menu. The owner key is set in Cloudflare as ADMIN_KEY.'))}
+loadPrices();setInterval(loadPrices,9e5);
+
 })();
 
 (function(){var P=document.getElementById('give-pop');if(!P)return;

@@ -30,6 +30,8 @@ FEEDS = {
                 ("Google News", G + "Myanmar+when:2d"),
                 ("Google News", G + "Myanmar+(economy+OR+business+OR+kyat+OR+trade+OR+investment+OR+fuel+OR+gold+price)+when:3d"),
                 ("Google News", G + "Myanmar+(football+OR+sports+OR+SEA+Games+OR+lethwei+OR+athlete)+when:5d")],
+    "burmese": [("BBC News မြန်မာ", "https://feeds.bbci.co.uk/burmese/rss.xml"), ("Myanmar Now မြန်မာ", "https://myanmar-now.org/mm/feed/"),
+                ("ဧရာဝတီ", "https://burma.irrawaddy.com/feed")],
     "sports": [("BBC Sport", "https://feeds.bbci.co.uk/sport/rss.xml"), ("The Guardian", "https://www.theguardian.com/sport/rss"),
                ("Sky Sports", "https://www.skysports.com/rss/12040"), ("CBS Sports", "https://www.cbssports.com/rss/headlines/"), ("Google News", G + "football+OR+soccer+when:1d")],
     "world": [("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml"), ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
@@ -512,7 +514,7 @@ def risk(path, items):
         print("risk quakes skipped:", e, file=sys.stderr)
     now = datetime.now(timezone.utc)
     for i in items:
-        if i["topic"] not in ("weather", "myanmar") or now - datetime.fromisoformat(i["published"]) > timedelta(hours=72) or not re.search(HAZ, i["title"], re.I):
+        if i["topic"] not in ("weather", "myanmar", "burmese") or now - datetime.fromisoformat(i["published"]) > timedelta(hours=72) or not re.search(HAZ, i["title"], re.I):
             continue
         for n, pat in RWORDS.items():
             if re.search(pat, i["title"], re.I):
@@ -559,7 +561,7 @@ def risk(path, items):
 
 
 STOP = set("a an the of in on at to for and or but with from by as is are was were be been after over amid into new says say said will its it his her their than that this what who how why more most out up off about against".split())
-TRUST = {"BBC": 9, "BBC Sport": 9, "Reuters": 9, "Associated Press": 9, "AP News": 9, "The Guardian": 8, "Al Jazeera": 8, "NPR": 8, "DW": 8, "France 24": 7,
+TRUST = {"BBC News မြန်မာ": 9, "Myanmar Now မြန်မာ": 9, "ဧရာဝတီ": 9, "BBC": 9, "BBC Sport": 9, "Reuters": 9, "Associated Press": 9, "AP News": 9, "The Guardian": 8, "Al Jazeera": 8, "NPR": 8, "DW": 8, "France 24": 7,
          "The Irrawaddy": 9, "Irrawaddy": 9, "Myanmar Now": 9, "Frontier Myanmar": 9, "DVB": 8, "BNI": 8, "Mizzima": 8, "Shan News": 7, "Global New Light Of Myanmar": 7,
          "Global New Light of Myanmar": 7, "Eleven Myanmar": 7, "elevenmyanmar.com": 7, "Nikkei Asia": 8, "CNA": 8, "The Diplomat": 7, "CNBC": 8, "MarketWatch": 7,
          "Bloomberg": 9, "Financial Times": 9, "The Verge": 8, "Ars Technica": 8, "TechCrunch": 7, "Wired": 7, "Politico": 8, "The Hill": 7, "Sky Sports": 8,
@@ -745,6 +747,34 @@ def gpm(path):
         print("GPM", m.group(1))
 
 
+def prices(path):
+    """Official exchange rates, world gold converted to kyattha, and oil."""
+    out = {}
+    try:
+        j = json.loads(get("https://forex.cbm.gov.mm/api/latest"))
+        r = j["rates"]
+        out["cbm"] = [[c, float(r[c].replace(",", ""))] for c in ("USD", "EUR", "SGD", "THB", "CNY") if c in r]
+        out["cbm_date"] = datetime.fromtimestamp(int(j["timestamp"]), timezone.utc).strftime("%-d %b %Y")
+    except Exception as e:
+        print("prices cbm skipped:", e, file=sys.stderr)
+    try:
+        mk = json.load(open("data/markets.json", encoding="utf-8"))["items"]
+        g = float(re.sub(r"[^0-9.]", "", mk["Gold"]["value"]))
+        out["gold_usd_oz"], out["gold_when"] = round(g), mk["Gold"].get("when", "")
+        usd = next((v for c, v in out.get("cbm", []) if c == "USD"), None)
+        if usd:
+            out["gold_kyattha"] = round(g / 31.1035 * 16.329 * usd, -2)
+        b = mk.get("Brent crude")
+        if b:
+            out["brent"], out["brent_when"] = b["value"].replace("$", ""), b.get("when", "")
+    except Exception as e:
+        print("prices world skipped:", e, file=sys.stderr)
+    out["updated"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False)
+    print("PRICES", {k: v for k, v in out.items() if k != "updated"})
+
+
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -797,17 +827,6 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
-    for name, u in [("cbm", "https://forex.cbm.gov.mm/api/latest"), ("bbcmy", "https://feeds.bbci.co.uk/burmese/rss.xml"), ("voamy", "https://burmese.voanews.com/api/zmgqoe$moq"),
-                    ("dvbmy", "https://burmese.dvb.no/feed"), ("mnowmy", "https://myanmar-now.org/mm/feed/"), ("irrmy", "https://burma.irrawaddy.com/feed"),
-                    ("khitthit", "https://yktnews.com/feed/"), ("elevenmy", "https://news-eleven.com/rss"), ("mizzimamy", "https://bur.mizzima.com/feed"),
-                    ("gnmm", "https://news.google.com/rss/search?hl=my&gl=MM&ceid=MM:my&q=%E1%80%99%E1%80%BC%E1%80%94%E1%80%BA%E1%80%99%E1%80%AC"),
-                    ("gnen", G + "Myanmar+gold+price+OR+fuel+price+OR+kyat+dollar+when:7d"), ("goldpricez", "https://goldpricez.com/mm"),
-                    ("cbmhtml", "https://forex.cbm.gov.mm/index.php/fxrate")]:
-        try:
-            t = get(u)
-            print("PROBE", name, len(t), re.sub(r"\s+", " ", t[:300]) if name in ("cbm", "goldpricez", "cbmhtml") else len(re.findall(r"<item", t)), re.findall(r"<title>([^<]{0,90})", t)[1:3])
-        except Exception as e:
-            print("PROBE FAIL", name, e)
     markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")
@@ -817,7 +836,7 @@ def main(path="data/live.json"):
         hotspots("data/hotspots.json")
     except Exception as e:
         print("skipped hotspots:", e, file=sys.stderr)
-    for name, job in (("stations", lambda: stations("data/stations.json")), ("gpm", lambda: gpm("data/gpm.json"))):
+    for name, job in (("stations", lambda: stations("data/stations.json")), ("gpm", lambda: gpm("data/gpm.json")), ("prices", lambda: prices("data/prices.json"))):
         try:
             job()
         except Exception as e:

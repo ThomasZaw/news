@@ -201,6 +201,14 @@ h3.sec::after,.week>h3::after,.cal-month h3::after{content:"";flex:1;height:1px;
 .size-bottom .give-btn{grid-column:2/-1!important}.size-bottom .theme-btn{grid-column:1}
 .wx-pane{mix-blend-mode:screen}
 @media (max-width:480px){.brand-row{flex-wrap:wrap;row-gap:10px}.brand-row .size{flex:1 1 100%;display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1.6fr;gap:6px}.brand-row .size .btn{width:100%;padding:0}.home-link b{white-space:nowrap!important;font-size:.98rem!important}}
+.alert-prefs{margin-top:32px}.prefs{display:grid;gap:12px}.pref{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--panel);border:1px solid var(--line);cursor:pointer}.pref input,.pc input{width:18px;height:18px;accent-color:var(--gold);margin:0}.pref .mm{margin-left:auto;color:var(--gold);font-size:.9rem}
+.pref-cities{border:0;padding:0;margin:8px 0 0}.pref-cities legend{font-weight:600;margin-bottom:4px}.pc{display:inline-flex;align-items:center;gap:8px;cursor:pointer}.pc:has(input:checked){border-color:var(--gold);color:var(--gold)}
+.prefs-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:8px}
+.pr-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.pr-card{display:grid;gap:4px;align-content:start;padding:20px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--gold)}.pr-card h3 .mm{color:var(--gold);font-weight:400;font-size:.92em;white-space:nowrap}.pr-card h3{flex-wrap:wrap}
+.pr-row{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;padding:12px 0;border-top:1px solid var(--line)}.pr-row b{font-weight:600;font-size:.92rem;color:var(--muted)}.pr-row b{display:block;font-weight:600;font-size:.95rem}.pr-row small{display:block;color:var(--muted);font-size:.78rem;line-height:1.4}.pr-row strong{font:700 1.35rem/1.25 var(--display);white-space:nowrap;margin-top:2px}
+@media (max-width:900px){.pr-grid{grid-template-columns:minmax(0,1fr)}}
+.prices-form{display:grid;gap:12px;max-width:560px}.prices-form fieldset{display:grid;gap:10px;border:1px solid var(--line);padding:16px}.prices-form label{display:grid;gap:4px;font-size:.9rem}.prices-form input{min-height:40px;padding:0 10px;border:1px solid var(--line);background:var(--panel);color:var(--chalk);font:inherit}
+.topdate{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}.prices-strip .h-status{margin-top:4px;padding-top:0;border-top:0}.prices-strip .h-st small{display:block;font-size:.76rem;color:var(--muted)}.listen{margin-left:auto;min-height:32px;padding:0 12px;font-size:.85rem}
 </style>
 </head>
 <body>
@@ -231,7 +239,9 @@ h3.sec::after,.week>h3::after,.cal-month h3::after{content:"";flex:1;height:1px;
       <section class="view" data-nosnippet id="v-safety" aria-label="Safety" hidden><div class="enso" id="safety-box"></div></section>
       <section class="view" data-nosnippet id="v-privacy" aria-label="Privacy" hidden><div class="enso" id="privacy-box"></div></section>
       <section class="view" data-nosnippet id="v-calendar" aria-label="Burmese calendar" hidden><div class="day-box" id="daybox"></div></section>
-      <section class="view" data-nosnippet id="v-reminders" aria-label="Reminders" hidden><div class="notes" id="notes"></div></section>
+      <section class="view" data-nosnippet id="v-reminders" aria-label="Reminders" hidden><div class="notes" id="notes"></div><div class="notes alert-prefs" id="alert-prefs"></div></section>
+      <section class="view" data-nosnippet id="v-prices" aria-label="Prices" hidden><div class="enso" id="prices-box"></div></section>
+      <section class="view" data-nosnippet id="v-admin" aria-label="Owner tools" hidden><div class="enso" id="admin-box"></div></section>
       <section class="view" data-nosnippet id="v-news" aria-label="News" hidden>
         <div class="chips" id="chips" aria-label="News topics"></div>
         <div class="lead" id="lead"></div>

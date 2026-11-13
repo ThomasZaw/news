@@ -126,11 +126,30 @@ async function sendOne(env, keyName, sub, a) {
   return r.status;
 }
 
+// Which kind of alert this is, and which city it is about, so each person only gets what they chose.
+export function alertKind(a) {
+  const p = a.key.split(":")[0];
+  if (p === "h") return { cat: "system" };
+  if (p === "q") return { cat: "quakes" };
+  if (p === "d") return { cat: "official" };
+  if (p === "ts") return { cat: "weather", city: "Yangon" };
+  if (p === "w") return { cat: "weather", city: a.key.split(":")[2] };
+  if (p === "st" || p === "sr") return { cat: "weather", city: a.city || null };
+  return { cat: "news" };
+}
+export function wants(sub, a) {
+  const k = alertKind(a), p = sub.prefs || {};
+  if (k.cat === "system") return !!p.owner;
+  if (p[k.cat] === false) return false;
+  if (k.cat === "weather" && k.city && Array.isArray(p.cities) && p.cities.length && !p.cities.includes(k.city)) return false;
+  return true;
+}
+
 async function push(env, a) {
   const { keys } = await env.SEEN.list({ prefix: "s:" });
   for (const k of keys) {
     const sub = await env.SEEN.get(k.name, "json");
-    if (sub) await sendOne(env, k.name, sub, a).catch((e) => console.log(String(e)));
+    if (sub && wants(sub, a)) await sendOne(env, k.name, sub, a).catch((e) => console.log(String(e)));
   }
 }
 
@@ -165,7 +184,7 @@ export function yangonDay(now) {
 export function healthAlerts(edition, live, now) {
   const out = [], y = new Date(now + 6.5 * 3600e3), day = y.toISOString().slice(0, 10);
   if (edition && y.getUTCHours() >= 8 && edition.date !== day) out.push({ key: "h:edition:" + day, title: "Parabaik Daily needs attention", body: "The morning update did not run today.", click: SITE });
-  if (live && now - Date.parse(live.updated) > 2 * 3600e3) out.push({ key: "h:live:" + day, title: "Parabaik Daily needs attention", body: "The live feed has not updated for 2 hours.", click: SITE });
+  if (live && now - Date.parse(live.updated) > 3600e3) out.push({ key: "h:live:" + day + ":" + y.getUTCHours(), title: "Parabaik Daily needs attention", body: "The live feed has not updated for an hour.", click: SITE });
   return out;
 }
 
@@ -187,8 +206,9 @@ export async function run30(env, now = Date.now()) {
       const age = now - Date.parse(s.time);
       if (age > 4 * 3600e3) continue;
       const main = /Yangon|Mingaladon|Mandalay|Pyinmana/.test(s.name);
-      if (s.storm && main) list.push({ key: "st:" + s.id + ":" + s.time, title: "Thunderstorm at " + s.name, body: "Reported by the " + s.name + " weather station. Stay clear of open ground and tall trees.", click: SITE + "#weather" });
-      if (s.rain != null && s.rain_h <= 12 && s.rain >= 50) list.push({ key: "sr:" + s.id + ":" + s.time, title: "Heavy rain at " + s.name, body: s.rain + " mm of rain measured in " + s.rain_h + " hours. Watch for flooding.", click: SITE + "#weather" });
+      const city = /Yangon|Mingaladon/.test(s.name) ? "Yangon" : /Pyinmana/.test(s.name) ? "Naypyitaw" : s.name;
+      if (s.storm && main) list.push({ city, key: "st:" + s.id + ":" + s.time, title: "Thunderstorm at " + s.name, body: "Reported by the " + s.name + " weather station. Stay clear of open ground and tall trees.", click: SITE + "#weather" });
+      if (s.rain != null && s.rain_h <= 12 && s.rain >= 50) list.push({ city, key: "sr:" + s.id + ":" + s.time, title: "Heavy rain at " + s.name, body: s.rain + " mm of rain measured in " + s.rain_h + " hours. Watch for flooding.", click: SITE + "#weather" });
     }
   }
   if (d.status === "fulfilled") for (const x of d.value.items || []) if (x.active) list.push({ key: "d:" + x.url, title: "Official warning: " + x.kind, body: x.title, click: x.url });
@@ -206,6 +226,20 @@ async function dueReminders(env, now) {
   for (const r of due) await sendOne(env, await subKey(r.sub.endpoint), r.sub, { title: "Parabaik reminder", body: r.text, click: SITE + "#reminders" }).catch((e) => console.log(String(e)));
 }
 
+// GitHub's 15-minute timer sometimes runs late. If the live feed is over 22 minutes old, ask GitHub to run the update now.
+async function nudge(env, live, now) {
+  if (!env.GH_TOKEN || now - Date.parse(live.updated) < 22 * 60e3) return;
+  const last = +(await env.SEEN.get("nudged")) || 0;
+  if (now - last < 20 * 60e3) return;
+  await env.SEEN.put("nudged", String(now), { expirationTtl: 86400 });
+  const r = await fetch("https://api.github.com/repos/ThomasZaw/news/actions/workflows/live.yml/dispatches", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + env.GH_TOKEN, Accept: "application/vnd.github+json", "User-Agent": "ParabaikDaily/1.0", "Content-Type": "application/json" },
+    body: JSON.stringify({ ref: "main" }),
+  });
+  console.log("asked GitHub to update, status " + r.status);
+}
+
 export async function run(env, now = Date.now()) {
   if (!env.VAPID_PRIVATE) return console.log("VAPID_PRIVATE is not set");
   await dueReminders(env, now);
@@ -215,6 +249,7 @@ export async function run(env, now = Date.now()) {
   else console.log(String(q.reason));
   if (n.status === "fulfilled") list.push(...newsAlerts(n.value));
   else console.log(String(n.reason));
+  if (n.status === "fulfilled") await nudge(env, n.value, now).catch((e) => console.log("nudge " + e));
   await sendNew(env, list);
 }
 
@@ -248,11 +283,36 @@ export default {
       if (!sub || !/^https:\/\//.test(sub.endpoint || "") || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) return new Response("Invalid subscription", { status: 400, headers: cors });
       const key = await subKey(sub.endpoint);
       if (path === "/subscribe") {
-        await env.SEEN.put(key, JSON.stringify({ endpoint: sub.endpoint, keys: sub.keys }));
+        const old = (await env.SEEN.get(key, "json")) || {};
+        await env.SEEN.put(key, JSON.stringify({ endpoint: sub.endpoint, keys: sub.keys, prefs: old.prefs }));
         return new Response("Subscribed", { headers: cors });
       }
       const status = await sendOne(env, key, sub, { title: "Parabaik Daily", body: "Test alert. Notifications are working.", click: SITE });
       return new Response(String(status), { status: status < 300 ? 200 : 502, headers: cors });
+    }
+    if (request.method === "POST" && path === "/prefs") {
+      const b = await request.json().catch(() => null);
+      if (!b || !b.sub || !/^https:\/\//.test(b.sub.endpoint || "") || !b.sub.keys) return new Response("Invalid", { status: 400, headers: cors });
+      const key = await subKey(b.sub.endpoint), old = (await env.SEEN.get(key, "json")) || {};
+      const p = b.prefs || {}, prefs = {};
+      for (const c of ["quakes", "weather", "official", "news"]) prefs[c] = p[c] !== false;
+      prefs.cities = Array.isArray(p.cities) ? p.cities.filter((x) => typeof x === "string").slice(0, 20) : [];
+      prefs.owner = !!(old.prefs && old.prefs.owner) || (!!env.ADMIN_KEY && b.admin === env.ADMIN_KEY);
+      await env.SEEN.put(key, JSON.stringify({ endpoint: b.sub.endpoint, keys: b.sub.keys, prefs }));
+      return new Response(JSON.stringify({ saved: true, owner: prefs.owner }), { headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    if (path === "/prices") {
+      if (request.method === "POST") {
+        const b = await request.json().catch(() => null);
+        if (!env.ADMIN_KEY || !b || b.key !== env.ADMIN_KEY) return new Response("Wrong key", { status: 403, headers: cors });
+        const v = {};
+        for (const f of ["gold_ygea", "gold_15", "usd_market", "octane92", "octane95", "diesel", "premium_diesel"]) if (b.prices && b.prices[f] !== "" && b.prices[f] != null && isFinite(+b.prices[f])) v[f] = +b.prices[f];
+        v.note = String((b.prices && b.prices.note) || "").slice(0, 200);
+        v.updated = new Date().toISOString();
+        await env.SEEN.put("prices", JSON.stringify(v));
+        return new Response("Saved", { headers: cors });
+      }
+      return new Response((await env.SEEN.get("prices")) || "{}", { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "max-age=60" } });
     }
     if (path === "/obs") {
       const r = await fetch("https://aviationweather.gov/api/data/metar?ids=VYYY,VYMD,VYNT,VYMM,VYHH,VYSW,VYMK,VYKT,VYPT,VYMY&format=json&hours=3", { headers: { "User-Agent": "ParabaikDaily/1.0" }, cf: { cacheTtl: 240, cacheEverything: true } });
