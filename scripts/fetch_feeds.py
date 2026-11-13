@@ -207,9 +207,20 @@ def quakes():
     return out
 
 
-def get(url):
-    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
-        return r.read().decode("utf-8", "replace")
+def get(url, tries=3):
+    """Download a page, trying again after short waits if the connection fails."""
+    import time
+    for n in range(tries):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
+                return r.read().decode("utf-8", "replace")
+        except urllib.error.HTTPError as e:
+            if e.code < 500 or n == tries - 1:
+                raise
+        except Exception:
+            if n == tries - 1:
+                raise
+        time.sleep(3 * (n + 1))
 
 
 def parse_weekly(text):
@@ -791,7 +802,7 @@ def main(path="data/live.json"):
     for i in rows:
         key = re.sub(r"[^a-z0-9]+", "", i["title"].lower())[:70]
         age = now - datetime.fromisoformat(i["published"])
-        if key in seen or age > (timedelta(days=7) if i["topic"] == "weather" else MAX_AGE) or age < timedelta(minutes=-10):
+        if key in seen or age > (timedelta(days=7) if i["topic"] == "weather" else timedelta(days=4) if i["topic"] == "burmese" else MAX_AGE) or age < timedelta(minutes=-10):
             continue
         seen.add(key)
         pool[i["topic"]].append(i)
