@@ -732,7 +732,7 @@ def stations(path):
     out.sort(key=lambda x: x["name"])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "source": "Myanmar Department of Meteorology and Hydrology, via Ogimet", "stations": out}, f, ensure_ascii=False)
-    print(len(out), "weather stations")
+    print(len(out), "weather stations", [(x["name"], x["time"][11:16], x.get("temp"), x.get("rh"), x.get("wind"), x.get("cond"), x.get("rain"), x.get("rain24")) for x in out if x["name"] in ("Yangon (Kaba-Aye)", "Mandalay", "Pyinmana", "Taunggyi", "Sittwe", "Loikaw") or x.get("storm") or (x.get("rain24") or 0) >= 20])
 
 
 def gpm(path):
