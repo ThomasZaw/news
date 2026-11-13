@@ -176,7 +176,7 @@ function wxAlerts(){
   var cyclone=LIVE?LIVE.items.filter(function(q){return q.source==='GDACS'&&/cyclone|storm/i.test(q.title)})[0]:null;
   var ob=c._obs,gust=Math.max(c.wind_gusts_10m||0,(D.wind_gusts_10m_max||[0])[0]||0,ob&&ob.gust||0),mm0=(D.precipitation_sum||[0])[0]||0,feel=Math.max(c.apparent_temperature||0,(D.apparent_temperature_max||[0])[0]||0);
   return [
-   {en:'Storm',mm:'မုန်တိုင်း',l:cyclone||(c._obs&&c._obs.ts)?2:thunder?1:0,msg:cyclone?cyclone.title:c._obs&&c._obs.ts?'Thunderstorm reported at '+c._obs.name+', '+c._obs.mins+' min ago':thunder?'Thunderstorms possible in the next 24 hours':'No storm in the forecast'},
+   {en:'Storm',mm:'မုန်တိုင်း',l:cyclone||(c._obs&&c._obs.ts)?2:thunder?1:0,msg:cyclone?cyclone.title:c._obs&&c._obs.ts?'Thunderstorm reported at '+c._obs.name+', '+c._obs.ago:thunder?'Thunderstorms possible in the next 24 hours':'No storm in the forecast'},
    {en:'Heavy rain',mm:'မိုးသည်းထန်',l:Math.max(lvl(mm0,50,100),ob&&ob.heavy?2:ob&&(ob.ts||ob.rain)?1:0),msg:ob&&ob.heavy?'Heavy rain reported at '+ob.name+', '+ob.mins+' min ago':ob&&ob.ts?'Storm rain reported nearby. Downpours can be heavier than the '+Math.round(mm0)+' mm forecast':ob&&ob.rain?'Rain reported at '+ob.name+', '+ob.mins+' min ago':Math.round(mm0)+' mm of rain forecast today'},
    {en:'Strong wind',mm:'လေပြင်း',l:Math.max(lvl(gust,50,75),ob&&ob.ts?1:0),msg:ob&&ob.gust?'Gusts of '+ob.gust+' km/h reported at '+ob.name:ob&&ob.ts?'Storm winds can rise suddenly, even if the forecast shows '+Math.round(gust)+' km/h':'Gusts up to '+Math.round(gust)+' km/h today'},
    {en:'Extreme heat',mm:'အပူလွန်ကဲ',l:lvl(feel,41,46),msg:'Feels like up to '+Math.round(feel)+'° today'}].concat(AQ?[{en:'Air quality',mm:'လေထုအရည်အသွေး',l:lvl(AQ.current.us_aqi,101,151),word:aqiWord(AQ.current.us_aqi),msg:'Index '+AQ.current.us_aqi+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³'}]:[]);
@@ -196,7 +196,7 @@ function renderWx(){
   [['Feels like',Math.round(c.apparent_temperature)+'°'],['Chance of rain',(H.precipitation_probability[i]||0)+'%'],['Wind',(c._obs&&c._obs.wind!=null?c._obs.wind:Math.round(c.wind_speed_10m))+' km/h'],['Humidity',c.relative_humidity_2m+'%']].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   if(D.sunrise)[['Sunrise',D.sunrise[0].slice(11,16)],['Sunset',D.sunset[0].slice(11,16)]].forEach(function(r){var d=el('div');d.append(el('b',null,r[0]),el('span',null,r[1]));st.append(d)});
   now.append(main,st);b.append(now);
-  b.append(el('p','small-note',c._obs?'Live report from '+c._obs.name+', '+c._obs.mins+' min ago. Rain can differ across the city.':'Forecast estimate. No recent airport report for this area, so local rain may be missed.'));
+  b.append(el('p','small-note',c._obs?'Live report from '+c._obs.name+', '+c._obs.ago+(c._obs.station?'. Stations report every 3 hours.':'. Rain can differ across the city.'):'Forecast estimate. No recent airport or weather station report for this area, so local rain may be missed.'));
   var pl=el('div','places'),saved=places();saved.forEach(function(n){var q=el('button','chip',cn(n));q.type='button';if(n===city)q.setAttribute('aria-pressed','true');q.onclick=function(){city=n;store('pd-city',city);loadWx();loadObs();loadAir();loadRiver()};pl.append(q)});
   if(saved.indexOf(city)<0){var sv=el('button','chip add','Save this city');sv.type='button';sv.onclick=function(){store('pd-places',saved.concat(city));renderWx()};pl.append(sv)}b.append(pl);
   var ah=el('h3','sec',"Today's alerts");ah.append(mm('span','သတိပေးချက်'));
@@ -209,6 +209,11 @@ function renderWx(){
   var w=el('div','week'),wr=el('div','week-scroll'),row=el('div','week-row');w.append(el('h3','sec','Next 7 days'));
   D.time.forEach(function(t,n){var p=t.split('-').map(Number),cd=code(D.weather_code[n],1),d=el('div');d.append(el('b',null,n===0?'Today':n===1?'Tomorrow':WDN[wd(p)].slice(0,3)),WI(cd[0],'wi-s'),el('span',null,Math.round(D.temperature_2m_max[n])+'° / '+Math.round(D.temperature_2m_min[n])+'°'),el('small',null,'Rain '+D.precipitation_probability_max[n]+'%'));row.append(d)});
   wr.append(row);w.append(wr);b.append(w);
+  var ss=el('div','week');ss.append(el('h3','sec','Weather stations across Myanmar'));var smb=el('div');ss.append(smb);
+  if(STN){var fresh=STN.stations.filter(function(s){return Date.now()-new Date(s.time)<6*36e5}),wet=fresh.filter(function(s){return s.storm||/Rain|Showers|Drizzle/.test(s.cond||'')});
+    ss.append(el('p','small-note',fresh.length+' of '+STN.stations.length+' stations reported in the last 6 hours'+(wet.length?', '+wet.length+' with rain or thunderstorms':'')+'. Green is dry, blue is rain and red is a thunderstorm. Zoom in to see temperatures, or tap a station for details. Stations report every 3 hours. Readings from Myanmar\'s Department of Meteorology and Hydrology.'+(GPM?' The blue and yellow layer is NASA satellite rain from '+gpmWhen()+' Myanmar time, which arrives a few hours late.':'')))}
+  else ss.append(el('p','small-note','Loading weather stations.'));
+  b.append(ss);setTimeout(function(){stnMap(smb)},0);
   var sd=el('details','enso-more'),sb=el('div');sd.append(el('summary',null,'Live storm map'),sb,el('p','small-note','Satellite cloud image from Himawari with rain radar where it is available. Rain radar coverage in Myanmar is limited, so bright cold clouds may be the best storm sign. The map opens on your chosen city.'));sd.addEventListener('toggle',function(){if(sd.open)stormMap(sb)});b.append(sd);
   var det=el('details','enso-more'),sm=el('summary',null,'View full details'),ch=el('div','chart');ch.id='chart';det.append(sm,ch);
   var ln=el('div','ext'),cc=CITIES.find(function(x){return x[0]===city})||CITIES[0];
@@ -378,10 +383,34 @@ function renderQuakes(){
 
 /* Live airport reports */
 var OBS=[],OMAP={Yangon:['VYYY','Yangon Airport'],Bago:['VYYY','Yangon Airport'],Pathein:['VYPT','Pathein Airport'],Mandalay:['VYMD','Mandalay Airport'],Naypyitaw:['VYNT','Naypyitaw Airport'],Taunggyi:['VYHH','Heho Airport'],Sittwe:['VYSW','Sittwe Airport'],Myitkyina:['VYMK','Myitkyina Airport'],Kawthaung:['VYKT','Kawthaung Airport'],Monywa:['VYMY','Monywa Airport'],Mawlamyine:['VYMM','Mawlamyine Airport'],'Hpa-An':['VYMM','Mawlamyine Airport']};
-function curObs(){var s=OMAP[city];if(!s)return null;var r=OBS.filter(function(o){return o.icaoId===s[0]}).sort(function(a,b){return (b.obsTime||0)-(a.obsTime||0)})[0];if(!r||!r.obsTime)return null;var mins=Math.round((Date.now()-r.obsTime*1000)/6e4);if(mins>120)return null;var x=r.wxString||'';return {name:s[1],mins:mins,wx:x,temp:r.temp,wind:typeof r.wspd==='number'?Math.round(r.wspd*1.852):null,gust:typeof r.wgst==='number'?Math.round(r.wgst*1.852):null,ts:/TS/.test(x),rain:/RA|SH|DZ/.test(x),heavy:/\+RA|\+TS/.test(x)}}
+var STN=null,GPM=null;
+function agoMin(m){return m<90?m+' min ago':Math.round(m/60)+' h ago'}
+function airObs(){var s=OMAP[city];if(!s)return null;var r=OBS.filter(function(o){return o.icaoId===s[0]}).sort(function(a,b){return (b.obsTime||0)-(a.obsTime||0)})[0];if(!r||!r.obsTime)return null;var mins=Math.round((Date.now()-r.obsTime*1000)/6e4);if(mins>120)return null;var x=r.wxString||'';return {name:s[1],mins:mins,ago:agoMin(mins),wx:x,temp:r.temp,wind:typeof r.wspd==='number'?Math.round(r.wspd*1.852):null,gust:typeof r.wgst==='number'?Math.round(r.wgst*1.852):null,ts:/TS/.test(x),rain:/RA|SH|DZ/.test(x),heavy:/\+RA|\+TS/.test(x)}}
+function stnNear(lat,lon,maxKm){if(!STN)return null;var best=null,bd=1e9;STN.stations.forEach(function(s){var d=km(lat,lon,s.lat,s.lon);if(d<bd){bd=d;best=s}});return best&&bd<=maxKm?{s:best,km:Math.round(bd)}:null}
+function stnObs(){var c=CITIES.find(function(x){return x[0]===city});if(!c)return null;var n=stnNear(c[1],c[2],50);if(!n)return null;var s=n.s,mins=Math.round((Date.now()-new Date(s.time))/6e4);if(mins>270)return null;
+  var w=s.ww;return {name:s.name+' weather station',mins:mins,ago:agoMin(mins),wx:s.cond||'',temp:s.temp,rh:s.rh,wind:s.wind!=null?s.wind:null,gust:null,ts:!!s.storm,rain:/Rain|Showers|Drizzle|Thunderstorm/.test(s.cond||''),heavy:(w===63||w===65||w===82||(w>=95&&w<=99))||(s.rain!=null&&s.rain_h<=6&&s.rain>=20),station:true}}
+function curObs(){return airObs()||stnObs()}
 function obsCode(o){return !o?null:o.ts?95:o.heavy?65:o.rain?63:null}
-function applyObs(){if(!WX)return;var o=curObs(),c=obsCode(o);if(WX.current._model==null){WX.current._model=WX.current.weather_code;WX.current._mt=WX.current.temperature_2m}WX.current.weather_code=c==null?WX.current._model:c;WX.current.temperature_2m=o&&o.temp!=null?o.temp:WX.current._mt;WX.current._obs=o}
+function applyObs(){if(!WX)return;var o=curObs(),c=obsCode(o);if(WX.current._model==null){WX.current._model=WX.current.weather_code;WX.current._mt=WX.current.temperature_2m}WX.current.weather_code=c==null?WX.current._model:c;WX.current.temperature_2m=o&&o.temp!=null?o.temp:WX.current._mt;if(WX.current._mh==null)WX.current._mh=WX.current.relative_humidity_2m;WX.current.relative_humidity_2m=o&&o.rh!=null?o.rh:WX.current._mh;WX.current._obs=o}
+function loadStations(){return Promise.all([get('data/stations.json').then(function(j){STN=j}).catch(function(){}),get('data/gpm.json').then(function(j){GPM=j}).catch(function(){})]).then(function(){applyObs();if(view==='weather')renderWx();renderHome()})}
 function loadObs(){var u=location.hostname==='parabaikdaily.com'?'/obs':PUSH_API+'/obs';return fetch(u+'?t='+Math.floor(Date.now()/12e4)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){OBS=Array.isArray(j)?j:[];applyObs();if(view==='weather')renderWx();renderHome()}).catch(function(){})}
+
+/* Weather station map with NASA GPM satellite rain */
+var STM=null;
+function gpmWhen(){var d=new Date(new Date(GPM.time).getTime()+234e5);return d.getUTCDate()+' '+MON[d.getUTCMonth()].slice(0,3)+', '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')}
+function gpmLayer(){return L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'IMERG_Precipitation_Rate_30min',format:'image/png',transparent:true,version:'1.3.0',opacity:.75,time:GPM.time,attribution:'Rain: NASA GPM IMERG'})}
+function stnMap(box){if(!window.L||!STN)return;
+  if(STM){STM.remove();STM=null}var e=el('div','qmap');box.append(e);STM=L.map(e,{minZoom:4,maxZoom:10,scrollWheelZoom:false}).setView([20,96.5],5);baseMap(STM,true);
+  var over={};if(GPM){var gl=gpmLayer().addTo(STM);over['NASA satellite rain ('+gpmWhen()+')']=gl}
+  STN.stations.forEach(function(s){var mins=Math.round((Date.now()-new Date(s.time))/6e4),old=mins>360,cls=s.storm?'storm':/Rain|Showers|Drizzle/.test(s.cond||'')?'wet':'dry';
+    var ic=L.divIcon({className:'',html:'<span class="stn-pin '+cls+(old?' old':'')+'">'+(s.temp!=null?Math.round(s.temp)+'°':'–')+'</span>',iconSize:null});
+    var rows=['<b>'+s.name+'</b>','<span class="pp-t">'+mmTime(new Date(s.time).getTime())+' Myanmar time ('+agoMin(mins)+')</span>'];
+    if(s.cond)rows.push(s.cond);if(s.temp!=null)rows.push('Temperature '+s.temp+'°'+(s.rh!=null?', humidity '+s.rh+'%':''));if(s.wind!=null)rows.push('Wind '+s.wind+' km/h');
+    if(s.rain!=null)rows.push('Rain '+s.rain+' mm in the last '+s.rain_h+' h');if(s.rain24!=null)rows.push('Rain '+s.rain24+' mm in 24 h');
+    L.marker([s.lat,s.lon],{icon:ic,title:s.name}).bindPopup(rows.join('<br>')).addTo(STM)});
+  if(GPM)L.control.layers(null,over,{collapsed:false,position:'bottomleft'}).addTo(STM);
+  function zc(){STM.getContainer().classList.toggle('stn-small',STM.getZoom()<6.5)}STM.on('zoomend',zc);setTimeout(zc,100);
+  setTimeout(function(){STM.invalidateSize()},0)}
 
 /* Official warnings and storm map */
 var DMH=null,SM=null;
@@ -391,6 +420,7 @@ function stormMap(box){
   if(!window.L)return;
   if(!SM){var e=el('div','qmap');box.append(e);var cc=curCity();SM=L.map(e,{minZoom:4,maxZoom:8,scrollWheelZoom:false}).setView([cc[1],cc[2]],6);baseMap(SM);
     L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'Himawari_AHI_Band13_Clean_Infrared',format:'image/png',transparent:true,version:'1.3.0',opacity:.55,attribution:'Himawari satellite via NASA'}).addTo(SM);
+    if(GPM)L.control.layers(null,{'NASA satellite rain':gpmLayer()},{collapsed:false,position:'bottomleft'}).addTo(SM);
     fetch('https://api.rainviewer.com/public/weather-maps.json').then(function(r){return r.json()}).then(function(j){var p=j.radar.past[j.radar.past.length-1];L.tileLayer(j.host+p.path+'/256/{z}/{x}/{y}/2/1_1.png',{maxNativeZoom:7,maxZoom:8,opacity:.75,attribution:'Radar by RainViewer'}).addTo(SM)}).catch(function(){})
   }else box.append(SM.getContainer());
   setTimeout(function(){SM.invalidateSize()},0);
@@ -580,7 +610,7 @@ function pullMarkets(){return get('data/markets.json').then(function(j){MK=j;if(
 function get(p){return fetch(p+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
 function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderHome();if(view==='news'&&E)renderNews();else renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
 
-pullQuakes(true);setInterval(pullQuakes,6e4);get('data/hotspots.json').then(function(j){HS=j;if(view==='safety')renderSafety()}).catch(function(){});loadAir();loadRiver();loadDmh();loadRisk();setInterval(loadRisk,9e5);setInterval(loadAir,18e5);setInterval(loadDmh,6e5);
+pullQuakes(true);setInterval(pullQuakes,6e4);get('data/hotspots.json').then(function(j){HS=j;if(view==='safety')renderSafety()}).catch(function(){});loadAir();loadRiver();loadDmh();loadRisk();loadStations();setInterval(loadStations,9e5);setInterval(loadRisk,9e5);setInterval(loadAir,18e5);setInterval(loadDmh,6e5);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
 function netState(){$('offline').hidden=navigator.onLine}addEventListener('online',netState);addEventListener('offline',netState);netState();
 get('data/enso.json').then(function(d){ENSO=d;renderHome();if(view==='enso')renderEnso(d)}).catch(function(){});

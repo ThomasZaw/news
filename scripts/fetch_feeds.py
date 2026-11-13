@@ -527,6 +527,19 @@ def risk(path, items):
     except Exception as e:
         print("risk warnings skipped:", e, file=sys.stderr)
     try:
+        for st in json.load(open("data/stations.json", encoding="utf-8"))["stations"]:
+            if now - datetime.fromisoformat(st["time"]) > timedelta(hours=12):
+                continue
+            n = region_at(st["lat"], st["lon"])
+            if not n:
+                continue
+            r24 = st.get("rain24") or 0
+            if r24 >= 100: bump(n, 2, f"{r24:g} mm of rain measured at {st['name']} in 24 hours")
+            elif r24 >= 50: bump(n, 1, f"{r24:g} mm of rain measured at {st['name']} in 24 hours")
+            if st.get("storm"): bump(n, 1, f"Thunderstorm reported at {st['name']} weather station")
+    except Exception as e:
+        print("risk stations skipped:", e, file=sys.stderr)
+    try:
         pts = json.load(open("data/hotspots.json", encoding="utf-8")).get("points", [])
         count = {}
         for p in pts:
@@ -585,6 +598,153 @@ def cluster(rows, now):
     return sorted(out, key=lambda i: i["published"], reverse=True)
 
 
+# Myanmar weather department stations that send reports to the international network (WMO number: name, lat, lon).
+STATIONS = {"48001": ("Putao", 27.333, 97.417), "48004": ("Hkamti", 26.0, 95.7), "48008": ("Myitkyina", 25.367, 97.4), "48010": ("Homalin", 24.867, 94.917),
+            "48017": ("Pinlebu", 24.083, 95.367), "48018": ("Katha", 24.167, 96.333), "48019": ("Bhamo", 24.267, 97.2), "48020": ("Mawlaik", 23.633, 94.417),
+            "48024": ("Kalay", 23.2, 94.067), "48025": ("Kalewa", 23.2, 94.3), "48030": ("Hakha", 22.65, 93.633), "48031": ("Falam", 22.917, 93.683),
+            "48033": ("Shwebo", 22.583, 95.717), "48035": ("Lashio", 22.933, 97.75), "48036": ("Gangaw", 22.167, 94.133), "48037": ("Monywa", 22.1, 95.133),
+            "48040": ("Hsipaw", 22.6, 97.3), "48042": ("Mandalay", 21.983, 96.1), "48045": ("Mindat", 21.383, 93.95), "48047": ("Myingyan", 21.467, 95.383),
+            "48048": ("Nyaung-U (Bagan)", 21.2, 94.917), "48051": ("Kyauktaw", 20.85, 92.633), "48052": ("Chauk", 20.9, 94.833), "48053": ("Meiktila", 20.833, 95.833),
+            "48057": ("Taunggyi", 20.783, 97.05), "48058": ("Loilem", 20.917, 97.55), "48060": ("Kengtung", 21.3, 99.617), "48062": ("Sittwe", 20.133, 92.873),
+            "48064": ("Minbu", 20.167, 94.883), "48067": ("Yamethin", 20.417, 96.15), "48068": ("Pinlaung", 20.133, 96.767), "48070": ("Mong Hsat", 20.55, 99.267),
+            "48071": ("Kyaukphyu", 19.417, 93.55), "48072": ("Manaung", 18.85, 93.733), "48074": ("Pyinmana", 19.717, 96.217), "48075": ("Loikaw", 19.683, 97.217),
+            "48077": ("Pyay", 18.8, 95.217), "48078": ("Taungoo", 18.917, 96.467), "48080": ("Thandwe", 18.467, 94.35), "48085": ("Gwa", 17.583, 94.583),
+            "48087": ("Hinthada", 17.667, 95.417), "48088": ("Tharrawaddy", 17.633, 95.8), "48089": ("Shwegyin", 17.917, 96.867), "48093": ("Bago", 17.333, 96.5),
+            "48094": ("Pathein", 16.767, 94.767), "48095": ("Maubin", 16.733, 95.65), "48096": ("Mingaladon", 16.9, 96.183), "48097": ("Yangon (Kaba-Aye)", 16.867, 96.2),
+            "48098": ("Thaton", 16.917, 97.367), "48099": ("Hpa-An", 16.75, 97.667), "48101": ("Pyapon", 16.267, 95.667), "48103": ("Mawlamyine", 16.5, 97.617),
+            "48107": ("Ye", 15.25, 97.867), "48108": ("Dawei", 14.1, 98.217), "48109": ("Coco Island", 14.117, 93.367), "48110": ("Myeik", 12.433, 98.6),
+            "48112": ("Kawthaung", 9.967, 98.583)}
+WW_TEXT = [(range(91, 100), "Thunderstorm"), ((17, 29), "Thunderstorm"), (range(80, 91), "Showers"), (range(60, 70), "Rain"), (range(50, 60), "Drizzle"),
+           (range(40, 50), "Fog"), ((10,), "Mist"), ((4, 5), "Haze or smoke"), ((20, 21, 22, 23, 24, 25, 26, 27), "Recent rain")]
+
+
+def rain_mm(rrr):
+    v = int(rrr)
+    return 0.0 if v == 990 else round((v - 990) / 10, 1) if v > 990 else float(v)
+
+
+def parse_synop(msg):
+    """Read the main parts of one SYNOP weather station report."""
+    g = msg.replace("=", " ").split()
+    if len(g) < 5 or g[0] != "AAXX":
+        return None
+    iw = g[1][-1]
+    i = 3
+    ir, ix = g[i][0], g[i][1]
+    i += 1
+    out = {}
+    nddff = g[i]
+    i += 1
+    if nddff[0] in "012345678":
+        out["cloud"] = int(nddff[0])
+    dd, ff = nddff[1:3], nddff[3:5]
+    if ff == "99" and i < len(g) and g[i].startswith("00"):
+        ff = g[i][2:5]
+        i += 1
+    if dd.isdigit() and ff.isdigit():
+        f = int(ff)
+        out["wind"] = round(f * (1.852 if iw in "34" else 3.6))
+        out["dir"] = int(dd) * 10
+    sec3 = False
+    rain = []
+    for grp in g[i:]:
+        if grp in ("333", "999"):
+            sec3 = True
+            continue
+        if grp in ("444", "555") or grp.startswith("9"):
+            if not sec3:
+                continue
+        if "/" in grp[:2] or len(grp) != 5:
+            continue
+        k = grp[0]
+        if not sec3:
+            if k == "1" and "temp" not in out and grp[1] in "01" and grp[2:].isdigit():
+                out["temp"] = (-1 if grp[1] == "1" else 1) * int(grp[2:]) / 10
+            elif k == "2" and "dew" not in out and grp[1] in "01" and grp[2:].isdigit():
+                out["dew"] = (-1 if grp[1] == "1" else 1) * int(grp[2:]) / 10
+            elif k == "6" and grp[1:4].isdigit():
+                rain.append((rain_mm(grp[1:4]), grp[4]))
+            elif k == "7" and grp[1:3].isdigit():
+                out["ww"] = int(grp[1:3])
+        else:
+            if k == "6" and grp[1:4].isdigit():
+                rain.append((rain_mm(grp[1:4]), grp[4]))
+            elif k == "7" and grp[1:].isdigit():
+                v = int(grp[1:])
+                out["rain24"] = 0.0 if v == 9999 else v / 10
+    hours = {"1": 6, "2": 12, "3": 18, "4": 24, "5": 1, "6": 2, "7": 3, "8": 9, "9": 15}
+    if rain:
+        mm, t = rain[0]
+        out["rain"], out["rain_h"] = mm, hours.get(t, 6)
+    if "temp" in out and "dew" in out:
+        import math
+        a, b = 17.625, 243.04
+        t, d = out["temp"], out["dew"]
+        out["rh"] = round(100 * math.exp(a * d / (b + d)) / math.exp(a * t / (b + t)))
+    return out
+
+
+def stations(path):
+    """Latest real readings from Myanmar's weather stations, sent every 3 hours."""
+    begin = (datetime.now(timezone.utc) - timedelta(hours=26)).strftime("%Y%m%d%H00")
+    latest, rain24 = {}, {}
+    for block in ("480", "481"):
+        try:
+            text = get("https://www.ogimet.com/cgi-bin/getsynop?block=" + block + "&begin=" + begin)
+        except Exception as e:
+            print("stations block", block, "skipped:", e, file=sys.stderr)
+            continue
+        for line in text.splitlines():
+            p = line.split(",", 6)
+            if len(p) < 7 or p[0] not in STATIONS:
+                continue
+            try:
+                when = datetime(int(p[1]), int(p[2]), int(p[3]), int(p[4]), int(p[5]), tzinfo=timezone.utc)
+                r = parse_synop(p[6])
+            except Exception:
+                continue
+            if not r:
+                continue
+            if r.get("rain") is not None and r.get("rain_h", 99) <= 12:
+                rain24.setdefault(p[0], []).append((when, r["rain"], r["rain_h"]))
+            if p[0] not in latest or when > latest[p[0]][0]:
+                latest[p[0]] = (when, r)
+    out = []
+    for sid, (when, r) in latest.items():
+        name, lat, lon = STATIONS[sid]
+        ww = r.get("ww")
+        cond = next((t for codes, t in WW_TEXT if ww is not None and ww in codes), None)
+        if "rain24" not in r and sid in rain24:
+            spans = sorted(rain24[sid], key=lambda x: x[0], reverse=True)
+            total, covered = 0.0, 0
+            for w, mm, h in spans:
+                if covered >= 24:
+                    break
+                total += mm
+                covered += h
+            if covered >= 12:
+                r["rain24"] = round(total, 1)
+        row = {"id": sid, "name": name, "lat": lat, "lon": lon, "time": when.isoformat(timespec="minutes"), **r}
+        if cond:
+            row["cond"] = cond
+        row["storm"] = ww is not None and (ww in (17, 29) or 91 <= ww <= 99)
+        out.append(row)
+    out.sort(key=lambda x: x["name"])
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "source": "Myanmar Department of Meteorology and Hydrology, via Ogimet", "stations": out}, f, ensure_ascii=False)
+    print(len(out), "weather stations")
+
+
+def gpm(path):
+    """Time of the newest NASA GPM satellite rain picture."""
+    t = get("https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0")
+    m = re.search(r"<Name>IMERG_Precipitation_Rate_30min</Name>.*?default=\"([^\"]+)\"", t, re.S)
+    if m:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"layer": "IMERG_Precipitation_Rate_30min", "time": m.group(1)}, f)
+        print("GPM", m.group(1))
+
+
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -637,16 +797,6 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
-    try:
-        t = get("https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv")
-        print("PROBE ISD", [l[:80] for l in t.splitlines() if l.startswith('"481') or l.startswith('"48034') or l.startswith('"48039') or l.startswith('"48043') or l.startswith('"48055') or l.startswith('"48065') or l.startswith('"48052')])
-        b = (datetime.now(timezone.utc) - timedelta(hours=12)).strftime("%Y%m%d%H00")
-        t = get("https://www.ogimet.com/cgi-bin/getsynop?block=481&begin=" + b)
-        print("PROBE S481", sorted({l.split(",")[0] for l in t.splitlines() if l}))
-        t = get("https://www.ogimet.com/cgi-bin/getsynop?block=480&begin=" + b)
-        print("PROBE S480", [l for l in t.splitlines() if l.startswith(("48097", "48042", "48034", "48039", "48043", "48055", "48065"))][-14:])
-    except Exception as e:
-        print("PROBE FAIL", e)
     markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")
@@ -656,6 +806,11 @@ def main(path="data/live.json"):
         hotspots("data/hotspots.json")
     except Exception as e:
         print("skipped hotspots:", e, file=sys.stderr)
+    for name, job in (("stations", lambda: stations("data/stations.json")), ("gpm", lambda: gpm("data/gpm.json"))):
+        try:
+            job()
+        except Exception as e:
+            print("skipped", name + ":", e, file=sys.stderr)
     try:
         risk("data/risk.json", items)
     except Exception as e:

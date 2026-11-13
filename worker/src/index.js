@@ -180,8 +180,17 @@ async function sendNew(env, list) {
 export async function run30(env, now = Date.now()) {
   if (!env.VAPID_PRIVATE) return;
   const url = "https://api.open-meteo.com/v1/forecast?latitude=" + CITIES.map((c) => c[1]).join(",") + "&longitude=" + CITIES.map((c) => c[2]).join(",") + "&daily=precipitation_sum,wind_gusts_10m_max,apparent_temperature_max&forecast_days=1&timezone=Asia%2FYangon";
-  const [w, e, l, d, m] = await Promise.allSettled([getJson(url), getJson(ORIGIN + "/data/edition.json?t=" + now), getJson(ORIGIN + "/data/live.json?t=" + now), getJson(ORIGIN + "/data/dmh.json?t=" + now), getJson("https://aviationweather.gov/api/data/metar?ids=VYYY&format=json&hours=1")]);
+  const [w, e, l, d, st, m] = await Promise.allSettled([getJson(url), getJson(ORIGIN + "/data/edition.json?t=" + now), getJson(ORIGIN + "/data/live.json?t=" + now), getJson(ORIGIN + "/data/dmh.json?t=" + now), getJson(ORIGIN + "/data/stations.json?t=" + now).catch(() => null), getJson("https://aviationweather.gov/api/data/metar?ids=VYYY&format=json&hours=1")]);
   const list = [];
+  if (st.status === "fulfilled" && st.value) {
+    for (const s of st.value.stations || []) {
+      const age = now - Date.parse(s.time);
+      if (age > 4 * 3600e3) continue;
+      const main = /Yangon|Mingaladon|Mandalay|Pyinmana/.test(s.name);
+      if (s.storm && main) list.push({ key: "st:" + s.id + ":" + s.time, title: "Thunderstorm at " + s.name, body: "Reported by the " + s.name + " weather station. Stay clear of open ground and tall trees.", click: SITE + "#weather" });
+      if (s.rain != null && s.rain_h <= 12 && s.rain >= 50) list.push({ key: "sr:" + s.id + ":" + s.time, title: "Heavy rain at " + s.name, body: s.rain + " mm of rain measured in " + s.rain_h + " hours. Watch for flooding.", click: SITE + "#weather" });
+    }
+  }
   if (d.status === "fulfilled") for (const x of d.value.items || []) if (x.active) list.push({ key: "d:" + x.url, title: "Official warning: " + x.kind, body: x.title, click: x.url });
   if (m.status === "fulfilled" && m.value[0] && /TS/.test(m.value[0].wxString || "")) list.push({ key: "ts:" + yangonDay(now) + ":" + Math.floor(new Date(now + 6.5 * 3600e3).getUTCHours() / 3), title: "Thunderstorm in Yangon", body: "Reported at Yangon Airport. Stay clear of open ground and tall trees.", click: SITE + "#weather" });
   if (w.status === "fulfilled") list.push(...weatherAlerts(w.value, yangonDay(now)));
