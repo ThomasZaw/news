@@ -637,6 +637,17 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
+    try:
+        t = get("https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv")
+        print("PROBE ISD", [l for l in t.splitlines() if l.startswith('"480')])
+    except Exception as e:
+        print("PROBE FAIL isd", e)
+    try:
+        t = get("https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0")
+        for m in re.finditer(r"<Name>([^<]*IMERG[^<]*)</Name>", t):
+            k = t.find("<Dimension", m.end()); print("PROBE GIBS", m.group(1), t[k:k+260].replace("\n", " "))
+    except Exception as e:
+        print("PROBE FAIL gibs", e)
     markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")
