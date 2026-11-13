@@ -637,22 +637,6 @@ def main(path="data/live.json"):
         push([a for a in found if key_of(a) not in before])
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
-    ids = "VYYY,VYNT,VYMD,VYHH,VYNS,VYSW,VYMK,VYLS,VYKG,VYTL,VYDW,VYME,VYKT,VYMW,VYKL,VYBM,VYPT,VYKP,VYTD,VYPY,VYLK,VYPA,VYHL,VYKI,VYPN,VYMN,VYCZ,VYMS,VYML,VYGG,VYST"
-    for u in ["https://aviationweather.gov/api/data/metar?ids=" + ids + "&format=json&hours=24",
-              "https://www.ogimet.com/cgi-bin/getsynop?block=480&begin=" + (datetime.now(timezone.utc) - timedelta(hours=12)).strftime("%Y%m%d%H00"),
-              "https://aviationweather.gov/api/data/stationinfo?bbox=9,92,29,102&format=json"]:
-        try:
-            t = get(u)
-            if "metar?" in u:
-                j = json.loads(t); seen = {}
-                for m in j: seen.setdefault(m["icaoId"], m.get("reportTime") or m.get("obsTime"))
-                print("PROBE METAR", len(j), seen)
-            elif "stationinfo" in u:
-                print("PROBE STATIONS", [(x.get("icaoId"), x.get("site")) for x in json.loads(t)][:60])
-            else:
-                lines = t.strip().splitlines(); print("PROBE SYNOP", len(lines), sorted({l.split(",")[0] for l in lines if l})[:80]); print("PROBE SYNOP sample", lines[:3])
-        except Exception as e:
-            print("PROBE FAIL", u[:60], e)
     markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")
