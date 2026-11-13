@@ -639,15 +639,14 @@ def main(path="data/live.json"):
         json.dump({"updated": now.isoformat(timespec="seconds"), "alerts": found, "items": items}, f, ensure_ascii=False, indent=1)
     try:
         t = get("https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv")
-        print("PROBE ISD", [l for l in t.splitlines() if l.startswith('"480')])
+        print("PROBE ISD", [l[:80] for l in t.splitlines() if l.startswith('"481') or l.startswith('"48034') or l.startswith('"48039') or l.startswith('"48043') or l.startswith('"48055') or l.startswith('"48065') or l.startswith('"48052')])
+        b = (datetime.now(timezone.utc) - timedelta(hours=12)).strftime("%Y%m%d%H00")
+        t = get("https://www.ogimet.com/cgi-bin/getsynop?block=481&begin=" + b)
+        print("PROBE S481", sorted({l.split(",")[0] for l in t.splitlines() if l}))
+        t = get("https://www.ogimet.com/cgi-bin/getsynop?block=480&begin=" + b)
+        print("PROBE S480", [l for l in t.splitlines() if l.startswith(("48097", "48042", "48034", "48039", "48043", "48055", "48065"))][-14:])
     except Exception as e:
-        print("PROBE FAIL isd", e)
-    try:
-        t = get("https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0")
-        for m in re.finditer(r"<Name>([^<]*IMERG[^<]*)</Name>", t):
-            k = t.find("<Dimension", m.end()); print("PROBE GIBS", m.group(1), t[k:k+260].replace("\n", " "))
-    except Exception as e:
-        print("PROBE FAIL gibs", e)
+        print("PROBE FAIL", e)
     markets("data/markets.json")
     fallback_edition(items)
     dmh("data/dmh.json")
