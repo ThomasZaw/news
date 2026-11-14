@@ -305,10 +305,15 @@ export default {
       if (request.method === "POST") {
         const b = await request.json().catch(() => null);
         if (!env.ADMIN_KEY || !b || b.key !== env.ADMIN_KEY) return new Response("Wrong key", { status: 403, headers: cors });
-        const v = {};
-        for (const f of ["gold_ygea", "gold_15", "usd_market", "octane92", "octane95", "octane97", "diesel", "premium_diesel"]) if (b.prices && b.prices[f] !== "" && b.prices[f] != null && isFinite(+b.prices[f])) v[f] = +b.prices[f];
-        v.note = String((b.prices && b.prices.note) || "").slice(0, 200);
-        v.updated = new Date().toISOString();
+        // Keep earlier prices and only change what was sent. Gold and dollar, and fuel, each keep their own date.
+        const v = (await env.SEEN.get("prices", "json")) || {}, at = new Date().toISOString();
+        const GOLD = ["gold_ygea", "gold_15", "usd_market"], FUEL = ["octane92", "octane95", "octane97", "diesel", "premium_diesel"];
+        for (const f of GOLD.concat(FUEL)) if (b.prices && b.prices[f] !== "" && b.prices[f] != null && isFinite(+b.prices[f])) {
+          v[f] = +b.prices[f];
+          if (GOLD.includes(f)) v.gold_at = at; else v.fuel_at = at;
+        }
+        if (b.prices && b.prices.note != null) v.note = String(b.prices.note).slice(0, 200);
+        v.updated = at;
         await env.SEEN.put("prices", JSON.stringify(v));
         return new Response("Saved", { headers: cors });
       }
