@@ -105,7 +105,7 @@ function renderNotes(){
   var f=el('form','note-form');f.autocomplete='off';
   f.innerHTML='<label class="w" for="note-text">What should I remind you about?<input class="field" id="note-text" required maxlength="200"></label><label for="note-date">Date<input class="field" id="note-date" type="date" required></label><label for="note-time">Time<input class="field" id="note-time" type="time"></label><button class="btn main w" type="submit">Add reminder</button>';
   var list=el('ul','nlist');
-  b.append(h,alertBox,f,list,el('p','small-note','Reminders appear here. Turn on notifications to get them on your device too.'));
+  b.append(h,alertBox,f,list,el('p','small-note','Reminders appear here. With phone alerts on, they also reach this device.'));
   $('note-date').value=iso(pick);
   f.addEventListener('submit',function(e){e.preventDefault();var t=$('note-text').value.trim();if(!t)return;var n=loadNotes();var r={id:String(Date.now()),text:t,date:$('note-date').value,time:$('note-time').value};n.push(r);store('pd-notes',n);syncReminder(r);renderNotes();renderDay()});
   drawNotes();
@@ -375,8 +375,8 @@ function renderQuakes(){
   var lg=el('div','q-legend');[['#E0252B','Last 24 hours'],['#F08A24','Last 7 days'],['#F2C14E','Older']].forEach(function(x){var i=el('span');var d=el('i');d.style.background=x[0];i.append(d,x[1]);lg.append(i)});var fl=el('span'),fd=el('i','fault');fl.append(fd,'Sagaing Fault, approximate');lg.append(fl,el('span',null,'Bigger circle, stronger quake'));b.append(lg);
   var act=el('div','q-act'),g1=el('button','btn',GEO?'Location saved':'Use my location'),g2=el('button','btn',store('pd-push')?'Notifications on':'Turn on notifications'),g3=el('button','btn',store('pd-qsound')?'Sound on':'Turn on sound');[g1,g2,g3].forEach(function(x){x.type='button'});
   g1.onclick=function(){if(!navigator.geolocation){g1.textContent='Location not available';return}navigator.geolocation.getCurrentPosition(function(p){GEO={lat:+p.coords.latitude.toFixed(2),lon:+p.coords.longitude.toFixed(2)};store('pd-geo',GEO);qSet([],QK_SRC)},function(){g1.textContent='Location was blocked'})};
-  g2.onclick=function(){g2.textContent='Turning on…';enablePush().then(function(){g2.textContent='Notifications on';g4.hidden=false}).catch(function(e){g2.textContent=e.message||'Could not turn on'})};
-  var g4=el('button','btn','Send a test');g4.type='button';g4.hidden=!store('pd-push');g4.onclick=function(){g4.textContent='Sending…';testPush().then(function(){g4.textContent='Test sent'}).catch(function(){g4.textContent='Test failed'})};
+  g2.textContent=pushState()==='on'?'Alert settings':'Turn on phone alerts';g2.onclick=function(){location.hash='#reminders';setTimeout(function(){var x=$('alert-prefs');if(x)x.scrollIntoView({behavior:'smooth'})},120)};
+  var g4=el('button','btn','Send a test');g4.type='button';g4.hidden=true;g4.onclick=function(){g4.textContent='Sending…';testPush().then(function(){g4.textContent='Test sent'}).catch(function(){g4.textContent='Test failed'})};
   g3.onclick=function(){var v=!store('pd-qsound');store('pd-qsound',v);if(v)beep();g3.textContent=v?'Sound on':'Turn on sound'};
   act.append(g1,g2,g3,g4);b.append(act);
   b.append(el('p','small-note','Data from USGS, EMSC and GEOFON, checked every minute. Most quakes near Myanmar appear within 5 to 15 minutes, and the first magnitude can change. Alerts show for magnitude 4.0+ in or near Myanmar. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
@@ -568,7 +568,7 @@ function renderLive(){
   if(!rows.length){liveBox.append(el('p','empty','No headlines from the last two days in this topic.'));return}
   liveBox.append(feedList(rows));
 }
-var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['all','News','သတင်း'],['prices','Prices','ဈေးနှုန်း'],['quakes','Earthquakes','ငလျင်'],['safety','Safety','ဘေးကင်းရေး'],['enso','El Niño','အယ်လ်နီညို'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Reminders','မှတ်စု'],['learn','Learn','လေ့လာရန်']];
+var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['all','News','သတင်း'],['prices','Prices','ဈေးနှုန်း'],['quakes','Earthquakes','ငလျင်'],['safety','Safety','ဘေးကင်းရေး'],['enso','El Niño','အယ်လ်နီညို'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Alerts','သတိပေးချက်'],['learn','Learn','လေ့လာရန်']];
 (function(){var n=$('nav');NAV.forEach(function(x){var a=el('a');a.href='#'+x[0];a.dataset.key=x[0];a.append(x[1],mm('span',x[2]));n.append(a)})})();
 var VIEWS=['home','weather','enso','quakes','safety','privacy','calendar','reminders','learn','prices','admin'],NEWS=['all','myanmar','burmese','world','politics','business','stocks','sports','tech'];
 function route(jump){
@@ -632,16 +632,28 @@ var PREF_CITIES_OLD=['Yangon','Naypyitaw','Mandalay','Bago','Mawlamyine','Hpa-An
 function getPrefs(){return store('pd-prefs')||{quakes:true,weather:true,official:true,news:true,cities:[]}}
 function loadPricesSafe(){if(typeof loadPrices==='function')loadPrices()}
 function savePrefs(p,admin){store('pd-prefs',p);return pushSub().then(function(s){return fetch(PUSH_API+'/prefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sub:s,prefs:p,admin:admin})})}).then(function(r){if(!r.ok)throw new Error('Could not save. Try again later.');return r.json()})}
-function renderAlertPrefs(){var box=$('alert-prefs');if(!box)return;clear(box);var p=getPrefs();
-  var h=el('h3','sec','Phone alerts');box.append(h);
-  var on=!!store('pd-push');box.append(el('p','small-note',on?'Choose which alerts this device receives.':'Turn on notifications first, then choose which alerts you want.'));
-  var f=el('form','prefs');[['quakes','Earthquakes in or near Myanmar','ငလျင်'],['weather','Weather and storm warnings','ရာသီဥတု'],['official','Official warnings from the weather department','တရားဝင်သတိပေးချက်'],['news','Breaking news','သတင်းထူး']].forEach(function(x){var l=el('label','pref'),c=el('input');c.type='checkbox';c.name=x[0];c.checked=p[x[0]]!==false;l.append(c,el('span',null,x[1]),mm('span',x[2]));f.append(l)});
-  var ct=el('fieldset','pref-cities'),lg=el('legend',null,'Weather alerts for these cities only');ct.append(lg,el('p','small-note','Leave all unticked to get weather alerts for every city.'));var cw=el('div','places');
+function pushState(){if(!('Notification' in window)||!('PushManager' in window))return /iPad|iPhone|Macintosh/.test(navigator.userAgent)&&!navigator.standalone?'install':'unsupported';if(Notification.permission==='denied')return 'blocked';return store('pd-push')&&Notification.permission==='granted'?'on':'off'}
+function disablePush(){return navigator.serviceWorker.ready.then(function(r){return r.pushManager.getSubscription()}).then(function(s){if(!s)return;return fetch(PUSH_API+'/unsubscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:s.endpoint})}).then(function(){return s.unsubscribe()})}).then(function(){store('pd-push',0)})}
+function renderAlertPrefs(){var box=$('alert-prefs');if(!box)return;clear(box);var p=getPrefs(),st=pushState();
+  var hd=el('div','ap-head'),h=el('h2',null,'Phone alerts');h.append(mm('span','သတိပေးချက်'));hd.append(h);
+  var badge=el('span','ap-state '+st,{on:'On for this device',off:'Off',blocked:'Blocked',install:'Needs Home Screen',unsupported:'Not supported'}[st]);hd.append(badge);box.append(hd);
+  var help={on:'Choose what reaches this device. Changes save when you press Save.',off:'Turn on alerts to get earthquakes, storm warnings and breaking news on this device, even when the site is closed.',blocked:'This browser has blocked alerts for the site. Allow notifications for parabaikdaily.com in your browser or phone settings, then come back.',install:'On iPhone and iPad, tap Share, then Add to Home Screen, and open Parabaik Daily from there to turn on alerts.',unsupported:'This browser cannot receive alerts. Try Chrome, Edge, Firefox or Safari on a recent device.'}[st];
+  box.append(el('p','ap-help',help));
+  var act=el('div','prefs-row'),msg=el('span','small-note');msg.setAttribute('role','status');
+  if(st==='off'){var en=el('button','btn btn-gold','Turn on alerts');en.type='button';en.onclick=function(){en.disabled=true;msg.textContent='Asking your browser';enablePush().then(function(){return savePrefs(getPrefs())}).then(function(){renderAlertPrefs()}).catch(function(e){msg.textContent=e.message;en.disabled=false})};act.append(en)}
+  if(st==='on'){var te=el('button','btn','Send a test alert'),off=el('button','btn','Turn off on this device');te.type=off.type='button';te.onclick=function(){te.disabled=true;msg.textContent='Sending';testPush().then(function(){msg.textContent='Sent. It should arrive in a few seconds.'}).catch(function(e){msg.textContent=e.message}).then(function(){te.disabled=false})};off.onclick=function(){off.disabled=true;disablePush().then(function(){renderAlertPrefs()}).catch(function(){msg.textContent='Could not turn off. Try again.';off.disabled=false})};act.append(te,off)}
+  act.append(msg);if(act.children.length>1)box.append(act);else{box.append(msg)}
+  var f=el('form','prefs');if(st!=='on'&&st!=='off')f.classList.add('dim');
+  var g1=el('fieldset','ap-group');g1.append(el('legend',null,'What to send'));
+  [['quakes','Earthquakes','In or near Myanmar','ငလျင်'],['weather','Weather and storms','Thunderstorms, heavy rain, strong wind and extreme heat','ရာသီဥတု'],['official','Official warnings','From Myanmar\'s weather department','တရားဝင်သတိပေးချက်'],['news','Breaking news','Major stories only, at most a few a day','သတင်းထူး']].forEach(function(x){var l=el('label','pref'),c=el('input'),t=el('span','pref-tx');c.type='checkbox';c.name=x[0];c.checked=p[x[0]]!==false;t.append(el('b',null,x[1]),el('small',null,x[2]));l.append(c,t,mm('span',x[3]));g1.append(l)});
+  var mg=el('label','pref pref-sel'),ms=el('select'),mt=el('span','pref-tx');ms.name='minMag';[[4,'Magnitude 4.0 and stronger'],[5,'Magnitude 5.0 and stronger only']].forEach(function(o){var op=el('option',null,o[1]);op.value=o[0];if((p.minMag||4)===o[0])op.selected=true;ms.append(op)});mt.append(el('b',null,'Earthquake strength'),el('small',null,'Smaller quakes are rarely felt'));mg.append(mt,ms);g1.append(mg);f.append(g1);
+  var g2=el('fieldset','ap-group');g2.append(el('legend',null,'When'));var ql=el('label','pref'),qc=el('input'),qt=el('span','pref-tx');qc.type='checkbox';qc.name='quiet';qc.checked=!!p.quiet;qt.append(el('b',null,'Quiet at night'),el('small',null,'10 PM to 6 AM Myanmar time. Official warnings and earthquakes of 5.0 or stronger still come through.'));ql.append(qc,qt,mm('span','ညအချိန်'));g2.append(ql);f.append(g2);
+  var ct=el('fieldset','ap-group pref-cities'),cw=el('div','places');ct.append(el('legend',null,'Weather alerts for these cities'),el('p','small-note','Leave all unticked to get weather alerts for every city.'));
   prefCities().forEach(function(n){var l=el('label','chip pc'),c=el('input');c.type='checkbox';c.value=n;c.checked=(p.cities||[]).indexOf(n)>=0;l.append(c,cn(n));cw.append(l)});ct.append(cw);f.append(ct);
-  var row=el('div','prefs-row'),sv=el('button','btn','Save alert settings'),msg=el('span','small-note');sv.type='submit';if(!on){var en=el('button','btn','Turn on notifications');en.type='button';en.onclick=function(){en.disabled=true;enablePush().then(function(){renderAlertPrefs()}).catch(function(e){msg.textContent=e.message;en.disabled=false})};row.append(en)}row.append(sv,msg);f.append(row);
-  f.onsubmit=function(e){e.preventDefault();var np={cities:[]};['quakes','weather','official','news'].forEach(function(k){np[k]=f.elements[k].checked});Array.prototype.forEach.call(cw.querySelectorAll('input:checked'),function(c){np.cities.push(c.value)});
-    if(!store('pd-push')){store('pd-prefs',np);msg.textContent='Saved on this device. Turn on notifications to start receiving them.';return}
-    sv.disabled=true;msg.textContent='Saving';savePrefs(np).then(function(){msg.textContent='Saved.'}).catch(function(x){msg.textContent=x.message}).then(function(){sv.disabled=false})};
+  var row=el('div','prefs-row'),sv=el('button','btn btn-gold','Save alert settings'),sm=el('span','small-note');sm.setAttribute('role','status');sv.type='submit';row.append(sv,sm);f.append(row);
+  f.onsubmit=function(e){e.preventDefault();var np={cities:[],minMag:+f.elements.minMag.value,quiet:f.elements.quiet.checked};['quakes','weather','official','news'].forEach(function(k){np[k]=f.elements[k].checked});Array.prototype.forEach.call(cw.querySelectorAll('input:checked'),function(c){np.cities.push(c.value)});
+    if(pushState()!=='on'){store('pd-prefs',np);sm.textContent='Saved on this device. Turn on alerts to start receiving them.';return}
+    sv.disabled=true;sm.textContent='Saving';savePrefs(np).then(function(){sm.textContent='Saved.'}).catch(function(x){sm.textContent=x.message}).then(function(){sv.disabled=false})};
   box.append(f)}
 
 /* Read aloud: weather and top headlines */

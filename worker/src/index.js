@@ -56,7 +56,7 @@ export async function quakeAlerts(env, quakes, now) {
     if (sent.some((s) => Math.abs(s.t - q.time) < 90e3 && km(s.lat, s.lon, q.lat, q.lon) < 150)) continue;
     sent.push({ t: q.time, lat: q.lat, lon: q.lon });
     const t = new Date(q.time + 6.5 * 3600e3).toISOString().slice(11, 16);
-    out.push({ key: "q:" + q.id, title: "Earthquake M" + q.mag.toFixed(1) + (q.mag >= 5 ? ", strong" : ""), body: `${mmNear(q.lat, q.lon).km <= 60 ? mmNear(q.lat, q.lon).label : q.place || "Near Myanmar"} at ${t} Myanmar time. Depth ${Math.round(q.depth)} km. Source ${q.src}.`, click: SITE + "#quakes" });
+    out.push({ mag: q.mag, key: "q:" + q.id, title: "Earthquake M" + q.mag.toFixed(1) + (q.mag >= 5 ? ", strong" : ""), body: `${mmNear(q.lat, q.lon).km <= 60 ? mmNear(q.lat, q.lon).label : q.place || "Near Myanmar"} at ${t} Myanmar time. Depth ${Math.round(q.depth)} km. Source ${q.src}.`, click: SITE + "#quakes" });
   }
   if (out.length) await env.SEEN.put("qsent", JSON.stringify(sent.slice(-200)));
   return out;
@@ -137,10 +137,14 @@ export function alertKind(a) {
   if (p === "st" || p === "sr") return { cat: "weather", city: a.city || null };
   return { cat: "news" };
 }
-export function wants(sub, a) {
+export function wants(sub, a, now = Date.now()) {
   const k = alertKind(a), p = sub.prefs || {};
   if (k.cat === "system") return !!p.owner;
   if (p[k.cat] === false) return false;
+  if (k.cat === "quakes" && a.mag != null && p.minMag && a.mag < p.minMag) return false;
+  // Quiet at night, 10 PM to 6 AM Myanmar time: only official warnings and strong earthquakes come through.
+  const hour = new Date(now + 6.5 * 3600e3).getUTCHours();
+  if (p.quiet && (hour >= 22 || hour < 6) && !(k.cat === "official" || (k.cat === "quakes" && a.mag >= 5))) return false;
   if (k.cat === "weather" && k.city && Array.isArray(p.cities) && p.cities.length && !p.cities.includes(k.city)) return false;
   return true;
 }
@@ -290,12 +294,20 @@ export default {
       const status = await sendOne(env, key, sub, { title: "Parabaik Daily", body: "Test alert. Notifications are working.", click: SITE });
       return new Response(String(status), { status: status < 300 ? 200 : 502, headers: cors });
     }
+    if (request.method === "POST" && path === "/unsubscribe") {
+      const b = await request.json().catch(() => null);
+      if (!b || !/^https:\/\//.test(b.endpoint || "")) return new Response("Invalid", { status: 400, headers: cors });
+      await env.SEEN.delete(await subKey(b.endpoint));
+      return new Response("Removed", { headers: cors });
+    }
     if (request.method === "POST" && path === "/prefs") {
       const b = await request.json().catch(() => null);
       if (!b || !b.sub || !/^https:\/\//.test(b.sub.endpoint || "") || !b.sub.keys) return new Response("Invalid", { status: 400, headers: cors });
       const key = await subKey(b.sub.endpoint), old = (await env.SEEN.get(key, "json")) || {};
       const p = b.prefs || {}, prefs = {};
       for (const c of ["quakes", "weather", "official", "news"]) prefs[c] = p[c] !== false;
+      prefs.minMag = p.minMag === 5 ? 5 : 4;
+      prefs.quiet = !!p.quiet;
       prefs.cities = Array.isArray(p.cities) ? p.cities.filter((x) => typeof x === "string").slice(0, 20) : [];
       prefs.owner = !!(old.prefs && old.prefs.owner) || (!!env.ADMIN_KEY && b.admin === env.ADMIN_KEY);
       await env.SEEN.put(key, JSON.stringify({ endpoint: b.sub.endpoint, keys: b.sub.keys, prefs }));

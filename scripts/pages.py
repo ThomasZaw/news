@@ -19,6 +19,7 @@ def main(site="_site"):
     for slug, view, title, desc in PAGES:
         url = "https://parabaikdaily.com/" + slug + "/"
         h = base.replace("<head>", '<head>\n<base href="/">', 1)
+        h = h.replace('<h1 class="sr-only">Parabaik Daily: Myanmar news, weather and earthquake alerts</h1>', '<h1 class="sr-only">' + title + '</h1>')
         h = h.replace("<title>Parabaik Daily: Myanmar news, weather and earthquake alerts</title>", "<title>" + title + " | Parabaik Daily</title>")
         h = h.replace('<link rel="canonical" href="https://parabaikdaily.com/">', '<link rel="canonical" href="' + url + '">')
         h = h.replace('<meta property="og:url" content="https://parabaikdaily.com/">', '<meta property="og:url" content="' + url + '">')
