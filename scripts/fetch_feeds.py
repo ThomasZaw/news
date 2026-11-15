@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build data/live.json from public RSS and Atom feeds. Standard library only."""
-import csv, email.utils, io, json, os, re, sys, urllib.request
+import csv, email.utils, io, json, os, re, sys, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -141,13 +141,55 @@ def sub_of(title):
     return "general"
 
 
+def gnews_url(link):
+    """Google News feed links point to Google, not the outlet. Ask Google for the real article address,
+    the same way its own page does, so the article's photo can be found. Returns None if that fails."""
+    import base64
+    m = re.search(r"/articles/([^?/]+)", link)
+    if not m:
+        return None
+    aid = m.group(1)
+    try:
+        raw = base64.urlsafe_b64decode(aid + "=" * (-len(aid) % 4))
+        old = re.search(rb"https?://[^\x00-\x20\x7f-\xff]+", raw)
+        if old and b"news.google" not in old.group(0):
+            return old.group(0).decode("ascii", "ignore")
+    except Exception:
+        pass
+    req = urllib.request.Request("https://news.google.com/rss/articles/" + aid, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=12) as r:
+        html = r.read(400000).decode("utf-8", "replace")
+    sg, ts = re.search(r'data-n-a-sg="([^"]+)"', html), re.search(r'data-n-a-ts="([^"]+)"', html)
+    if not (sg and ts):
+        return None
+    inner = json.dumps(["garturlreq", [["X", "X", ["X", "X"], None, None, 1, 1, "US:en", None, 1, None, None, None, None, None, 0, 1], "X", "X", 1, [1, 1, 1], 1, 1, None, 0, 0, None, 0], aid, int(ts.group(1)), sg.group(1)])
+    body = urllib.parse.urlencode({"f.req": json.dumps([[["Fbv4je", inner, None, "generic"]]])}).encode()
+    req = urllib.request.Request("https://news.google.com/_/DotsSplashUi/data/batchexecute", data=body, headers={"User-Agent": "Mozilla/5.0", "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"})
+    with urllib.request.urlopen(req, timeout=12) as r:
+        text = r.read().decode("utf-8", "replace")
+    for line in text.split("\n"):
+        if '"garturlres"' in line:
+            out = json.loads(json.loads(line)[0][2])[1]
+            return out if isinstance(out, str) and out.startswith("http") else None
+    return None
+
+
 def og_images(items, limit=60):
     """Find the main photo for articles whose feed gave none. Google News links are skipped because they are redirects."""
-    todo = [i for i in items if "img" not in i and "news.google.com" not in i["url"] and i["source"] not in ("USGS", "GDACS")][:limit]
+    todo = [i for i in items if "img" not in i and i["source"] not in ("USGS", "GDACS")][:limit]
+    real = {"n": 0}
 
     def one(i):
         try:
-            req = urllib.request.Request(i["url"], headers={"User-Agent": "Mozilla/5.0 (compatible; ParabaikDaily/1.0)"})
+            url = i["url"]
+            if "news.google.com" in url:
+                # Use the outlet's own address for the photo and for the link people tap.
+                url = gnews_url(url)
+                if not url:
+                    return
+                i["url"] = url
+                real["n"] += 1
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; ParabaikDaily/1.0)"})
             with urllib.request.urlopen(req, timeout=12) as r:
                 html = r.read(300000).decode("utf-8", "replace")
             m = re.search(r'<meta[^>]+(?:property|name)=["\'](?:og:image|twitter:image)["\'][^>]+content=["\']([^"\']+)', html, re.I) or re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\'](?:og:image|twitter:image)', html, re.I)
@@ -159,6 +201,7 @@ def og_images(items, limit=60):
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(12) as ex:
         list(ex.map(one, todo))
+    print(real["n"], "Google News links turned into outlet links")
     print(sum(1 for i in items if "img" in i), "of", len(items), "headlines have photos")
 
 
@@ -825,8 +868,8 @@ def main(path="data/live.json"):
         if i["topic"] == "myanmar" or (i["topic"] == "weather" and i.get("mm")):
             i["sub"] = "weather" if i["topic"] == "weather" else sub_of(i["title"])
     picks = [i for v in by_topic.values() for i in v[:10]]
-    picks += [i for i in by_topic["myanmar"][10:] + by_topic["weather"] if "news.google.com" not in i["url"] and i not in picks]
-    og_images(picks, limit=90)
+    picks += [i for i in by_topic["myanmar"][10:] + by_topic["weather"] + by_topic.get("burmese", []) if i not in picks]
+    og_images(picks, limit=140)
     if not items:
         sys.exit("No headlines fetched")
     found = alerts(rows, now)

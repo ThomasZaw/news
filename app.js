@@ -17,8 +17,10 @@ function iso(d){return d[0]+'-'+String(d[1]).padStart(2,'0')+'-'+String(d[2]).pa
 /* Text size */
 function size(n){n=Math.max(0,Math.min(2,n));document.documentElement.dataset.size=n;store('pd-size',n);return n}
 var sz=size(store('pd-size')||0);
-['lang1','lang2'].forEach(function(i){var b=$(i);if(b){b.textContent=window.PD_LANG==='mm'?'EN':'မြန်မာ';b.onclick=function(){window.setLang(window.PD_LANG==='mm'?'en':'mm')}}});
-['size-up','size-up2'].forEach(function(i){$(i).onclick=function(){sz=size(sz+1);redraw()}});['size-down','size-down2'].forEach(function(i){$(i).onclick=function(){sz=size(sz-1);redraw()}});
+function each(q,fn){Array.prototype.forEach.call(document.querySelectorAll(q),fn)}
+var T=PX.T,LITE=PX.lite(),V=document.documentElement.dataset.v||'';
+each('.lang',function(b){b.textContent=window.PD_LANG==='mm'?'EN':'မြန်မာ';b.setAttribute('aria-label',window.PD_LANG==='mm'?'Switch to English':'မြန်မာဘာသာသို့ ပြောင်းရန်');b.onclick=function(){window.setLang(window.PD_LANG==='mm'?'en':'mm')}});
+each('.size-up',function(b){b.onclick=function(){sz=size(sz+1);redraw()}});each('.size-down',function(b){b.onclick=function(){sz=size(sz-1);redraw()}});
 
 /* Burmese calendar */
 var M=ceMmDateTime,TR=new ceMmTranslate();
@@ -29,7 +31,7 @@ function wd(d){return new Date(Date.UTC(d[0],d[1]-1,d[2])).getUTCDay()}
 var WDN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
 function mmLine(m){return tr(m.ToMString('&M &P &ff'))}
 function mmNum(n){return tr(String(n))}
-var TODAY=ygn(),calView=[TODAY[0],TODAY[1]],pick=TODAY.slice(),HOL=null;
+var TODAY=ygn(),calView=[TODAY[0],TODAY[1]],pick=TODAY.slice(),HOL=null,EDAGE=0;
 var HMM={"New Year's Day":'နိုင်ငံတကာ နှစ်ဆန်းတစ်ရက်နေ့','New Year holiday':'နှစ်သစ် ရုံးပိတ်ရက်','Independence Day':'လွတ်လပ်ရေးနေ့','Union Day':'ပြည်ထောင်စုနေ့','Union Day holiday':'ပြည်ထောင်စုနေ့ ရုံးပိတ်ရက်','Chinese New Year':'တရုတ်နှစ်သစ်ကူး',"Peasants' Day":'တောင်သူလယ်သမားနေ့',"Peasants' Day holiday":'တောင်သူလယ်သမားနေ့ ရုံးပိတ်ရက်','Armed Forces Day':'တပ်မတော်နေ့','Resistance Day':'တော်လှန်ရေးနေ့','Thingyan':'သင်္ကြန်','Thingyan and New Year':'သင်္ကြန်နှင့် နှစ်သစ်',"Myanmar New Year's Day":'မြန်မာနှစ်ဆန်းတစ်ရက်နေ့','Labour Day':'အလုပ်သမားနေ့',"Martyrs' Day":'အာဇာနည်နေ့','National Day':'အမျိုးသားနေ့','National Day holiday':'အမျိုးသားနေ့ ရုံးပိတ်ရက်','Christmas Day':'ခရစ္စမတ်နေ့','Karen New Year':'ကရင်နှစ်သစ်ကူးနေ့','Karen New Year holiday':'ကရင်နှစ်သစ် ရုံးပိတ်ရက်',"Karen New Year's Day":'ကရင်နှစ်သစ်ကူးနေ့','Full moon of Tabaung':'တပေါင်းလပြည့်နေ့','Full moon of Kason':'ကဆုန်လပြည့်နေ့','Kason holiday':'ကဆုန် ရုံးပိတ်ရက်','Full moon of Waso':'ဝါဆိုလပြည့်နေ့','Thadingyut':'သီတင်းကျွတ်','Thadingyut holiday':'သီတင်းကျွတ် ရုံးပိတ်ရက်','Full moon of Thadingyut':'သီတင်းကျွတ်လပြည့်နေ့','Full moon of Tazaungmon':'တန်ဆောင်မုန်းလပြည့်နေ့','Tazaungmon holiday':'တန်ဆောင်မုန်း ရုံးပိတ်ရက်','Public holiday':'ရုံးပိတ်ရက်','Eid':'အိဒ်နေ့','Diwali':'ဒီပါဝလီနေ့','Buddha Day':'ဗုဒ္ဓနေ့','Start of Buddhist Lent':'ဝါဆိုနေ့','End of Buddhist Lent':'ဝါကျွတ်နေ့','Tazaungdaing':'တန်ဆောင်တိုင်','Sabbath (Uposatha day)':'ဥပုသ်နေ့','Sabbath eve':'အဖိတ်နေ့','Thingyan Akyo':'သင်္ကြန်အကြို','Thingyan Akya':'သင်္ကြန်အကျ','Thingyan Akyat':'သင်္ကြန်အကြတ်','Thingyan Atat':'သင်္ကြန်အတက်'};
 var FMN={Tabaung:'Tabaung pagoda festival',Kason:'Buddha Day, watering the Bodhi tree',Waso:'Start of Buddhist Lent',Thadingyut:'End of Buddhist Lent, festival of lights',Tazaungmon:'Tazaungdaing festival of lights'};
 var HSKIP=/Valentine|April Fool|Halloween|Earth Day|Red Cross|United Nations|Teachers|Easter|Good Friday|^Holiday$|Christmas/;
@@ -49,8 +51,10 @@ get('data/holidays.json').then(function(j){HOL=j;if(view==='calendar')renderDay(
 
 function renderDateline(){
   var dl=$('dateline'),w=wd(TODAY),m=md(TODAY);clear(dl);
-  dl.append(mm('span',tr(WDN[w])+'နေ့'),el('span',null,WDN[w]+', '+TODAY[2]+' '+MON[TODAY[1]-1]+' '+TODAY[0]));
-  if(window.speechSynthesis){var lb=el('button','btn listen','Listen');lb.type='button';lb.setAttribute('aria-label','Read the weather and top news aloud');lb.onclick=function(){readAloud(lb)};dl.append(lb)}
+  var tx=el('div'),h=el('h2',null,T('Mingalaba. Here is '+WDN[w]+'.','မင်္ဂလာပါ'));
+  tx.append(mm('span',tr(WDN[w])+'နေ့ · '+mmLine(m)),h,el('p',null,TODAY[2]+' '+MON[TODAY[1]-1]+' '+TODAY[0]+' · '+cn(city)));dl.append(tx);
+  if(window.speechSynthesis){var lb=el('button','btn listen');lb.type='button';lb.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9v6h4l5 4V5L9 9H5z"/></svg>';var lt=el('span',null,'Listen');lb.append(lt);lb.setAttribute('aria-label','Read the weather and top news aloud');lb.onclick=function(){readAloud(lt)};dl.append(lb)}
+  if(EDAGE>=2)dl.append(el('span','stale','News edition is '+EDAGE+' days old'));
 }
 function renderDay(){
   var b=$('daybox'),m=md(TODAY),w=wd(TODAY),h=el('h2',null,'Burmese calendar');h.append(' ',mm('span','ပြက္ခဒိန်'));clear(b);
@@ -123,6 +127,7 @@ function drawNotes(){
 
 /* Weather */
 var CITIES=[['Yangon',16.87,96.2,'ရန်ကုန်'],['Mandalay',21.97,96.08,'မန္တလေး'],['Naypyitaw',19.75,96.12,'နေပြည်တော်'],['Hpa-An',16.89,97.63,'ဘားအံ'],['Mawlamyine',16.49,97.63,'မော်လမြိုင်'],['Pathein',16.78,94.73,'ပုသိမ်'],['Bago',17.34,96.48,'ပဲခူး'],['Taunggyi',20.79,97.04,'တောင်ကြီး'],['Sittwe',20.15,92.9,'စစ်တွေ'],['Myitkyina',25.38,97.4,'မြစ်ကြီးနား'],['Monywa',22.11,95.14,'မုံရွာ'],['Kawthaung',9.98,98.55,'ကော့သောင်း']];
+(function(){var t=store('pd-town');if(t&&t[0]&&!CITIES.some(function(c){return c[0]===t[0]}))CITIES.push([t[0],t[1],t[2],''])})();
 var city=store('pd-city')||'Yangon',WX=null,wxSource='';
 function code(c,day){
   if(c===0)return [day?'sun':'moon','Clear','ကြည်လင်'];
@@ -138,10 +143,10 @@ function code(c,day){
 // Weather icons drawn as SVG, in place of emoji.
 var WI=(function(){
   var cl='M20 46H46A9 9 0 0 0 47.5 28.1A13 13 0 0 0 23 25A10.5 10.5 0 0 0 20 46Z';
-  function cloud(f,s,t){return '<path d="'+cl+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.5" stroke-linejoin="round"'+(t?' transform="'+t+'"':'')+'/>'}
-  function sun(x,y,r){var o='<g stroke="#F2A900" stroke-width="2.6" stroke-linecap="round">';for(var k=0;k<8;k++){var an=k*Math.PI/4,c=Math.cos(an),s=Math.sin(an);o+='<line x1="'+(x+c*(r+4)).toFixed(1)+'" y1="'+(y+s*(r+4)).toFixed(1)+'" x2="'+(x+c*(r+9)).toFixed(1)+'" y2="'+(y+s*(r+9)).toFixed(1)+'"/>'}return o+'</g><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#FDB813" stroke="#F2A900" stroke-width="1.5"/>'}
+  function cloud(f,s,t){return '<g class="drift"><path d="'+cl+'" fill="'+f+'" stroke="'+s+'" stroke-width="1.5" stroke-linejoin="round"'+(t?' transform="'+t+'"':'')+'/></g>'}
+  function sun(x,y,r){var o='<g class="sunray" stroke="#F2A900" stroke-width="2.6" stroke-linecap="round">';for(var k=0;k<8;k++){var an=k*Math.PI/4,c=Math.cos(an),s=Math.sin(an);o+='<line x1="'+(x+c*(r+4)).toFixed(1)+'" y1="'+(y+s*(r+4)).toFixed(1)+'" x2="'+(x+c*(r+9)).toFixed(1)+'" y2="'+(y+s*(r+9)).toFixed(1)+'"/>'}return o+'</g><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#FDB813" stroke="#F2A900" stroke-width="1.5"/>'}
   function moon(x,y,r){return '<path d="M'+(x+r*.35)+' '+(y-r)+'A'+r+' '+r+' 0 1 0 '+(x+r)+' '+(y+r*.45)+'A'+(r*.85)+' '+(r*.85)+' 0 0 1 '+(x+r*.35)+' '+(y-r)+'Z" fill="#F3DFA2" stroke="#D9BC6A" stroke-width="1.5"/>'}
-  function drops(n,col){var o='<g stroke="'+(col||'#2F80C8')+'" stroke-width="3" stroke-linecap="round">',xs=n===2?[26,38]:n===3?[22,32,42]:[19,28,37,46];xs.forEach(function(x,k){var y=k%2?52:49;o+='<line x1="'+x+'" y1="'+y+'" x2="'+(x-3)+'" y2="'+(y+7)+'"/>'});return o+'</g>'}
+  function drops(n,col){var o='<g stroke="'+(col||'#2F80C8')+'" stroke-width="3" stroke-linecap="round">',xs=n===2?[26,38]:n===3?[22,32,42]:[19,28,37,46];xs.forEach(function(x,k){var y=k%2?52:49;o+='<line class="drop" x1="'+x+'" y1="'+y+'" x2="'+(x-3)+'" y2="'+(y+7)+'"/>'});return o+'</g>'}
   var W='#FBFCFD',WS='#AEB7C1',G='#C5CDD6',GS='#8E99A5',D='#8A95A1',DS='#5F6B77',up='translate(0 -7)';
   var S={sun:sun(32,32,12),moon:moon(30,32,14),
     'pc-day':sun(24,22,9)+cloud(W,WS,'translate(2 4)'),
@@ -151,7 +156,7 @@ var WI=(function(){
     drizzle:cloud(W,WS,up)+drops(2),
     rain:cloud(G,GS,up)+drops(3),
     heavy:cloud(D,DS,up)+drops(4,'#1F6FB5'),
-    storm:cloud(D,DS,up)+'<path d="M34 36L26 49H32L28 60L40 45H33L37 36Z" fill="#F7C20E" stroke="#D99A00" stroke-width="1.2" stroke-linejoin="round"/>'+'<g stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"><line x1="20" y1="48" x2="17" y2="55"/><line x1="46" y1="48" x2="43" y2="55"/></g>'};
+    storm:cloud(D,DS,up)+'<path class="bolt" d="M34 36L26 49H32L28 60L40 45H33L37 36Z" fill="#F7C20E" stroke="#D99A00" stroke-width="1.2" stroke-linejoin="round"/>'+'<g stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"><line x1="20" y1="48" x2="17" y2="55"/><line x1="46" y1="48" x2="43" y2="55"/></g>'};
   return function(k,cls){var s=document.createElement('span');s.className='wi'+(cls?' '+cls:'');s.setAttribute('aria-hidden','true');s.innerHTML='<svg viewBox="0 0 64 64">'+(S[k]||S.cloud)+'</svg>';return s};
 })();
 function cn(n){return n==='Naypyitaw'?'Nay Pyi Taw':n}
@@ -167,8 +172,8 @@ function hhmm(s){return s.slice(11,16)}
 function url(c){return 'https://api.open-meteo.com/v1/forecast?latitude='+c[1]+'&longitude='+c[2]+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,is_day&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,wind_gusts_10m_max,precipitation_sum,apparent_temperature_max,sunrise,sunset&timezone=Asia%2FYangon&forecast_days=7'}
 function loadWx(){
   var c=CITIES.find(function(x){return x[0]===city})||CITIES[0];
-  return fetch(url(c)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){WX=j;applyObs();wxSource='Live from Open-Meteo, updated '+new Date(Date.now()+6.5*36e5).toISOString().slice(11,16);renderWx()}).catch(function(){
-    return get('data/weather.json').then(function(a){if(!a.cities[city])throw 0;WX=a.cities[city];applyObs();wxSource='Saved '+ago(a.updated)+' ago';renderWx()}).catch(function(){if(!WX)renderWx()})});
+  return fetch(url(c)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){store('pd-wx',{city:city,at:Date.now(),d:j});WX=j;applyObs();wxSource='Live from Open-Meteo, updated '+new Date(Date.now()+6.5*36e5).toISOString().slice(11,16);renderWx()}).catch(function(){
+    return get('data/weather.json').then(function(a){if(!a.cities[city])throw 0;WX=a.cities[city];applyObs();wxSource='Saved '+ago(a.updated)+' ago';renderWx()}).catch(function(){var k=store('pd-wx');if(k&&k.city===city&&Date.now()-k.at<2*864e5){WX=k.d;applyObs();wxSource='Saved on this device '+ago(new Date(k.at).toISOString())+' ago';renderWx()}else if(!WX)renderWx()})});
 }
 function wxAlerts(){
   if(!WX)return [];var H=WX.hourly,D=WX.daily,c=WX.current,i=nowIdx(WX);
@@ -189,7 +194,7 @@ function renderWx(){
   var s=el('select','field');s.id='city';s.setAttribute('aria-label','Choose a city');
   CITIES.forEach(function(c){var o=el('option',null,cn(c[0])+'  '+c[3]);o.value=c[0];o.selected=c[0]===city;s.append(o)});
   s.onchange=function(){city=s.value;store('pd-city',city);loadWx();loadObs();loadAir();loadRiver()};top.append(h,s);b.append(top);
-  if(!WX){renderHome();b.append(el('p',null,'Weather is loading. If it does not appear, check your internet connection.'));return}
+  if(!WX){renderHome();b.append(PX.skCard(),el('p','small-note','Weather is loading. If it does not appear, check your internet connection.'));return}
   var c=WX.current,k=code(c.weather_code,c.is_day),i=nowIdx(WX),H=WX.hourly,D=WX.daily;
   var now=el('div','wx-now'),main=el('div','wx-main'),cond=el('div','wx-cond'),tx=el('div');
   tx.append(el('div','wx-temp',Math.round(c.temperature_2m)+'°'));cond.append(k[1],mm('span',k[2]));tx.append(cond);main.append(WI(k[0],'wx-emoji'),tx);
@@ -209,7 +214,8 @@ function renderWx(){
   hs.append(hr);hsec.append(hs);b.append(hsec);
   var w=el('div','week'),wr=el('div','week-scroll'),row=el('div','week-row');w.append(el('h3','sec','Next 7 days'));
   D.time.forEach(function(t,n){var p=t.split('-').map(Number),cd=code(D.weather_code[n],1),d=el('div');d.append(el('b',null,n===0?'Today':n===1?'Tomorrow':WDN[wd(p)].slice(0,3)),WI(cd[0],'wi-s'),el('span',null,Math.round(D.temperature_2m_max[n])+'° / '+Math.round(D.temperature_2m_min[n])+'°'),el('small',null,'Rain '+D.precipitation_probability_max[n]+'%'));row.append(d)});
-  wr.append(row);w.append(wr);b.append(w);
+  wr.append(row);w.append(wr);
+  w.append(PX.week(D.time.map(function(t,n){return n===0?'Today':WDN[wd(t.split('-').map(Number))].slice(0,3)}),D.temperature_2m_max,D.temperature_2m_min,D.precipitation_sum||D.time.map(function(){return 0}),'Seven-day forecast for '+cn(city)+': highs '+D.temperature_2m_max.map(Math.round).join(', ')+' degrees'));b.append(w);
   var ss=el('div','week');ss.append(el('h3','sec','Weather stations across Myanmar'));var smb=el('div');ss.append(smb);
   if(STN){var fresh=STN.stations.filter(function(s){return Date.now()-new Date(s.time)<6*36e5}),wet=fresh.filter(function(s){return s.storm||/Rain|Showers|Drizzle/.test(s.cond||'')});
     ss.append(el('p','small-note',fresh.length+' of '+STN.stations.length+' stations reported in the last 6 hours'+(wet.length?', '+wet.length+' with rain or thunderstorms':'')+'. Green is dry, blue is rain and red is a thunderstorm. Zoom in to see temperatures, or tap a station for details. Stations report every 3 hours. Readings from Myanmar\'s Department of Meteorology and Hydrology.'+(GPM?' The blue and yellow layer is NASA satellite rain from '+gpmWhen()+' Myanmar time, which arrives a few hours late.':'')))}
@@ -222,6 +228,7 @@ function renderWx(){
   det.append(el('p','small-note','Alerts are estimates from the forecast and storm feeds, not official warnings. Fire danger uses the Chandler Burning Index from temperature and humidity.'));
   det.addEventListener('toggle',function(){if(det.open)drawChart(ch,H,i)});b.append(det);
   var wn=el('div','wn');wn.id='wn';b.append(wn);renderWeatherNews();
+  var shr=el('div','q-act');shr.append(pageShare('Weather in '+cn(city)+': '+Math.round(c.temperature_2m)+'°, '+k[1].toLowerCase(),'weather/'));b.append(shr);
   b.append(el('p','small-note',wxSource+' · Times are Myanmar time'));renderHome();
 }
 function drawChart(box,H,i){
@@ -347,7 +354,7 @@ function wxPane(m){if(!m.getPane('wx')){var p=m.createPane('wx');p.style.zIndex=
 function baseMap(m,fitMM){m.options.zoomSnap=.25;m.options.zoomDelta=.5;if(fitMM){var done=false;function fit(){var s=m.getSize();if(done||s.x<50||s.y<50)return;done=true;m.fitBounds([[9.6,92.2],[28.6,101.2]],{padding:[8,8]})}m.on('resize',fit);[60,300,1000].forEach(function(t){setTimeout(function(){m.invalidateSize();fit()},t)})}
   var G='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/';L.imageOverlay('lib/myanmar.jpg',[[4,86],[32,108]]).addTo(m);L.tileLayer('https://tiles.maps.eox.at/wmts/1.0.0/'+EOX+'/default/g/{z}/{y}/{x}.jpg',{maxNativeZoom:14,maxZoom:15,attribution:'Sentinel-2 cloudless by EOX · NASA'}).addTo(m);L.tileLayer(G+'Reference_Labels_15m/default//GoogleMapsCompatible_Level13/{z}/{y}/{x}.png',{maxNativeZoom:13,maxZoom:15,opacity:.9}).addTo(m);L.geoJSON({type:'Feature',geometry:MM_GEO},{style:{color:'#FFD24A',weight:1.6,fill:false},interactive:false}).addTo(m)}
 function qMap(box,top){
-  if(!window.L)return;
+  if(!mapGate(QM?null:box))return;
   if(!QM){var e=el('div','qmap');e.id='qmap';box.append(e);
     QM=L.map(e,{attributionControl:true,minZoom:4,maxZoom:15,worldCopyJump:false,scrollWheelZoom:false}).setView([20,96.5],5);
     baseMap(QM,true);
@@ -373,12 +380,13 @@ function renderQuakes(){
   shown.slice(0,80).forEach(function(q){var li=el('li','q-row'),g=el('b',q.mag>=5?'q-mag hi':'q-mag',q.mag.toFixed(1)),c=el('div'),a=el('a',null,q.where);a.href=safe(q.url);a.target='_blank';a.rel='noopener';c.append(a,el('small',null,qWord(q.mag)+' · '+qAgo(q.time)+' · '+mmTime(q.time)),el('small',null,'Depth '+Math.round(q.depth)+' km · '+q.dist+' km away · '+q.srcs.join(', ')));li.append(g,c);ul.append(li)});
   side.append(ul);pair.append(m,side);b.append(pair);qMap(m,top);requestAnimationFrame(function(){var two=getComputedStyle(pair).gridTemplateColumns.split(' ').length>1;side.style.height=two?m.offsetHeight+'px':''})
   var lg=el('div','q-legend');[['#E0252B','Last 24 hours'],['#F08A24','Last 7 days'],['#F2C14E','Older']].forEach(function(x){var i=el('span');var d=el('i');d.style.background=x[0];i.append(d,x[1]);lg.append(i)});var fl=el('span'),fd=el('i','fault');fl.append(fd,'Sagaing Fault, approximate');lg.append(fl,el('span',null,'Bigger circle, stronger quake'));b.append(lg);
+  if(QK_T){var wk=el('div','week'),wkh=el('h3','sec','Earthquakes in Myanmar by week');wkh.append(mm('span','အပတ်စဉ်'));wk.append(wkh,PX.bars(quakeWeeks(),'Earthquakes in Myanmar by week'),el('p','small-note','Counts earthquakes of magnitude 2 and stronger inside Myanmar. A red bar means the week had one of magnitude 5 or more.'));b.append(wk)}
   var act=el('div','q-act'),g1=el('button','btn',GEO?'Location saved':'Use my location'),g2=el('button','btn',store('pd-push')?'Notifications on':'Turn on notifications'),g3=el('button','btn',store('pd-qsound')?'Sound on':'Turn on sound');[g1,g2,g3].forEach(function(x){x.type='button'});
   g1.onclick=function(){if(!navigator.geolocation){g1.textContent='Location not available';return}navigator.geolocation.getCurrentPosition(function(p){GEO={lat:+p.coords.latitude.toFixed(2),lon:+p.coords.longitude.toFixed(2)};store('pd-geo',GEO);qSet([],QK_SRC)},function(){g1.textContent='Location was blocked'})};
   g2.textContent=pushState()==='on'?'Alert settings':'Turn on phone alerts';g2.onclick=function(){location.hash='#reminders';setTimeout(function(){var x=$('alert-prefs');if(x)x.scrollIntoView({behavior:'smooth'})},120)};
   var g4=el('button','btn','Send a test');g4.type='button';g4.hidden=true;g4.onclick=function(){g4.textContent='Sending…';testPush().then(function(){g4.textContent='Test sent'}).catch(function(){g4.textContent='Test failed'})};
   g3.onclick=function(){var v=!store('pd-qsound');store('pd-qsound',v);if(v)beep();g3.textContent=v?'Sound on':'Turn on sound'};
-  act.append(g1,g2,g3,g4);b.append(act);
+  act.append(g1,g2,g3,g4,pageShare(top?'Earthquake M '+top.mag.toFixed(1)+', '+top.where+', '+qAgo(top.time):'Myanmar earthquakes, live map','earthquakes/'));b.append(act);
   b.append(el('p','small-note','Data from USGS, EMSC and GEOFON, checked every minute. Most quakes near Myanmar appear within 5 to 15 minutes, and the first magnitude can change. Alerts show for magnitude 4.0+ in or near Myanmar. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
   if(QK_SRC)b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
 }
@@ -401,7 +409,7 @@ function loadObs(){var u=location.hostname==='parabaikdaily.com'?'/obs':PUSH_API
 var STM=null;
 function gpmWhen(){var d=new Date(new Date(GPM.time).getTime()+234e5);return d.getUTCDate()+' '+MON[d.getUTCMonth()].slice(0,3)+', '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')}
 function gpmLayer(m){return L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'IMERG_Precipitation_Rate_30min',format:'image/png',transparent:true,version:'1.3.0',opacity:.85,time:GPM.time,pane:wxPane(m),attribution:'Rain: NASA GPM IMERG'})}
-function stnMap(box){if(!window.L||!STN)return;
+function stnMap(box){if(!STN)return;if(!mapGate(box))return;
   if(STM){STM.remove();STM=null}var e=el('div','qmap');box.append(e);STM=L.map(e,{minZoom:4,maxZoom:10,scrollWheelZoom:false}).setView([20,96.5],5);baseMap(STM,true);
   var over={};if(GPM){var gl=gpmLayer(STM).addTo(STM);over['NASA satellite rain ('+gpmWhen()+')']=gl}
   STN.stations.forEach(function(s){var mins=Math.round((Date.now()-new Date(s.time))/6e4),old=mins>360,cls=s.storm?'storm':/Rain|Showers|Drizzle/.test(s.cond||'')?'wet':'dry';
@@ -419,7 +427,7 @@ var DMH=null,SM=null;
 function loadDmh(){return get('data/dmh.json').then(function(j){DMH=j;if(view==='weather')renderWx();renderHome()}).catch(function(){})}
 function dmhActive(){return DMH?DMH.items.filter(function(x){return x.active}):[]}
 function stormMap(box){
-  if(!window.L)return;
+  if(!mapGate(SM?null:box))return;
   if(!SM){var e=el('div','qmap');box.append(e);var cc=curCity();SM=L.map(e,{minZoom:4,maxZoom:8,scrollWheelZoom:false}).setView([cc[1],cc[2]],6);baseMap(SM);
     L.tileLayer.wms('https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi',{layers:'Himawari_AHI_Band13_Clean_Infrared',format:'image/png',transparent:true,version:'1.3.0',opacity:.55,pane:wxPane(SM),attribution:'Himawari satellite via NASA'}).addTo(SM);
     if(GPM)L.control.layers(null,{'NASA satellite rain':gpmLayer(SM)},{collapsed:false,position:'bottomleft'}).addTo(SM);
@@ -437,7 +445,7 @@ function loadAir(){var c=curCity();return fetch('https://air-quality-api.open-me
 function loadRiver(){var c=curCity();return fetch('https://flood-api.open-meteo.com/v1/flood?latitude='+c[1]+'&longitude='+c[2]+'&daily=river_discharge&past_days=7&forecast_days=7').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){RV=j;if(view==='safety')renderSafety()}).catch(function(){})}
 var RISK=null,RM=null,RL=null;
 function loadRisk(){return get('data/risk.json').then(function(j){RISK=j;if(view==='safety')renderSafety()}).catch(function(){})}
-function riskMap(box){if(!window.L||!window.MM_REG)return;
+function riskMap(box){if(!window.MM_REG)return;if(!mapGate(RM?null:box))return;
   if(!RM){var e=el('div','qmap risk-map');box.append(e);RM=L.map(e,{minZoom:4,maxZoom:9,scrollWheelZoom:false}).setView([20,96.5],5);baseMap(RM,true)}else box.append(RM.getContainer());
   setTimeout(function(){RM.invalidateSize()},0);if(RL)RL.remove();
   var col=['#2E8B57','#E0A800','#C0392B'];
@@ -449,6 +457,7 @@ function renderSafety(){
   var s1=el('div','week'),ec=el('h3','sec','Emergency contacts');s1.append(ec);var g=el('div','tel');
   [['Fire','191'],['Ambulance','192'],['Police','199']].forEach(function(r){var a=el('a');a.href='tel:'+r[1];a.append(el('b',null,r[0]),el('strong',null,r[1]));g.append(a)});s1.append(g);
   var src=el('p','small-note','These national numbers may not work the same way on every network, so keep your local station number too. ');var q=el('a',null,'Source');q.href='https://naypyidaw.embassy.qa/en/myanmar/important-phones';q.target='_blank';q.rel='noopener';src.append(q);s1.append(src);b.append(s1);
+  var sd=el('div','week'),sdh=el('h3','sec','What to do');sdh.append(mm('span','ဘာလုပ်ရမလဲ'));sd.append(sdh,emergencySteps(),el('p','small-note','These steps are saved with the page, so they still open with no signal.'),pageShare('Emergency numbers and what to do, Myanmar','safety/'));b.append(sd);
   var s2=el('div','week'),ag=el('div','alerts');s2.append(el('h3','sec','Conditions in '+cn(city)));
   function row(n,sub,word,l){var d=el('div','al l'+l),t=el('div');t.append(el('div','al-n',n));t.firstChild.textContent=n;t.append(el('p',null,sub));d.append(el('i'),t,el('em',null,word));ag.append(d)}
   if(AQ){var v=AQ.current.us_aqi;row('Air quality','Index '+v+', fine dust (PM2.5) '+Math.round(AQ.current.pm2_5)+' µg/m³',aqiWord(v),v>150?2:v>100?1:0)}else row('Air quality','Loading','Checking',0);
@@ -463,7 +472,7 @@ function renderSafety(){
   var fb=el('div','places');[['all','All'],['mm','Myanmar only']].concat(HS&&HS.detail?[['high','High confidence']]:[]).forEach(function(r){var c=el('button','chip',r[1]);c.type='button';if(r[0]===HF)c.setAttribute('aria-pressed','true');c.onclick=function(){HF=r[0];HM._f=null;renderSafety()};fb.append(c)});m.parentNode.insertBefore(fb,m);
   if(window.L){if(!HM){var e=el('div','qmap');m.append(e);HM=L.map(e,{minZoom:4,maxZoom:15,scrollWheelZoom:false}).setView([20,96.5],5);baseMap(HM,true);HM._g=L.layerGroup().addTo(HM)}else{m.append(keep)}
    if(HS&&HM._f!==HF){HM._f=HF;HM._g.clearLayers();hotRows().forEach(function(p){var inM=p[2],hi=p[3]==='h'||p[3]==='high',col=!HS.detail?(inM?'#FF5A1F':'#FFB347'):hi?'#E0252B':p[3]==='l'||p[3]==='low'?'#FFD24A':'#FF8A1F';var c=L.circleMarker([p[0],p[1]],{radius:inM?5:3.5,color:'#fff',weight:inM?1:.5,fillColor:col,fillOpacity:.95}).addTo(HM._g);c.bindPopup(function(){return hotPopup(p)})})}
-   setTimeout(function(){HM.invalidateSize()},0)}
+   setTimeout(function(){HM.invalidateSize()},0)}else mapGate(m);
 }
 var HF='all';
 function hotRows(){return (HS?HS.points:[]).filter(function(p){return HF==='mm'?p[2]:HF==='high'?(p[3]==='h'||p[3]==='high'):true})}
@@ -477,18 +486,21 @@ function renderPrivacy(){var b=$('privacy-box');if(!b||b.firstChild)return;var h
  ['Settings on your device','Your city, language, text size, light or dark mode, alert choices and reminders are saved in your browser on this device.'],
  ['Read aloud','Listen uses your device\'s own voice. The text is not sent to us.'],
  ['Visitor counts','We may count visits with Cloudflare Web Analytics, which uses no cookies and does not identify you.'],
- ['News photos','Story photos load directly from each news outlet\'s website, so that outlet can see your connection.'],
- ['Services used','GitHub, Cloudflare, Open-Meteo, USGS, EMSC, GEOFON, NASA, NOAA, Ogimet, the Central Bank of Myanmar, Yahoo Finance and news publishers. Fonts load from Google Fonts. Each service may see basic connection details.'],
+ ['News photos','Story photos are fetched through wsrv.nl, a free image service that makes them smaller. If that fails, the photo loads from the news outlet\'s own site. Either service can see your connection.'],
+ ['Saved stories and your town','Stories you save, your town and low-data mode are kept in your browser on this device only.'],
+ ['Services used','GitHub, Cloudflare, Open-Meteo, USGS, EMSC, GEOFON, NASA, NOAA, Ogimet, the Central Bank of Myanmar, Yahoo Finance and news publishers. Fonts are served from this site. Each service may see basic connection details.'],
  ['No accounts','There is no login, and we do not sell personal data.']].forEach(function(r){var d=el('div');d.append(el('h3','sec',r[0]),el('p',null,r[1]));b.append(d)})}
 
 /* Daily edition */
-function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',(Date.now()-new Date(i.published)<36e5?'fresh ':'')+'pic'),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source+(i.n>1?' · reported by '+i.n+' outlets':'')));li.append(t,c);var f=el('div','thumb');if(i.img)f.append(newsImg(i.img,i));else f.append(phTile(i));li.append(f);ul.append(li)});return ul}
+function feedList(rows){var ul=el('ul','feed');rows.forEach(function(i){var li=el('li',(Date.now()-new Date(i.published)<36e5?'fresh ':'')+'pic'),t=el('time',null,ago(i.published)),c=el('div'),a=el('a',null,i.title);t.dateTime=i.published;a.href=safe(i.url);a.target='_blank';a.rel='noopener';c.append(a,el('span',null,i.source+(i.n>1?' · reported by '+i.n+' outlets':'')));li.append(t,c);var f=el('div','thumb');if(i.img)f.append(newsImg(i.img,i,200));else f.append(phTile(i));li.append(f,PX.moreBtn(i,'row'));ul.append(li)});return ul}
 /* Rotating photo slides: one large story beside two smaller ones */
 var HERO_T=null,MSUB='all',SUBN=[['all','All','အားလုံး'],['burmese','In Burmese','မြန်မာဘာသာ'],['politics','Politics','နိုင်ငံရေး'],['business','Business','စီးပွားရေး'],['weather','Weather and disasters','ရာသီဥတုနှင့် ဘေးအန္တရာယ်'],['sports','Sports','အားကစား'],['general','Other','အခြား']];
 function phTile(i){var d=el('div','ph'),w=(i.source||'News').replace(/^The /,'').split(/[\s.]+/).filter(Boolean);d.append(el('b',null,(w[0][0]+(w[1]?w[1][0]:'')).toUpperCase()),el('small',null,i.source||''));return d}
-function newsImg(src,it){var im=el('img');im.alt='';im.loading='lazy';im.decoding='async';im.referrerPolicy='no-referrer';im.onerror=function(){var p=im.parentNode;im.remove();if(p){p.classList.add('noimg');if(p.classList.contains('thumb'))p.append(phTile(it||{source:''}))}};im.src=src;return im}
+function newsImg(src,it,w){var im=el('img'),tried=0;im.alt='';im.loading='lazy';im.decoding='async';im.referrerPolicy='no-referrer';
+  im.onerror=function(){if(!tried&&im.src!==src){tried=1;im.src=src;return}var p=im.parentNode;im.remove();if(p){p.classList.add('noimg');p.append(phTile(it||{source:''}))}};
+  im.src=PX.img(src,w||480);return im}
 function topicName(i){if(i.topic==='myanmar'&&i.sub&&i.sub!=='general'){var s=SUBN.find(function(x){return x[0]===i.sub});return 'Myanmar · '+s[1]}var t=TOPICS.find(function(x){return x.id===i.topic});return t?t.en:i.topic==='weather'?'Weather':''}
-function storyCard(i,big){var a=el('a','st'+(big?' big':''));a.href=safe(i.url);a.target='_blank';a.rel='noopener';var f=el('div','st-img');f.append(newsImg(i.img,i));var t=el('div','st-tx'),k=topicName(i);if(k)t.append(el('span','st-k',k));t.append(el(big?'h2':'h3',null,i.title),el('small',null,i.source+' · '+ago(i.published)+(ago(i.published)==='now'?'':' ago')+(i.n>1?' · '+i.n+' outlets':'')));a.append(f,t);return a}
+function storyCard(i,big){var a=el('a','st'+(big?' big':''));a.href=safe(i.url);a.target='_blank';a.rel='noopener';var f=el('div','st-img');f.append(newsImg(i.img,i,big?1100:560));var t=el('div','st-tx'),k=topicName(i);if(k)t.append(el('span','st-k',k));t.append(el(big?'h2':'h3',null,i.title),el('small',null,i.source+' · '+ago(i.published)+(ago(i.published)==='now'?'':' ago')+(i.n>1?' · '+i.n+' outlets':'')));a.append(f,t);var w=el('div','st-w'+(big?' big':''));w.append(a,PX.moreBtn(i));return w}
 function heroPick(rows,order){var pics=rows.filter(function(i){return i.img}).sort(function(x,y){var nx=Math.min(x.n||1,4),ny=Math.min(y.n||1,4);return ny-nx||(y.published>x.published?1:-1)}),out=[],used={};if(order){var by={};pics.forEach(function(i){(by[i.topic]=by[i.topic]||[]).push(i)});for(var r=0;out.length<9&&r<9;r++)order.forEach(function(t){var x=(by[t]||[])[r];if(x&&out.length<9)out.push(x)})}else out=pics.slice(0,9);return out}
 function carousel(rows){
   if(HERO_T){clearInterval(HERO_T);HERO_T=null}
@@ -497,7 +509,7 @@ function carousel(rows){
   wrap.setAttribute('aria-roledescription','carousel');wrap.setAttribute('aria-label','Top stories with photos');
   for(var k=0;k<n;k++){var sl=el('div','hero-slide'),side=el('div','hero-side');sl.setAttribute('aria-label','Slide '+(k+1)+' of '+n);side.append(storyCard(rows[k*3+1]),storyCard(rows[k*3+2]));sl.append(storyCard(rows[k*3],true),side);track.append(sl);
     (function(k){var d=el('button');d.type='button';d.setAttribute('aria-label','Show slide '+(k+1));d.onclick=function(){go(k);stop()};ds.push(d);dots.append(d)})(k)}
-  function go(x){cur=(x+n)%n;track.style.transform='translateX('+(-cur*100)+'%)';ds.forEach(function(d,j){d.setAttribute('aria-current',String(j===cur))});Array.prototype.forEach.call(track.children,function(s,j){s.inert=j!==cur})}
+  function go(x){cur=(x+n)%n;Array.prototype.forEach.call(track.children,function(sl,j){sl.classList.toggle('on',j===cur)});ds.forEach(function(d,j){d.setAttribute('aria-current',String(j===cur))});Array.prototype.forEach.call(track.children,function(s,j){s.inert=j!==cur})}
   function stop(){if(HERO_T){clearInterval(HERO_T);HERO_T=null}}
   function start(){stop();if(n>1&&!matchMedia('(prefers-reduced-motion: reduce)').matches)HERO_T=setInterval(function(){if(!document.hidden)go(cur+1)},7000)}
   var pv=el('button','hero-arr','‹'),nx=el('button','hero-arr','›');pv.type=nx.type='button';pv.setAttribute('aria-label','Previous stories');nx.setAttribute('aria-label','Next stories');pv.onclick=function(){go(cur-1);start()};nx.onclick=function(){go(cur+1);start()};
@@ -509,8 +521,8 @@ function mmRows(){if(!LIVE)return [];if(MSUB==='burmese')return LIVE.items.filte
 
 var N=$('news'),liveBox=el('section','live');liveBox.id='live';
 function renderEdition(){
-  var y=ygn(),p=E.date.split('-').map(Number),age=Math.floor((Date.UTC(y[0],y[1]-1,y[2])-Date.UTC(p[0],p[1]-1,p[2]))/864e5),dl=$('dateline');
-  if(age>=2)dl.append(el('span','stale','News edition is '+age+' days old'));
+  var y=ygn(),p=E.date.split('-').map(Number),age=Math.floor((Date.UTC(y[0],y[1]-1,y[2])-Date.UTC(p[0],p[1]-1,p[2]))/864e5);
+  EDAGE=age;renderDateline();
   var L=$('lead');clear(L);var ls=srcs(E.lead.sources);ls.style.marginTop='8px';
   L.append(el('span','flag',E.lead.flag),el('h2',null,E.lead.title),el('p',null,E.lead.body),ls);
   TOPICS=E.sections.filter(function(s){return s.id!=='weather'&&s.id!=='burmese'});
@@ -532,7 +544,7 @@ function ageTool(){
   i.onchange=run;i.value=store('pd-birth')||'';run();b.append(h,l,o);return b;
 }
 function mergeMarkets(){var m=(MK&&MK.items)||{};return E.markets.map(function(r){var x=m[r.name];return x?{name:r.name,value:x.value,change:x.change,when:x.when}:r})}
-function tile(i){var a=el('a','tile');a.href=safe(i.url);a.target='_blank';a.rel='noopener';var f=el('span','tile-img');if(i.img)f.append(newsImg(i.img,i));else f.append(phTile(i));var t=el('span','tile-tx');t.append(el('b',null,i.title),el('small',null,i.source+' · '+ago(i.published)+(ago(i.published)==='now'?'':' ago')+(i.n>1?' · '+i.n+' outlets':'')));a.append(f,t);return a}
+function tile(i){var a=el('a','tile');a.href=safe(i.url);a.target='_blank';a.rel='noopener';var f=el('span','tile-img');if(i.img)f.append(newsImg(i.img,i,480));else f.append(phTile(i));var t=el('span','tile-tx');t.append(el('b',null,i.title),el('small',null,i.source+' · '+ago(i.published)+(ago(i.published)==='now'?'':' ago')+(i.n>1?' · '+i.n+' outlets':'')));a.append(f,t);var w=el('div','tile-w');w.append(a,PX.moreBtn(i));return w}
 function topicRows(id){if(!LIVE)return [];return id==='myanmar'?mmRows():LIVE.items.filter(function(i){return i.topic===id})}
 function secHead(en,m,href){var h=el('div','sec-head'),t=el('h2');if(href){var l=el('a',null,en);l.href=href;t.append(l)}else t.append(en);h.append(t,mm('span',m));if(href){var mo=el('a','more','More');mo.href=href;h.append(mo)}return h}
 function renderNews(){
@@ -568,64 +580,224 @@ function renderLive(){
   if(!rows.length){liveBox.append(el('p','empty','No headlines from the last two days in this topic.'));return}
   liveBox.append(feedList(rows));
 }
-var NAV=[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['all','News','သတင်း'],['prices','Prices','ဈေးနှုန်း'],['quakes','Earthquakes','ငလျင်'],['safety','Safety','ဘေးကင်းရေး'],['enso','El Niño','အယ်လ်နီညို'],['calendar','Calendar','ပြက္ခဒိန်'],['reminders','Alerts','သတိပေးချက်'],['learn','Learn','လေ့လာရန်']];
-(function(){var n=$('nav');NAV.forEach(function(x){var a=el('a');a.href='#'+x[0];a.dataset.key=x[0];a.append(x[1],mm('span',x[2]));n.append(a)})})();
-var VIEWS=['home','weather','enso','quakes','safety','privacy','calendar','reminders','learn','prices','admin'],NEWS=['all','myanmar','burmese','world','politics','business','stocks','sports','tech'];
-function route(jump){
+var ICON={home:'<path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/>',weather:'<path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/>',all:'<path d="M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M8 9h5M8 13h5"/>',quakes:'<path d="M2 12h4l2-5 4 10 3-7 2 2h5"/>',safety:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',enso:'<path d="M3 15c3-3 6 3 9 0s6 3 9 0M3 10c3-3 6 3 9 0s6 3 9 0"/>',calendar:'<path d="M5 5h14v15H5zM5 9h14M9 3v4M15 3v4"/>',prices:'<path d="M12 3v18M16 7h-6a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H8"/>',learn:'<path d="M3 6c3-1 6-1 9 1 3-2 6-2 9-1v13c-3-1-6-1-9 1-3-2-6-2-9-1z"/>',reminders:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>'};
+function icon(k){return PX.svg(ICON[k]||ICON.home)}
+var GROUPS=[['today','Today','ယနေ့',[['home','Home','ပင်မ'],['weather','Weather','ရာသီဥတု'],['all','News','သတင်း']]],
+ ['safe','Safety','ဘေးကင်းရေး',[['quakes','Earthquakes','ငလျင်'],['safety','Danger map','အန္တရာယ်မြေပုံ'],['enso','El Niño','အယ်လ်နီညို']]],
+ ['life','Daily life','နေ့စဉ်ဘဝ',[['calendar','Calendar','ပြက္ခဒိန်'],['prices','Prices','ဈေးနှုန်း'],['learn','Learn','လေ့လာရန်']]]];
+var TABS=[['home','Today','ယနေ့','today'],['all','News','သတင်း','news'],['quakes','Safety','ဘေးကင်း','safe'],['calendar','Life','နေ့စဉ်','life'],['reminders','Alerts','သတိပေး','alerts']];
+function navLink(x,short){var a=el('a');a.href='#'+x[0];a.dataset.key=x[0];a.append(icon(x[0]),x[1]);if(!short)a.append(mm('span',x[2]));return a}
+(function(){var n=$('nav');GROUPS.forEach(function(g){var d=el('div','nav-g'),t=el('span',null,g[1]);t.append(mm('span',g[2]));d.append(t);g[3].forEach(function(x){d.append(navLink(x))});n.append(d)});
+  var tb=$('tabbar');TABS.forEach(function(x){var a=el('a'),i=el('i');a.href='#'+x[0];a.dataset.tab=x[3];i.append(icon(x[0]));a.append(i,el('span',null,T(x[1],x[2])));tb.append(a)})})();
+function groupOf(v,k){if(v==='news')return 'news';if(v==='reminders')return 'alerts';for(var i=0;i<GROUPS.length;i++)if(GROUPS[i][3].some(function(x){return x[0]===v}))return GROUPS[i][0];return ''}
+var VIEWS=['home','weather','enso','quakes','safety','privacy','about','saved','calendar','reminders','learn','prices','admin'],NEWS=['all','myanmar','burmese','world','politics','business','stocks','sports','tech'];
+var MAPV=['weather','quakes','safety'],MAPL=0,MAPOK=!LITE;
+function needMap(){if(window.L||MAPL)return;MAPL=1;var c=el('link');c.rel='stylesheet';c.href='lib/leaflet.css?v='+V;document.head.append(c);var j=el('script');j.src='lib/leaflet.js?v='+V;j.onload=function(){redraw()};j.onerror=function(){MAPL=0};document.head.append(j)}
+// Returns true when the map code is ready. Otherwise it leaves a placeholder, or in low-data mode a button to load the map.
+function mapGate(box){
+  if(window.L){if(box)each('.map-wait',function(n){if(box.contains(n))n.remove()});return true}if(!box)return false;
+  if(!MAPOK){var w=el('div','map-ask map-wait'),b=el('button','btn','Show the map');b.type='button';b.onclick=function(){MAPOK=true;needMap();redraw()};w.append(el('p','small-note','Low-data mode is on, so maps wait until you ask for them.'),b);box.append(w);return false}
+  needMap();var sk=PX.sk('box');sk.classList.add('map-wait');box.append(sk);return false;
+}
+function show(jump){
   var k=location.hash.slice(1);if(VIEWS.indexOf(k)<0&&NEWS.indexOf(k)<0)k='home';
   var v=NEWS.indexOf(k)>=0?'news':k;view=v;if(v==='news')key=k;
-  VIEWS.concat('news').forEach(function(x){$('v-'+x).hidden=x!==v});$('band').hidden=v!=='home';
-  Array.prototype.forEach.call($('nav').querySelectorAll('a'),function(a){var on=a.dataset.key===(v==='news'?'all':k);if(on){a.setAttribute('aria-current','page');var nv=$('nav');if(nv.scrollWidth>nv.clientWidth)nv.scrollLeft=a.offsetLeft-40}else a.removeAttribute('aria-current')});
+  VIEWS.concat('news').forEach(function(x){$('v-'+x).hidden=x!==v});
+  var cur=v==='news'?'all':k,grp=groupOf(v);
+  each('#nav a',function(a){if(a.dataset.key===cur)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  each('#tabbar a',function(a){if(a.dataset.tab===grp)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  var sn=$('subnav'),G=GROUPS.find(function(g){return g[0]===grp});clear(sn);sn.hidden=!G||v==='home';
+  if(G&&v!=='home')G[3].forEach(function(x){var a=navLink(x,true);if(x[0]===cur)a.setAttribute('aria-current','page');sn.append(a)});
+  if(v==='news'){clear(sn);sn.hidden=true}
+  if(MAPV.indexOf(v)>=0&&MAPOK)needMap();
   if(E&&v==='news')renderNews();
-  if(v==='home')renderHome();if(v==='privacy')renderPrivacy();if(v==='prices')renderPrices();if(v==='admin')renderAdmin();if(v==='reminders')renderAlertPrefs();
+  if(v==='home')renderHome();if(v==='privacy')renderPrivacy();if(v==='about')renderAbout();if(v==='saved')renderSaved();if(v==='prices')renderPrices();if(v==='admin')renderAdmin();if(v==='reminders')renderAlertPrefs();
   redraw();
   if(jump===true)scrollTo(0,0);
 }
+function route(jump){if(jump===true)PX.vt(function(){show(true)});else show(jump)}
 function redraw(){if(view==='quakes')renderQuakes();if(view==='safety')renderSafety();if(view==='weather'&&WX)renderWx();if(view==='enso')renderEnso(ENSO)}
 function card(cls,href,title,m){var c=el(href?'a':'section','card '+cls);if(href)c.href=href;var t=el('div','card-t');t.append(title);if(m)t.append(mm('span',m));if(href)t.append(el('i',null,'→'));c.append(t);return c}
 function homeNews(){
-  var c=el('section','card w12 hnews'),hd=el('div','hn-head'),t=el('h2',null,'Top news');t.append(mm('span','သတင်း'));var all=el('a','more','All news');all.href='#all';hd.append(t,all);c.append(hd);
+  var c=el('section','hnews');
   var rows=LIVE?LIVE.items.filter(function(i){return i.topic!=='weather'&&i.topic!=='enso'}):[];
-  if(!rows.length){if(E){var ul=el('ul','hl'),L0=E.lead.sources[0];ul.append(hlRow(E.lead.title,L0.url,L0.name));['myanmar','world','tech'].forEach(function(id){var s=E.sections.find(function(x){return x.id===id}),i0=s&&s.items[0];if(i0)ul.append(hlRow(i0.title,i0.sources[0].url,s.en+' · '+i0.sources[0].name))});c.append(ul)}else c.append(el('p','line muted','News is loading.'));return c}
+  if(!rows.length){if(E){var ul=el('ul','hl'),L0=E.lead.sources[0];ul.append(hlRow(E.lead.title,L0.url,L0.name));['myanmar','world','tech'].forEach(function(id){var s=E.sections.find(function(x){return x.id===id}),i0=s&&s.items[0];if(i0)ul.append(hlRow(i0.title,i0.sources[0].url,s.en+' · '+i0.sources[0].name))});c.append(ul)}else{var sk=el('div','hn-body');sk.append(PX.sk('box'),PX.skCard());c.append(sk)}return c}
   var pick=heroPick(rows,(window.PD_LANG==='mm'?['burmese','myanmar','world','business','politics','sports','tech','stocks']:['myanmar','world','business','politics','sports','tech','stocks'])),lead=pick[0],used={};used[lead.url]=1;
   var body=el('div','hn-body'),side=el('ul','feed hn-list');
   rows.filter(function(i){return !used[i.url]}).sort(function(x,y){return (Math.min(y.n||1,3)-Math.min(x.n||1,3))||(y.published>x.published?1:-1)}).slice(0,4).forEach(function(i){used[i.url]=1;side.append(feedList([i]).firstChild)});
   body.append(storyCard(lead,true),side);c.append(body);
   var ts=el('div','hn-topics');TOPICS.forEach(function(s){var r=topicRows(s.id).filter(function(i){return !used[i.url]})[0];if(!r)return;var a=el('a','hn-t');a.href=safe(r.url);a.target='_blank';a.rel='noopener';var k=el('span','hn-k');k.append(s.en);var go=el('a','hn-sec',s.en+' ›');go.href='#'+s.id;var f=el('span','tile-img');if(r.img)f.append(newsImg(r.img,r));else f.append(phTile(r));a.append(f,el('b',null,r.title),el('small',null,r.source+' · '+ago(r.published)+(ago(r.published)==='now'?'':' ago')));var w=el('div','hn-col');w.append(go,a);ts.append(w)});
   c.append(ts);return c}
+function secT(en,my,href,more){var d=el('div','sec-t'),h=el('h2',null,en);d.append(h,mm('span',my),el('span','orn'));if(href){var a=el('a','more',more||'More');a.href=href;d.append(a)}return d}
+// One plain sentence about today, built from the forecast, the alerts and the danger map.
+function todayLine(){
+  if(!WX||!WX.daily)return '';
+  var D=WX.daily,hi=Math.round(D.temperature_2m_max[0]),pr=D.precipitation_probability_max[0]||0,mmr=(D.precipitation_sum||[0])[0]||0,c=curCity();
+  var heat=hi>=38?['Very hot','အလွန်ပူ']:hi>=34?['Hot','ပူ']:hi>=29?['Warm','နွေး']:hi>=23?['Mild','အေးမြ']:['Cool','အေး'];
+  var wet=pr>=70||mmr>=10?['with rain likely','မိုးရွာနိုင်ခြေများပါသည်']:pr>=40?['with a chance of rain','မိုးအနည်းငယ် ရွာနိုင်ပါသည်']:['and dry','မိုးကင်းပါမည်'];
+  var al=wxAlerts().filter(function(x){return x.l>0}).sort(function(x,y){return y.l-x.l})[0];
+  var rk=RISK?Object.keys(RISK.regions).filter(function(n){return RISK.regions[n].level>0}).map(function(n){var f=window.MM_REG?MM_REG.features.find(function(z){return z.properties.name===n}):null;return f?[f.properties.label.replace(/ (State|Region)$/,''),f.properties.mm.split(' ')[0]]:[n,n]}):[];
+  function list(a){return a.length>1?a.slice(0,-1).join(', ')+' and '+a[a.length-1]:a[0]}
+  if(window.PD_LANG==='mm')return (c[3]||cn(city))+'တွင် ယနေ့ '+heat[1]+'ပြီး '+wet[1]+'။ အမြင့်ဆုံး '+mmNum(hi)+'°။'+(al?' '+al.mm+' '+LVM[al.l]+'။':'')+(rk.length?' သတိထားရန် ဒေသများ: '+rk.slice(0,4).map(function(x){return x[1]}).join('၊ ')+'။':'');
+  return heat[0]+' '+wet[0]+' in '+cn(city)+' today, up to '+hi+'°.'+(al?' '+al.en+' '+(al.l>1?'warning':'watch')+': '+al.msg.charAt(0).toLowerCase()+al.msg.slice(1)+'.':'')+(rk.length?' Take care in '+list(rk.slice(0,4).map(function(x){return x[0]}))+(rk.length>4?' and other areas':'')+'.':RISK?' No state or region has a danger warning.':'');
+}
+var RISEN={};function riseOnce(n,k){if(!RISEN[k]){RISEN[k]=1;PX.rise(n)}return n}
+function guide(){
+  var g=el('div','guide'),x=el('button','guide-x','×');x.type='button';x.setAttribute('aria-label','Hide this guide');x.onclick=function(){store('pd-guide',1);renderHome()};g.setAttribute('aria-label','How to use this site');
+  [['၁','Set your town','Weather and warnings for where you live',function(){openTown()}],['၂','Three groups hold everything','Today, Safety and Daily life',null],['၃','Turn on phone alerts','Earthquakes and storms, even when the site is closed','#reminders']].forEach(function(r){
+    var a=el(typeof r[3]==='string'?'a':r[3]?'button':'div','glass'),t=el('span');if(typeof r[3]==='string')a.href=r[3];else if(r[3]){a.type='button';a.onclick=r[3]}
+    t.append(el('b',null,r[1]),el('small',null,r[2]));a.append(el('i',null,r[0]),t);g.append(a)});
+  g.append(x);return g;
+}
 function renderHome(){
   var g=$('hgrid');if(!g||view!=='home')return;clear(g);
-  var c=card('w6','#weather','Weather · '+cn(city),'ရာသီဥတု');
-  if(WX){var w=WX.current,k=code(w.weather_code,w.is_day),i=nowIdx(WX),F=FIRE[fireLevel(WX.hourly,i)],row=el('div','h-row'),r=el('div','h-wx'),tx=el('div','c'),st=el('div','h-stats');
-    tx.append(k[1],mm('span',k[2]));r.append(WI(k[0],'e'),el('span','t',Math.round(w.temperature_2m)+'°'),tx);
+  var tl=todayLine();if(tl)g.append(el('p','today-line',tl));
+  if(ZG&&!store('pd-zg')){var zb=el('button','btn zg-note','Burmese text looks broken? Tap for help.');zb.type='button';zb.onclick=function(){store('pd-zg',1);openSettings(true)};g.append(zb)}
+  var gd=store('pd-guide')?null:guide(),phone=matchMedia('(max-width:640px)').matches;if(gd&&!phone)g.append(gd);
+  g.append(secT('Today','ယနေ့'));
+  var td=el('div','today'),c=card('wx-card','#weather','Weather · '+cn(city),'ရာသီဥတု');
+  if(WX){var w=WX.current,k=code(w.weather_code,w.is_day),i=nowIdx(WX),fi=fireLevel(WX.hourly,i),F=FIRE[fi],row=el('div','h-row'),r=el('div','h-wx'),tx=el('div','c'),st=el('div','h-stats'),tv=el('span','t');
+    PX.count(tv,w.temperature_2m,function(v){return Math.round(v)+'°'},'home-temp');
+    tx.append(k[1],mm('span',k[2]));r.append(WI(k[0],'e'),tv,tx);
     [['Feels like',Math.round(w.apparent_temperature)+'°'],['Rain',(WX.hourly.precipitation_probability[i]||0)+'%'],['Wind',(w._obs&&w._obs.wind!=null?w._obs.wind:Math.round(w.wind_speed_10m))+' km/h']].forEach(function(x){var d=el('div');d.append(el('b',null,x[0]),el('span',null,x[1]));st.append(d)});row.append(r,st);c.append(row);
     dmhActive().forEach(function(x){c.append(el('div','h-off','Official warning: '+x.kind))});
-    var sg=el('div','h-status');[{en:'Fire danger',word:F[1],col:FIRE.indexOf(F)?F[3]:'var(--jade)'}].concat(wxAlerts()).forEach(function(x){var d=el('div','h-st'),v=el('span');v.style.setProperty('--st',x.col||['var(--jade)','var(--amber)','var(--red)'][x.l]);v.textContent=x.word||LV[x.l];d.append(el('b',null,x.en),v);sg.append(d)});c.append(sg)
-  }else c.append(el('p','line muted','Weather is loading.'));
-  g.append(c);
-  g.append(homeNews());
+    var sg=el('div','h-status');[{en:'Fire danger',word:F[1],l:fi>=3?2:fi>=1?1:0}].concat(wxAlerts()).forEach(function(x){var d=el('div','h-st l'+x.l),v=el('span');v.textContent=x.word||LV[x.l];d.append(el('b',null,x.en),v);sg.append(d)});c.append(sg);
+    c.append(el('span','muted',w._obs?'Live from '+w._obs.name+', '+w._obs.ago:wxSource))
+  }else c.append(PX.skCard());
+  td.append(riseOnce(c,'wx'));
+  var side=el('div','today-side'),dc=card('','#safety','Danger map','အန္တရာယ်မြေပုံ');
+  if(RISK){var lst=Object.keys(RISK.regions).map(function(n){return [n,RISK.regions[n].level]}).filter(function(x){return x[1]>0}).sort(function(x,y){return y[1]-x[1]});
+    if(lst.length){var pl=el('div','pills');lst.slice(0,4).forEach(function(x){pl.append(el('span','pill l'+x[1],x[0]+' · '+(x[1]>1?'Danger':'Be aware')))});if(lst.length>4)pl.append(el('span','pill','+'+(lst.length-4)+' more'));dc.append(pl)}
+    else dc.append(el('p','line','No state or region has a warning right now.'))}
+  else dc.append(PX.sk('t2'),PX.sk('t3'));
+  dc.append(el('span','go','Open the map'));
+  var qc=card('','#quakes','Latest earthquake','ငလျင်'),qr=QK.filter(function(q){return q.mm})[0];
+  if(qr){var ql=el('div','q-line');ql.append(el('b','big','M '+qr.mag.toFixed(1)),el('span',null,qr.where));qc.append(ql,el('p','line muted',qAgo(qr.time)+' · '+qWord(qr.mag)))}
+  else if(QK_T)qc.append(el('div','big','None'),el('p','line muted','No earthquakes in Myanmar in the last 30 days'));
+  else qc.append(PX.sk('t1'),PX.sk('t3'));
+  side.append(riseOnce(dc,'risk'),riseOnce(qc,'quake'));td.append(side);g.append(td);if(gd&&phone)g.append(gd);
+  g.append(secT('News','သတင်း','#all','All news'),homeNews());
+  g.append(secT('Daily life','နေ့စဉ်ဘဝ'));
+  var life=el('div','life');
+  var m=md(TODAY),d=card('','#calendar','Calendar','ပြက္ခဒိန်');d.append(mm('div',mmLine(m)),el('p','line muted','Myanmar Era '+m.my));var tdi=dayInfo(TODAY),nh=nextHoliday();if(tdi.pub.length)d.append(el('p','line hol-line','Today: '+tdi.pub.join(', ')));else if(nh)d.append(el('p','line muted','Next holiday: '+nh.name+', '+nh.dt[2]+' '+MON[nh.dt[1]-1].slice(0,3)));life.append(riseOnce(d,'cal'));
+  var pc=card('','#prices','Prices','ဈေးနှုန်း'),P=PRICES||{},L0=LOCALP||{};
+  [['US dollar'+(L0.usd_market!=null?', market':', official'),L0.usd_market!=null?ks(L0.usd_market):P.cbm&&P.cbm[0]?ks(P.cbm[0][1]):'–'],['Gold, 1 kyattha',L0.gold_ygea!=null?ks(L0.gold_ygea):P.gold_kyattha?ks(P.gold_kyattha):'–'],['Octane 92, 1 litre',L0.octane92!=null?ks(L0.octane92):'–'],['Diesel, 1 litre',L0.diesel!=null?ks(L0.diesel):'–']].forEach(function(x){var r=el('div','row');r.append(el('span',null,x[0]),el('b',null,x[1]));pc.append(r)});
+  pc.append(el('span','go','All prices'));life.append(riseOnce(pc,'prices'));
   var en=card('','#enso','El Niño','အယ်လ်နီညို');
-  if(ENSO&&ENSO.weeks&&ENSO.weeks.length){var L=ENSO.weeks[ENSO.weeks.length-1],P=ensoPhase(L.n34);en.append(el('div','big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p','line',P[0]))}else en.append(el('p','line muted','Loading.'));
-  g.append(en);
-  var qc=card('','#quakes','Earthquakes','ငလျင်'),qr=QK.filter(function(q){return q.mm})[0];qc.append(el('div','big',qr?'M '+qr.mag.toFixed(1):'None'),el('p','line muted',qr?qAgo(qr.time)+' · '+qr.where:QK_T?'None in Myanmar in 30 days':'Checking'));g.append(qc);
-  var m=md(TODAY),d=card('','#calendar','Burmese date','ပြက္ခဒိန်');d.append(mm('div',mmLine(m)),el('p','line muted','ME '+m.my+' · '+m.ToMString('&M &P &ff')));var tdi=dayInfo(TODAY),nh=nextHoliday();if(tdi.pub.length)d.append(el('p','line hol-line','Today: '+tdi.pub.join(', ')));else if(nh)d.append(el('p','line muted','Next holiday: '+nh.name+', '+nh.dt[2]+' '+MON[nh.dt[1]-1].slice(0,3)));g.append(d);
-  var ns=loadNotes().sort(function(x,y){return (x.date+x.time).localeCompare(y.date+y.time)}),dc=ns.filter(due).length,rc=card('','#reminders','Reminders','မှတ်စု');
-  rc.append(el('div','big',dc?dc+' due':ns.length?String(ns.length):'None'),el('p','line muted',ns.length?ns[0].text:'Tap to add one'));g.append(rc);
-  var pc=card('w12 prices-strip','#prices','Prices','ဈေးနှုန်း'),P=PRICES||{},L0=LOCALP||{},ps=el('div','h-status');[['Gold, 1 kyattha',L0.gold_ygea!=null?ks(L0.gold_ygea):P.gold_kyattha?ks(P.gold_kyattha):'–',L0.gold_ygea!=null?'Yangon market':'World price'],['US dollar',L0.usd_market!=null?ks(L0.usd_market):P.cbm&&P.cbm[0]?ks(P.cbm[0][1]):'–',L0.usd_market!=null?'Market rate':'Official rate'],['Octane 92, 1 litre',L0.octane92!=null?ks(L0.octane92):'–','Yangon, weekly'],['Octane 95, 1 litre',L0.octane95!=null?ks(L0.octane95):'–','Yangon, weekly'],['Diesel, 1 litre',L0.diesel!=null?ks(L0.diesel):'–','Yangon, weekly'],['Brent oil',P.brent?'$'+P.brent:'–','World price']].forEach(function(x){var d=el('div','h-st'),v=el('span');v.textContent=x[1];v.style.setProperty('--st','var(--chalk)');d.append(el('b',null,x[0]),v,el('small',null,x[2]));ps.append(d)});pc.append(ps);g.append(pc);
+  if(ENSO&&ENSO.weeks&&ENSO.weeks.length){var L=ENSO.weeks[ENSO.weeks.length-1],Ph=ensoPhase(L.n34);en.append(el('div','big',(L.n34>0?'+':'')+L.n34.toFixed(1)+'°C'),el('p','line',Ph[0]))}else en.append(PX.sk('t1'),PX.sk('t3'));
+  life.append(riseOnce(en,'enso'));
+  if(E&&E.words&&E.words[0]){var wv=E.words[0],wc=card('','#learn','Word of the day','ယနေ့စကားလုံး');wc.append(el('div','big',wv.term),mm('span',wv.mm),el('p','line muted',wv.meaning));life.append(riseOnce(wc,'word'))}
+  var ns=loadNotes().sort(function(x,y){return (x.date+x.time).localeCompare(y.date+y.time)}),dcn=ns.filter(due).length,rc=card('','#reminders','Reminders','မှတ်စု');
+  rc.append(el('div','big',dcn?dcn+' due':ns.length?String(ns.length):'None'),el('p','line muted',ns.length?ns[0].text:'Tap to add one'));life.append(riseOnce(rc,'notes'));
+  var sv=PX.savedList(),sc=card('','#saved','Saved stories','သိမ်းထားသောသတင်း');sc.append(el('div','big',sv.length?String(sv.length):'None'),el('p','line muted',sv.length?sv[0].title:'Tap the three dots on a story to save it'));life.append(riseOnce(sc,'saved'));
+  g.append(life);
 }
 function checkVersion(){get('data/version.json').then(function(j){var cur=document.documentElement.dataset.v;if(j.v&&cur!=='__V__'&&j.v!==cur&&store('pd-tried')!==j.v){store('pd-tried',j.v);location.reload()}}).catch(function(){})}
 function pullMarkets(){return get('data/markets.json').then(function(j){MK=j;if(view==='news'&&key==='stocks')renderNews()}).catch(function(){})}
 function get(p){return fetch(p+'?t='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
 function pullLive(){return get('data/live.json').then(function(j){LIVE=j;renderHome();if(view==='news'&&E)renderNews();else renderLive();renderWeatherNews();renderEnsoNews();renderBreaking()}).catch(function(){if(!LIVE){clear(liveBox);liveBox.append(el('p','empty','The live feed could not load. It will try again in a few minutes.'))}})}
 
+/* ---------- Town, search, settings, saved stories, about ---------- */
+var ZG=false;
+function setTown(t){
+  if(!CITIES.some(function(c){return c[0]===t[0]})){CITIES.push([t[0],t[1],t[2],'']);store('pd-town',[t[0],t[1],t[2]])}
+  city=t[0];store('pd-city',city);WX=null;loadWx();loadObs();loadAir();loadRiver();renderDateline();renderHome();
+  PX.toast(T('Your town is now '+cn(city)+'.','သင့်မြို့ကို '+cn(city)+' အဖြစ် သတ်မှတ်ပြီး'));
+}
+function allTowns(){var seen={},out=[],first=['Yangon','Naypyitaw','Mandalay'];CITIES.slice().sort(function(x,y){return (first.indexOf(x[0])<0?9:first.indexOf(x[0]))-(first.indexOf(y[0])<0?9:first.indexOf(y[0]))}).forEach(function(c){seen[c[0]]=1;out.push([c[0],c[1],c[2],c[3]||''])});(window.MM_TOWNS||[]).forEach(function(t){if(!seen[t[0]]){seen[t[0]]=1;out.push([t[0],t[1],t[2],t[3]||''])}});return out}
+function openTown(){
+  PX.sheet('Your town','သင့်မြို့',function(b,close){
+    var inp=el('input','field');inp.type='search';inp.placeholder=T('Type a town name','မြို့အမည် ရိုက်ပါ');inp.setAttribute('aria-label',T('Find your town','မြို့ရှာရန်'));inp.autocomplete='off';
+    var near=el('button','btn','Use my location');near.type='button';var ul=el('ul','pick-l'),all=allTowns();
+    function draw(){clear(ul);var q=inp.value.trim().toLowerCase(),rows=all.filter(function(t){return !q||t[0].toLowerCase().indexOf(q)>=0||(t[3]||'').indexOf(inp.value.trim())>=0}).slice(0,q?40:14);
+      rows.forEach(function(t){var li=el('li'),x=el('button');x.type='button';x.append(el('b',null,cn(t[0])));if(t[3])x.append(el('small',/[က-႟]/.test(t[3])?'mm':null,t[3]));if(t[0]===city)x.setAttribute('aria-current','true');x.onclick=function(){setTown(t);close()};li.append(x);ul.append(li)});
+      if(!rows.length)ul.append(el('li','small-note',T('No town with that name. Try the nearest larger town.','ထိုအမည်ဖြင့် မြို့မတွေ့ပါ။')))}
+    near.onclick=function(){if(!navigator.geolocation){near.textContent='Location is not available';return}near.textContent='Finding you';navigator.geolocation.getCurrentPosition(function(p){var best=null,bd=1e9;all.forEach(function(t){var d=km(p.coords.latitude,p.coords.longitude,t[1],t[2]);if(d<bd){bd=d;best=t}});if(best&&bd<150){setTown(best);close()}else near.textContent='No Myanmar town is near you'},function(){near.textContent='Location was blocked'},{timeout:10000})};
+    b.append(el('p','sheet-sub',T('Weather, warnings and the daily summary will follow this town.','ရာသီဥတုနှင့် သတိပေးချက်များကို ဤမြို့အတွက် ပြပါမည်။')),inp,near,ul);inp.oninput=draw;draw();
+  },'narrow');
+}
+function openSearch(q0){
+  PX.sheet('Search','ရှာဖွေရန်',function(b,close){
+    var inp=el('input','field search-in'),out=el('div','search-out');inp.type='search';inp.placeholder=T('News, a town, an earthquake, a holiday','သတင်း၊ မြို့၊ ငလျင်၊ ရုံးပိတ်ရက်');inp.setAttribute('aria-label',T('Search','ရှာဖွေရန်'));inp.autocomplete='off';inp.value=q0||'';out.setAttribute('aria-live','polite');b.append(inp,out);
+    function row(main,sub,href,fn,ext){var li=el('li'),a=el('a');a.href=href||'#';if(ext){a.target='_blank';a.rel='noopener'}a.append(el('b',null,main));if(sub)a.append(el('small',null,sub));a.onclick=function(e){if(fn){e.preventDefault();fn()}close()};li.append(a);return li}
+    function run(){
+      var raw=inp.value.trim(),q=raw.toLowerCase(),n=0;clear(out);
+      if(q.length<2){out.append(el('p','small-note',T('Type two or more letters. Try a town like Lashio, a topic like fuel, or a holiday like Thingyan.','စာလုံးနှစ်လုံးနှင့်အထက် ရိုက်ပါ။')));return}
+      function has(t){return (t||'').toLowerCase().indexOf(q)>=0}
+      function group(title,my,rows){if(!rows.length)return;n+=rows.length;var h=el('h3','sec',title);h.append(mm('span',my));var ul=el('ul','search-l');rows.forEach(function(r){ul.append(r)});out.append(h,ul)}
+      var pages=[];GROUPS.forEach(function(g){g[3].forEach(function(x){if(has(x[1])||x[2].indexOf(raw)>=0)pages.push(row(x[1],g[1],'#'+x[0]))})});
+      [['reminders','Phone alerts and reminders','alert notification reminder'],['saved','Saved stories','saved bookmark'],['about','About and sources','about source contact'],['privacy','Privacy','privacy data']].forEach(function(x){if(has(x[1])||has(x[2]))pages.push(row(x[1],'Page','#'+x[0]))});
+      group('Pages','စာမျက်နှာ',pages);
+      group('Towns','မြို့များ',allTowns().filter(function(t){return has(t[0])||(t[3]||'').indexOf(raw)>=0}).slice(0,6).map(function(t){return row('Weather in '+cn(t[0]),t[3]&&!/[က-႟]/.test(t[3])?t[3]:'Set as your town','#weather',function(){setTown(t);location.hash='#weather'})}));
+      group('News','သတင်း',(LIVE?LIVE.items:[]).filter(function(i){return has(i.title)||has(i.source)}).slice(0,8).map(function(i){return row(i.title,i.source+' · '+ago(i.published)+(ago(i.published)==='now'?'':' ago'),safe(i.url),null,true)}));
+      group('Earthquakes','ငလျင်',QK.filter(function(k){return has(k.where)}).slice(0,5).map(function(k){return row('M '+k.mag.toFixed(1)+' · '+k.where,qAgo(k.time),'#quakes')}));
+      var hol=[];if(HOL)Object.keys(HOL.years).forEach(function(y){HOL.years[y].days.forEach(function(x){if(has(x[1])&&x[0]>=iso(TODAY))hol.push(x)})});
+      group('Holidays','ရုံးပိတ်ရက်',hol.slice(0,6).map(function(x){var dt=x[0].split('-').map(Number);return row(x[1],dt[2]+' '+MON[dt[1]-1]+' '+dt[0],'#calendar',function(){pick=dt;calView=[dt[0],dt[1]];renderDay();location.hash='#calendar'})}));
+      if(!n)out.append(PX.empty('search','Nothing found. Try a town name or a shorter word.','ရှာမတွေ့ပါ။ မြို့အမည် သို့မဟုတ် စကားလုံးတိုတို ရိုက်ကြည့်ပါ။'));
+    }
+    inp.oninput=run;run();setTimeout(function(){inp.focus()},60);
+  },'search');
+}
+function openSettings(help){
+  PX.sheet('Settings','ဆက်တင်',function(b,close){
+    function row(en,my,ctl,sub){var r=el('div','set-row'),t=el('div','set-t');t.append(el('b',null,T(en,my)));if(sub)t.append(el('small',null,sub));r.append(t,ctl);b.append(r);return r}
+    function btn(label,fn){var x=el('button','btn',label);x.type='button';x.onclick=fn;return x}
+    row('Your town','သင့်မြို့',btn(cn(city),function(){close();openTown()}),T('Used for weather, warnings and the daily summary','ရာသီဥတုနှင့် သတိပေးချက်များအတွက်'));
+    row('Language','ဘာသာစကား',btn(window.PD_LANG==='mm'?'English':'မြန်မာ',function(){window.setLang(window.PD_LANG==='mm'?'en':'mm')}));
+    var sz2=el('div','set-ctl');sz2.append(btn('A−',function(){sz=size(sz-1);redraw()}),btn('A+',function(){sz=size(sz+1);redraw()}));row('Text size','စာလုံးအရွယ်',sz2);
+    var th=btn('',function(){window.PD_THEME(th);lab()});function lab(){th.textContent=document.documentElement.dataset.theme==='dark'?T('Switch to light','အလင်းသို့ပြောင်း'):T('Switch to dark','အမှောင်သို့ပြောင်း')}lab();row('Light or dark','အလင်း သို့မဟုတ် အမှောင်',th);
+    var lw=el('label','switch'),lc=el('input');lc.type='checkbox';lc.checked=PX.lite();lc.setAttribute('aria-label',T('Low-data mode','ဒေတာချွေတာမုဒ်'));lw.append(lc,el('i'));
+    lc.onchange=function(){LITE=PX.lite(lc.checked);MAPOK=!LITE||!!window.L;PX.toast(LITE?T('Low-data mode is on. Photos are smaller and maps wait until you ask.','ဒေတာချွေတာမုဒ် ဖွင့်ထားသည်'):T('Low-data mode is off.','ဒေတာချွေတာမုဒ် ပိတ်ထားသည်'));show()};
+    row('Low-data mode','ဒေတာချွေတာမုဒ်',lw,T('Smaller photos, and maps load only when you tap. Good for slow or costly mobile data.','ဓာတ်ပုံအသေးနှင့် မြေပုံကို နှိပ်မှသာ ဖွင့်မည်'));
+    var links=el('div','set-links');[['#saved','Saved stories','သိမ်းထားသောသတင်း'],['#reminders','Phone alerts','ဖုန်းသတိပေးချက်'],['#about','About and sources','အကြောင်းနှင့် သတင်းရင်းမြစ်'],['#privacy','Privacy','ကိုယ်ရေးအချက်အလက်']].forEach(function(x){var a=el('a','btn',T(x[1],x[2]));a.href=x[0];a.onclick=close;links.append(a)});b.append(links);
+    var zd=el('details','enso-more');zd.open=!!help;zd.append(el('summary',null,T('Burmese text looks broken?','မြန်မာစာ မမှန်မကန် ပေါ်နေပါသလား')),el('p',null,'This site writes Burmese in Unicode, the standard used by Myanmar government sites and most phones made after 2019. Some older phones still use the Zawgyi font, which shows Unicode text with letters out of order.'),el('p',null,'To fix it, open your phone settings, look for Font or Display, and choose a Unicode font such as Pyidaungsu, Noto Sans Myanmar or Myanmar3. On Samsung phones this is under Settings, Display, Font size and style. Then reload this page.'),mm('p','ဤဝဘ်ဆိုက်သည် ယူနီကုဒ်ဖြင့် ရေးထားပါသည်။ ဇော်ဂျီဖောင့်သုံးထားသော ဖုန်းဟောင်းများတွင် စာလုံးများ မမှန်မကန် ပေါ်နိုင်ပါသည်။ ဖုန်း ဆက်တင်တွင် ပြည်ထောင်စု (Pyidaungsu) ကဲ့သို့သော ယူနီကုဒ်ဖောင့်ကို ရွေးပြီး ဤစာမျက်နှာကို ပြန်ဖွင့်ပါ။'));b.append(zd);
+    var gv=el('div','set-give');gv.append(el('b',null,T('Support Parabaik Daily','ပုရပိုက်ကို ပံ့ပိုးရန်')),el('span',null,'KBZPay (KPay) 09944939666'),btn(T('Copy number','နံပါတ်ကူး'),function(){PX.copy('09944939666',T('KPay number copied','နံပါတ်ကူးပြီး'))}));b.append(gv);
+  });
+}
+each('.search-open',function(b){b.onclick=function(){openSearch()}});each('.set-open',function(b){b.onclick=function(){openSettings()}});
+document.addEventListener('keydown',function(e){if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test((e.target||{}).tagName||'')&&!document.querySelector('dialog[open]')){e.preventDefault();openSearch()}});
+function pageShare(title,slug){return PX.shareBtn({title:title,url:'https://parabaikdaily.com/'+slug})}
+function renderSaved(){
+  var b=$('saved-box');if(!b)return;clear(b);var h=el('h2','q-title','Saved stories');h.append(mm('span','သိမ်းထားသောသတင်း'));b.append(h);
+  var l=PX.savedList();if(!l.length){b.append(PX.empty('saved','Nothing saved yet. Tap the three dots on any story, then Save for later.','သိမ်းထားသော သတင်းမရှိသေးပါ။ သတင်းပေါ်ရှိ အစက်သုံးစက်ကို နှိပ်ပြီး သိမ်းနိုင်ပါသည်။'));return}
+  b.append(el('p','small-note',T('Saved on this device only. The link opens the story on the outlet\'s own site.','ဤစက်ပေါ်တွင်သာ သိမ်းထားပါသည်။')),feedList(l));
+}
+document.addEventListener('pd-saved',function(){if(view==='saved')renderSaved();if(view==='home')renderHome()});
+var SOURCES=[['Weather','ရာသီဥတု','Open-Meteo forecast for every town. Live readings from 57 Myanmar weather stations (Department of Meteorology and Hydrology, through Ogimet) and from airports. Official warnings from the Department of Meteorology and Hydrology. Satellite rain from NASA GPM. Storm alerts from GDACS.'],
+ ['Earthquakes','ငလျင်','USGS, EMSC and GEOFON, checked every minute and merged, so one earthquake is shown once with the sources that reported it.'],
+ ['News','သတင်း','BBC, BBC News မြန်မာ, Reuters and AP through Google News, The Irrawaddy and ဧရာဝတီ, Myanmar Now, DVB, BNI, Shan News, Global New Light of Myanmar, Al Jazeera, The Guardian, NPR, DW, France 24, CNA, The Diplomat, CNBC, MarketWatch, Investing.com, Politico, The Hill, TechCrunch, The Verge, Wired, Ars Technica, Engadget, MIT Technology Review, BBC Sport, Sky Sports and CBS Sports.'],
+ ['Prices','ဈေးနှုန်း','Central Bank of Myanmar reference rates, world gold and Brent oil prices, and Yangon market and fuel prices entered by hand each week.'],
+ ['Fire and danger map','မီးနှင့် အန္တရာယ်မြေပုံ','NASA FIRMS heat detections. The danger map combines the forecast, earthquakes, official warnings, fire hotspots and disaster reports in the news.'],
+ ['El Niño','အယ်လ်နီညို','NOAA weekly sea temperature readings.'],
+ ['Calendar','ပြက္ခဒိန်','Burmese calendar calculations by Yan Naing Aye (MIT licence), with public holidays added by hand.']];
+function renderAbout(){
+  var b=$('about-box');if(!b||b.firstChild)return;var h=el('h2','q-title','About and sources');h.append(mm('span','အကြောင်းနှင့် သတင်းရင်းမြစ်'));b.append(h);
+  [['What this is','Parabaik Daily puts Myanmar news, weather, earthquakes, warnings, prices and the Burmese calendar on one page, in English and Burmese. It is free, has no adverts and needs no account.'],
+   ['How it stays current','News, weather stations, prices and the danger map are checked about every 15 minutes. Earthquakes are checked every minute. The page tells you when each part was last updated, and says so plainly when it is showing a saved copy.'],
+   ['How news is chosen','Headlines come from the outlets listed below. When several outlets report the same story it is shown once, the count of outlets is shown, and the most trusted source is linked. Every headline opens on the outlet\'s own site. Parabaik Daily does not write or change the stories.'],
+   ['Limits you should know','Alerts here are estimates from public data, not official warnings. Earthquake reports arrive minutes after the shaking, and cannot warn in advance. In an emergency follow the Department of Meteorology and Hydrology, the Fire Services Department and local authorities.']].forEach(function(r){var d=el('div','about-p');d.append(el('h3','sec',r[0]),el('p',null,r[1]));b.append(d)});
+  var sh=el('h3','sec','Sources');b.append(sh);var dl=el('div','src-grid');SOURCES.forEach(function(x){var c=el('div','card'),t=el('div','card-t',x[0]);t.append(mm('span',x[1]));c.append(t,el('p',null,x[2]));dl.append(c)});b.append(dl);
+  var mk=el('div','about-p');mk.append(el('h3','sec','Who makes it'),el('p',null,'Parabaik Daily is made in Yangon and crafted by ZeonaX. To support the running costs, use the Donate button. Map images are from NASA and EOX Sentinel-2 cloudless. Fonts are Hanken Grotesk, Cormorant Garamond and Noto Serif Myanmar, used under the SIL Open Font License.'));b.append(mk);
+}
+/* What to do in an emergency. Kept inside the page so it works with no signal. */
+var DO=[['Earthquake','ငလျင်လှုပ်လျှင်',[['Drop, take cover under a strong table and hold on.','ဝပ်ပါ၊ ခိုင်ခံ့သော စားပွဲအောက်တွင် ခိုပါ၊ မြဲမြဲကိုင်ထားပါ။'],['Stay away from windows, shelves and anything that can fall.','ပြတင်းပေါက်နှင့် ပြုတ်ကျနိုင်သော ပစ္စည်းများမှ ဝေးဝေးနေပါ။'],['Do not use lifts. Go outside only after the shaking stops.','ဓာတ်လှေကား မသုံးပါနှင့်။ တုန်ခါမှုရပ်မှ အပြင်ထွက်ပါ။'],['Outside, move to open ground away from buildings and power lines.','အပြင်တွင် အဆောက်အအုံနှင့် ဓာတ်ကြိုးများမှ ဝေးသော ကွင်းပြင်သို့ သွားပါ။'],['Expect aftershocks.','နောက်ဆက်တွဲငလျင်များ လှုပ်နိုင်သည်ကို သတိပြုပါ။']]],
+ ['Flood','ရေကြီးလျှင်',[['Move to higher ground early. Do not wait for the water to rise.','မြင့်ရာအရပ်သို့ စောစောရွှေ့ပါ။ ရေတက်လာသည်အထိ မစောင့်ပါနှင့်။'],['Do not walk or drive through moving water.','စီးနေသောရေထဲ လမ်းမလျှောက်ပါနှင့်၊ ကားမမောင်းပါနှင့်။'],['Switch off the main power if water is coming into the house.','အိမ်ထဲရေဝင်လျှင် မီးမိန်းခလုတ်ကို ပိတ်ပါ။'],['Keep drinking water, medicine, a torch and a charged phone ready.','သောက်ရေ၊ ဆေးဝါး၊ ဓာတ်မီးနှင့် အားသွင်းထားသောဖုန်း အသင့်ထားပါ။']]],
+ ['Storm or cyclone','မုန်တိုင်းကျလျှင်',[['Stay indoors and away from windows.','အိမ်တွင်းနေပါ၊ ပြတင်းပေါက်များမှ ဝေးဝေးနေပါ။'],['In a thunderstorm, stay off open ground and away from tall trees.','မိုးကြိုးပစ်ချိန်တွင် ကွင်းပြင်နှင့် သစ်ပင်မြင့်များအောက် မနေပါနှင့်။'],['On the coast, follow evacuation orders early.','ကမ်းရိုးတန်းတွင် ရွှေ့ပြောင်းရန် ညွှန်ကြားချက်ကို စောစောလိုက်နာပါ။'],['Tie down loose things or bring them inside.','လွင့်နိုင်သောပစ္စည်းများကို ချည်ထားပါ သို့မဟုတ် အိမ်ထဲသွင်းပါ။']]],
+ ['Fire','မီးလောင်လျှင်',[['Get out first, then call 191.','အရင်ထွက်ပါ၊ ပြီးမှ ၁၉၁ ကို ခေါ်ပါ။'],['Stay low under the smoke.','မီးခိုးအောက်တွင် ကိုယ်ကိုနှိမ့်၍ သွားပါ။'],['Do not go back inside for belongings.','ပစ္စည်းယူရန် ပြန်မဝင်ပါနှင့်။'],['If your clothes catch fire: stop, drop and roll.','အဝတ်မီးစွဲလျှင် ရပ်ပါ၊ လှဲပါ၊ လှိမ့်ပါ။']]]];
+function emergencySteps(){var w=el('div','do-grid');DO.forEach(function(x,n){var d=el('details','do-card'),sm=el('summary');sm.append(el('b',null,x[0]),mm('span',x[1]));var ol=el('ol');x[2].forEach(function(r){var li=el('li');li.append(el('span',null,r[0]),mm('span',r[1]));ol.append(li)});d.append(sm,ol);d.open=n===0;w.append(d)});return w}
+// Earthquakes in Myanmar counted by week, so it is easy to see whether activity is rising.
+function quakeWeeks(){var rows=[],now=Date.now(),lab=['This week','1 week ago','2 weeks ago','3 weeks ago'];for(var i=3;i>=0;i--){var a=now-(i+1)*6048e5,z=now-i*6048e5,l=QK.filter(function(q){return q.mm&&q.time>a&&q.time<=z});rows.push([lab[i],l.length,l.some(function(q){return q.mag>=5})?'hot':''])}return rows}
+
+
 pullQuakes(true);setInterval(pullQuakes,6e4);get('data/hotspots.json').then(function(j){HS=j;if(view==='safety')renderSafety()}).catch(function(){});loadAir();loadRiver();loadDmh();loadRisk();loadStations();setInterval(loadStations,9e5);setInterval(loadRisk,9e5);setInterval(loadAir,18e5);setInterval(loadDmh,6e5);
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
-function netState(){$('offline').hidden=navigator.onLine}addEventListener('online',netState);addEventListener('offline',netState);netState();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(function(){});
+function netState(){var o=$('offline');o.hidden=navigator.onLine;if(!navigator.onLine)o.textContent=T('You are offline. Showing the last saved update'+(LIVE?', from '+ago(LIVE.updated)+' ago':'')+'.','အင်တာနက်မရှိပါ။ နောက်ဆုံးသိမ်းထားသည့် အချက်အလက်ကို ပြထားသည်။')}addEventListener('online',netState);addEventListener('offline',netState);netState();
 get('data/enso.json').then(function(d){ENSO=d;renderHome();if(view==='enso')renderEnso(d)}).catch(function(){});
 renderDateline();renderDay();renderNotes();route();loadWx();
 setInterval(loadWx,3e5);loadObs();setInterval(loadObs,3e5);setInterval(drawNotes,3e4);
 get('data/edition.json').then(function(j){E=j;renderEdition();route();pullLive();pullMarkets();checkVersion();addEventListener('hashchange',function(){route(true)});setInterval(pullLive,3e5);setInterval(pullMarkets,3e5);setInterval(checkVersion,3e5);document.addEventListener('visibilitychange',function(){if(!document.hidden){loadObs();loadDmh();checkVersion();pullMarkets();pullLive();loadWx()}})}).catch(function(){N.append(el('p','empty','Today\'s edition could not load. Check your connection and reload.'))});
-addEventListener('load',function(){scrollTo(0,0)});
+addEventListener('load',function(){scrollTo(0,0);setTimeout(function(){ZG=PX.zawgyiCheck();if(ZG&&view==='home')renderHome()},2500)});
+PX.intro();(function(){var q=new URLSearchParams(location.search).get('q');if(q)setTimeout(function(){openSearch(q.slice(0,60))},400)})();
 /* Phone alert settings: choose which alerts and which cities */
 function prefCities(){return ['Yangon','Naypyitaw','Mandalay','Bago','Mawlamyine','Hpa-An','Pathein','Taunggyi','Sittwe','Myitkyina','Monywa','Magway','Dawei','Myeik','Kawthaung','Loikaw','Hakha','Lashio']}
 var PREF_CITIES_OLD=['Yangon','Naypyitaw','Mandalay','Bago','Mawlamyine','Hpa-An','Pathein','Taunggyi','Sittwe','Myitkyina','Monywa','Magway','Dawei','Myeik','Kawthaung','Loikaw','Hakha','Lashio'];
@@ -652,8 +824,8 @@ function renderAlertPrefs(){var box=$('alert-prefs');if(!box)return;clear(box);v
   prefCities().forEach(function(n){var l=el('label','chip pc'),c=el('input');c.type='checkbox';c.value=n;c.checked=(p.cities||[]).indexOf(n)>=0;l.append(c,cn(n));cw.append(l)});ct.append(cw);f.append(ct);
   var row=el('div','prefs-row'),sv=el('button','btn btn-gold','Save alert settings'),sm=el('span','small-note');sm.setAttribute('role','status');sv.type='submit';row.append(sv,sm);f.append(row);
   f.onsubmit=function(e){e.preventDefault();var np={cities:[],minMag:+f.elements.minMag.value,quiet:f.elements.quiet.checked};['quakes','weather','official','news'].forEach(function(k){np[k]=f.elements[k].checked});Array.prototype.forEach.call(cw.querySelectorAll('input:checked'),function(c){np.cities.push(c.value)});
-    if(pushState()!=='on'){store('pd-prefs',np);sm.textContent='Saved on this device. Turn on alerts to start receiving them.';return}
-    sv.disabled=true;sm.textContent='Saving';savePrefs(np).then(function(){sm.textContent='Saved.'}).catch(function(x){sm.textContent=x.message}).then(function(){sv.disabled=false})};
+    if(pushState()!=='on'){store('pd-prefs',np);sm.textContent='Saved on this device. Turn on alerts to start receiving them.';PX.toast(T('Saved on this device.','ဤစက်တွင် သိမ်းပြီး'));return}
+    sv.disabled=true;sm.textContent='Saving';savePrefs(np).then(function(){sm.textContent='Saved.';PX.toast(T('Alert settings saved.','သတိပေးချက်ဆက်တင် သိမ်းပြီး'))}).catch(function(x){sm.textContent=x.message}).then(function(){sv.disabled=false})};
   box.append(f)}
 
 /* Read aloud: weather and top headlines */
@@ -712,5 +884,6 @@ loadPrices();setInterval(loadPrices,9e5);
 (function(){var b=document.getElementById('kpay-copy');if(!b)return;b.onclick=function(){var n='09944939666';(navigator.clipboard?navigator.clipboard.writeText(n):Promise.reject()).then(function(){b.textContent='Copied'},function(){b.textContent='Number: '+n});setTimeout(function(){b.textContent='Copy'},2500)}})();
 
 (function(){function dark(){var t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
-  function sync(){var d=dark();Array.prototype.forEach.call(document.querySelectorAll('.theme-btn'),function(b){b.setAttribute('aria-label',d?'Light mode':'Dark mode');b.title=d?'Light mode':'Dark mode'});var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=d?'#14100E':'#F3EADB'}
-  Array.prototype.forEach.call(document.querySelectorAll('.theme-btn'),function(b){b.onclick=function(){var t=dark()?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('pd-theme',JSON.stringify(t))}catch(e){}sync()}});sync()})();
+  function sync(){var d=dark();Array.prototype.forEach.call(document.querySelectorAll('.theme-btn'),function(b){b.setAttribute('aria-label',d?'Light mode':'Dark mode');b.title=d?'Light mode':'Dark mode'});var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=d?'#140D09':'#F1E4C8'}
+  window.PD_THEME=function(b){var t=dark()?'light':'dark';PX.themeFlip(b,function(){document.documentElement.dataset.theme=t;try{localStorage.setItem('pd-theme',JSON.stringify(t))}catch(e){}sync()})};
+  Array.prototype.forEach.call(document.querySelectorAll('.theme-btn'),function(b){b.onclick=function(){window.PD_THEME(b)}});sync()})();
