@@ -419,3 +419,23 @@ h1,h2,h3,.big,.t,.wx-temp,.enso-big,.pr-row strong,.tel strong,.bar b,.home-link
 html[lang="my"] .sec-t>.mm,html[lang="my"] .h-wx .c .mm,html[lang="my"] .wx-cond .mm,html[lang="my"] .card-t .mm,html[lang="my"] .nav a .mm,html[lang="my"] .nav-g>span .mm,html[lang="my"] .view h2>.mm,html[lang="my"] h3.sec>.mm,html[lang="my"] .do-card summary .mm{display:none}
 @media (max-width:400px){.top-tools{gap:4px}.top-tools .tool{min-width:40px;min-height:40px;padding:0 6px}.home-link{gap:8px}.home-link b{white-space:normal;font-size:1.05rem;line-height:1}.side{padding:0 6px 0 10px}}
 dialog.sheet.search{margin-top:9vh}
+
+/* Smoothness: blur only on the few things that float over content (sidebar, tab bar, story captions, sheets).
+   Cards are solid glass-coloured panels, which phones can scroll without redrawing a blur every frame. */
+.blur,.glass,.card,.alerts,.pr-card,.alert-prefs,.hn-list li,.do-card,.bars,.wk-chart{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+:root{--panel:rgba(255,251,240,.78)}:root[data-theme="dark"]{--panel:rgba(48,34,24,.72)}
+body::before{background:var(--bg-art-soft,var(--bg-art));transform:translateZ(0);will-change:transform}
+:root{--bg-art-soft:radial-gradient(60vw 44vh at 78% 4%,rgba(240,200,110,.55),transparent 62%),radial-gradient(50vw 50vh at 6% 62%,rgba(214,160,80,.32),transparent 62%),radial-gradient(60vw 46vh at 88% 96%,rgba(230,190,120,.38),transparent 62%)}
+:root[data-theme="dark"]{--bg-art-soft:radial-gradient(60vw 44vh at 78% 0%,rgba(217,174,85,.17),transparent 62%),radial-gradient(50vw 50vh at 4% 60%,rgba(166,58,36,.15),transparent 62%),radial-gradient(60vw 46vh at 90% 100%,rgba(217,174,85,.09),transparent 62%)}
+.st-tx{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.side,.tabbar{will-change:transform}
+@media (max-width:759px){.st-tx{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--cap)}:root .st-tx{background:rgba(255,250,238,.92)}:root[data-theme="dark"] .st-tx{background:rgba(24,15,10,.88)}}
+@media (prefers-reduced-motion:no-preference){
+ .hero-slide.on .st.big .st-img img{animation:none}
+ .h-st.l1 span,.h-st.l2 span{animation:none}
+ .wi:is(.e,.wx-emoji) .drift,.wi:is(.e,.wx-emoji) .drop,.wi:is(.e,.wx-emoji) .bolt{animation:none}
+ .wi:is(.e,.wx-emoji) .sunray{animation:spin 40s linear infinite;will-change:transform}
+ .rise.in{transition:opacity .45s ease-out,transform .45s ease-out}
+ a.card{transition:box-shadow .2s ease}a.card:hover{transform:none}
+ .st-img img{transition:none}.st:hover .st-img img,.tile:hover .tile-img img{transform:none}
+}

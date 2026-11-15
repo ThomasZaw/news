@@ -649,8 +649,9 @@ function guide(){
     t.append(el('b',null,r[1]),el('small',null,r[2]));a.append(el('i',null,r[0]),t);g.append(a)});
   g.append(x);return g;
 }
-function renderHome(){
-  var g=$('hgrid');if(!g||view!=='home')return;clear(g);
+var HOME_T=0;function renderHome(){if(view!=='home')return;clearTimeout(HOME_T);HOME_T=setTimeout(drawHome,120)}
+function drawHome(){
+  var g=$('hgrid');if(!g||view!=='home')return;var keepH=g.offsetHeight;g.style.minHeight=keepH+'px';clear(g);requestAnimationFrame(function(){g.style.minHeight=''});
   var tl=todayLine();if(tl)g.append(el('p','today-line',tl));
   if(ZG&&!store('pd-zg')){var zb=el('button','btn zg-note','Burmese text looks broken? Tap for help.');zb.type='button';zb.onclick=function(){store('pd-zg',1);openSettings(true)};g.append(zb)}
   var gd=store('pd-guide')?null:guide(),phone=matchMedia('(max-width:640px)').matches;if(gd&&!phone)g.append(gd);
