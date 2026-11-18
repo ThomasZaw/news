@@ -439,3 +439,7 @@ body::before{background:var(--bg-art-soft,var(--bg-art));transform:translateZ(0)
  a.card{transition:box-shadow .2s ease}a.card:hover{transform:none}
  .st-img img{transition:none}.st:hover .st-img img,.tile:hover .tile-img img{transform:none}
 }
+
+.don-form{display:grid;gap:12px}.don-l{display:grid;gap:6px;font-weight:600;font-size:.92rem}.don-l textarea{min-height:90px;resize:vertical;font:inherit;padding:10px 12px}.don-l input{min-height:44px;padding:0 12px;font:inherit}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.give-pop .don-open{width:100%;margin-top:10px}.set-give .btn{margin-top:4px}

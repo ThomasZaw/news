@@ -257,6 +257,48 @@ export async function run(env, now = Date.now()) {
   await sendNew(env, list);
 }
 
+
+// A visitor says they sent a KPay donation. KPay cannot tell the site, so this is the donor's own word:
+// the owner gets a phone alert and an email, and checks the KPay app to confirm.
+function clean(v, n) {
+  return String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
+}
+async function mailOwner(env, subject, text) {
+  if (!env.MAIL || !env.OWNER_EMAIL) return "not set up";
+  const { EmailMessage } = await import("cloudflare:email");
+  const from = env.MAIL_FROM || "alerts@parabaikdaily.com";
+  const b64 = (t) => btoa(String.fromCharCode(...new TextEncoder().encode(t)));
+  const raw = ["From: Parabaik Daily <" + from + ">", "To: " + env.OWNER_EMAIL, "Subject: =?UTF-8?B?" + b64(subject) + "?=", "Message-ID: <" + crypto.randomUUID() + "@parabaikdaily.com>", "Date: " + new Date().toUTCString(), "MIME-Version: 1.0", "Content-Type: text/plain; charset=UTF-8", "Content-Transfer-Encoding: base64", "", b64(text).replace(/.{76}/g, "$&\r\n")].join("\r\n");
+  await env.MAIL.send(new EmailMessage(from, env.OWNER_EMAIL, raw));
+  return "sent";
+}
+async function donated(request, env, cors) {
+  const b = await request.json().catch(() => null);
+  if (!b) return new Response("Invalid", { status: 400, headers: cors });
+  if (b.website) return new Response("Thanks", { headers: cors });
+  const ip = request.headers.get("CF-Connecting-IP") || "?", day = new Date(Date.now() + 6.5 * 3600e3).toISOString().slice(0, 10);
+  const who = "dn:" + day + ":" + b64u(await crypto.subtle.digest("SHA-256", enc.encode(ip + (env.ADMIN_KEY || "")))).slice(0, 16);
+  const mine = +((await env.SEEN.get(who)) || 0), all = +((await env.SEEN.get("dn:" + day)) || 0);
+  if (mine >= 3 || all >= 60) return new Response("Too many today", { status: 429, headers: cors });
+  await env.SEEN.put(who, String(mine + 1), { expirationTtl: 172800 });
+  await env.SEEN.put("dn:" + day, String(all + 1), { expirationTtl: 172800 });
+  const name = clean(b.name, 60) || "Someone", amount = clean(b.amount, 30), msg = clean(b.message, 400);
+  const when = new Date(Date.now() + 6.5 * 3600e3).toISOString().replace("T", " ").slice(0, 16) + " Myanmar time";
+  const list = (await env.SEEN.get("donations", "json")) || [];
+  list.unshift({ at: new Date().toISOString(), name, amount, msg });
+  await env.SEEN.put("donations", JSON.stringify(list.slice(0, 200)));
+  const title = "Donation note" + (amount ? ": " + amount : ""), body = name + " says they sent a KPay donation" + (amount ? " of " + amount : "") + "." + (msg ? " \"" + msg + "\"" : "") + " Check your KPay app to confirm.";
+  const { keys } = await env.SEEN.list({ prefix: "s:" });
+  for (const k of keys) {
+    const sub = await env.SEEN.get(k.name, "json");
+    if (sub && sub.prefs && sub.prefs.owner) await sendOne(env, k.name, sub, { title, body, click: SITE }).catch((e) => console.log(String(e)));
+  }
+  const text = "Someone pressed \"I've sent a donation\" on parabaikdaily.com.\n\nName: " + name + "\nAmount: " + (amount || "not given") + "\nMessage: " + (msg || "none") + "\nTime: " + when + "\n\nThe site cannot see KPay payments, so this is the donor's own word. Open your KPay app to check the money arrived.\n\nParabaik Daily";
+  const mail = await mailOwner(env, title + " from " + name, text).catch((e) => "failed: " + e);
+  console.log("donation note, email " + mail);
+  return new Response("Thanks", { headers: cors });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(event.cron === "*/30 * * * *" ? run30(env) : run(env));
@@ -294,6 +336,7 @@ export default {
       const status = await sendOne(env, key, sub, { title: "Parabaik Daily", body: "Test alert. Notifications are working.", click: SITE });
       return new Response(String(status), { status: status < 300 ? 200 : 502, headers: cors });
     }
+    if (request.method === "POST" && path === "/donated") return donated(request, env, cors);
     if (request.method === "POST" && path === "/unsubscribe") {
       const b = await request.json().catch(() => null);
       if (!b || !/^https:\/\//.test(b.endpoint || "")) return new Response("Invalid", { status: 400, headers: cors });
@@ -340,7 +383,14 @@ export default {
       const d = await getQuakes(days);
       return new Response(JSON.stringify({ updated: new Date().toISOString(), sources: d.sources, features: d.quakes.map((q) => ({ id: q.id, properties: { mag: q.mag, place: q.place, time: q.time, url: q.url, src: q.src, srcs: q.srcs }, geometry: { coordinates: [q.lon, q.lat, q.depth] } })) }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "max-age=30" } });
     }
-    if (path === "/health") return new Response(JSON.stringify({ running: true, owner_key_set: !!env.ADMIN_KEY, github_token_set: !!env.GH_TOKEN, notifications_key_set: !!env.VAPID_PRIVATE }), { headers: { ...cors, "Content-Type": "application/json" } });
+    if (request.method === "POST" && path === "/donations") {
+      const b = await request.json().catch(() => null);
+      if (!env.ADMIN_KEY || !b || b.key !== env.ADMIN_KEY) return new Response("Wrong key", { status: 403, headers: cors });
+      let mail = null;
+      if (b.testEmail) mail = await mailOwner(env, "Test email from Parabaik Daily", "Email alerts are working. Donation notes will arrive here.").catch((e) => "failed: " + e);
+      return new Response(JSON.stringify({ mail, list: (await env.SEEN.get("donations", "json")) || [] }), { headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    if (path === "/health") return new Response(JSON.stringify({ running: true, owner_key_set: !!env.ADMIN_KEY, github_token_set: !!env.GH_TOKEN, notifications_key_set: !!env.VAPID_PRIVATE, email_set: !!(env.MAIL && env.OWNER_EMAIL) }), { headers: { ...cors, "Content-Type": "application/json" } });
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405, headers: cors });
     return fetch(ORIGIN + path + url.search, { method: request.method, headers: { "User-Agent": "ParabaikDaily/1.0" } });
   },

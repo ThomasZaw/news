@@ -171,5 +171,25 @@ function zawgyiCheck(){
     var webfont=document.fonts&&document.fonts.check('16px "Noto Serif Myanmar"','က');
     return a>0&&b>a*1.6&&!webfont}catch(e){return false}
 }
-return {el:el,store:store,T:T,svg:svg,IC:IC,toast:toast,sheet:sheet,lite:lite,img:img,savedList:savedList,isSaved:isSaved,toggleSave:toggleSave,share:share,shareBtn:shareBtn,storyMenu:storyMenu,moreBtn:moreBtn,copy:copy,rise:rise,count:count,vt:vt,themeFlip:themeFlip,sk:sk,skCard:skCard,empty:empty,spark:spark,bars:bars,week:week,intro:intro,zawgyiCheck:zawgyiCheck,RM:RM};
+
+/* "I've sent a donation": the donor's note goes to the owner as a phone alert and an email */
+function donated(){
+  var api=location.hostname==='parabaikdaily.com'?'':'https://parabaik-alerts.thomaszaw2019.workers.dev';
+  sheet('Thank you','ကျေးဇူးတင်ပါသည်',function(b,close){
+    var f=el('form','don-form');f.noValidate=true;
+    function field(name,en,my,type,ph,max){var l=el('label','don-l'),i=el(type==='area'?'textarea':'input','field');l.append(el('span',null,T(en,my)));if(type!=='area')i.type=type;i.name=name;i.maxLength=max;if(ph)i.placeholder=ph;l.append(i);f.append(l);return i}
+    f.append(el('p','sheet-sub',T('Sent a donation by KPay to 09944939666? Let us know so we can say thank you. Everything here is optional.','KPay ဖြင့် 09944939666 သို့ လှူဒါန်းပြီးပါက အသိပေးပါ။ အားလုံး ထည့်ချင်မှ ထည့်ပါ။')));
+    field('name','Your name','အမည်','text',T('Shown only to the owner','ပိုင်ရှင်သာ မြင်ရမည်'),60);
+    field('amount','Amount','ပမာဏ','text','5,000 Ks',30);
+    field('message','Message','မှတ်ချက်','area','',400);
+    var hp=el('input');hp.name='website';hp.tabIndex=-1;hp.autocomplete='off';hp.setAttribute('aria-hidden','true');hp.className='hp';f.append(hp);
+    var go=el('button','btn btn-gold',T('Send','ပို့ရန်')),msg=el('p','small-note');go.type='submit';msg.setAttribute('role','status');f.append(go,msg);
+    f.onsubmit=function(e){e.preventDefault();go.disabled=true;msg.textContent=T('Sending','ပို့နေသည်');
+      fetch(api+'/donated',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:f.elements.name.value,amount:f.elements.amount.value,message:f.elements.message.value,website:hp.value})}).then(function(r){
+        if(r.status===429)throw new Error(T('You have already sent a few notes today. Thank you.','ယနေ့ အကြိမ်အနည်းငယ် ပို့ပြီးပါပြီ။ ကျေးဇူးတင်ပါသည်။'));if(!r.ok)throw new Error(T('Could not send. Please try again later.','မပို့နိုင်ပါ။ နောက်မှ ထပ်ကြိုးစားပါ။'));
+        close();toast(T('Thank you for supporting Parabaik Daily.','ပုရပိုက်ကို ပံ့ပိုးပေးသည့်အတွက် ကျေးဇူးတင်ပါသည်။'))}).catch(function(x){go.disabled=false;msg.textContent=x.message||T('No internet connection.','အင်တာနက်မရှိပါ။')})};
+    b.append(f);
+  },'narrow');
+}
+return {el:el,donated:donated,store:store,T:T,svg:svg,IC:IC,toast:toast,sheet:sheet,lite:lite,img:img,savedList:savedList,isSaved:isSaved,toggleSave:toggleSave,share:share,shareBtn:shareBtn,storyMenu:storyMenu,moreBtn:moreBtn,copy:copy,rise:rise,count:count,vt:vt,themeFlip:themeFlip,sk:sk,skCard:skCard,empty:empty,spark:spark,bars:bars,week:week,intro:intro,zawgyiCheck:zawgyiCheck,RM:RM};
 })();
