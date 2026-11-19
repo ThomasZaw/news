@@ -158,7 +158,7 @@ def gnews_url(link):
         pass
     req = urllib.request.Request("https://news.google.com/rss/articles/" + aid, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=12) as r:
-        html = r.read(400000).decode("utf-8", "replace")
+        html = r.read(4000000).decode("utf-8", "replace")  # the key Google needs sits near the end of a large page
     sg, ts = re.search(r'data-n-a-sg="([^"]+)"', html), re.search(r'data-n-a-ts="([^"]+)"', html)
     if not (sg and ts):
         return None
