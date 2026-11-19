@@ -1,0 +1,30 @@
+name: probe
+on: workflow_dispatch
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'P'
+          import sys, re, json, urllib.request, traceback
+          sys.path.insert(0, "scripts")
+          import fetch_feeds as F
+          rss = F.get("https://news.google.com/rss/search?q=Myanmar&hl=en-US&gl=US&ceid=US:en")
+          links = re.findall(r"<link>(https://news.google.com/rss/articles/[^<]+)</link>", rss)[:3]
+          print("links", len(links), links[:1])
+          for l in links:
+              try:
+                  print("RESULT", F.gnews_url(l))
+              except Exception as e:
+                  traceback.print_exc()
+              aid = re.search(r"/articles/([^?/]+)", l).group(1)
+              for u in ("https://news.google.com/rss/articles/" + aid, "https://news.google.com/articles/" + aid):
+                  try:
+                      req = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124 Safari/537.36"})
+                      with urllib.request.urlopen(req, timeout=15) as r:
+                          h = r.read(500000).decode("utf-8", "replace")
+                      print(u[:60], r.status, len(h), "sg" in h, re.findall(r'data-n-a-(?:sg|ts)="[^"]{0,20}', h)[:2], re.findall(r"c-wiz[^>]{0,120}", h)[:1])
+                  except Exception as e:
+                      print(u[:60], "ERR", e)
+          P
