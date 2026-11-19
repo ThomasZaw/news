@@ -27,8 +27,16 @@ export function fromGeofon(t) {
   return t.split("\n").filter((l) => l && l[0] !== "#").map((l) => l.split("|")).filter((c) => c.length > 12 && c[10]).map((c) => ({ id: c[0], src: "GEOFON", mag: +c[10], place: c[12], time: Date.parse(c[1] + "Z"), lat: +c[2], lon: +c[3], depth: +c[4], url: "https://geofon.gfz.de/eqinfo/event.php?id=" + c[0] }));
 }
 // China Earthquake Networks Center, through the Wolfx copy of its latest 50 reports. Times are Beijing time.
+const CN = [["中缅边境", "Myanmar-China border"], ["缅甸", "Myanmar"], ["印度", "India"], ["孟加拉", "Bangladesh"], ["泰国", "Thailand"], ["老挝", "Laos"], ["越南", "Vietnam"], ["柬埔寨", "Cambodia"], ["西藏", "Tibet, China"], ["云南", "Yunnan, China"], ["四川", "Sichuan, China"], ["广西", "Guangxi, China"], ["贵州", "Guizhou, China"], ["尼泊尔", "Nepal"], ["不丹", "Bhutan"], ["安达曼", "Andaman Islands region"], ["尼科巴", "Nicobar Islands region"], ["苏门答腊", "Sumatra, Indonesia"], ["马来西亚", "Malaysia"], ["孟加拉湾", "Bay of Bengal"]];
+// CENC names places in Chinese. Turn the country or province into English; otherwise describe the spot by its coordinates.
+export function cencPlace(e) {
+  const t = (e.placeName || e.location || "") + "", hit = CN.filter((c) => t.includes(c[0])).sort((a, b) => b[0].length - a[0].length)[0];
+  if (hit) return hit[1];
+  const la = +e.latitude, lo = +e.longitude;
+  return isFinite(la) && isFinite(lo) ? Math.abs(la).toFixed(1) + "°" + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(1) + "°" + (lo >= 0 ? "E" : "W") : "Unknown place";
+}
 export function fromCenc(j) {
-  return Object.keys(j || {}).filter((k) => /^No\d+$/.test(k)).map((k) => j[k]).filter((e) => e && e.magnitude && e.time).map((e) => ({ id: "cenc" + e.EventID, src: "CENC", mag: +e.magnitude, place: e.placeName || e.location || "", time: Date.parse(e.time.replace(" ", "T") + "+08:00"), lat: +e.latitude, lon: +e.longitude, depth: +e.depth, url: "https://news.ceic.ac.cn/" }));
+  return Object.keys(j || {}).filter((k) => /^No\d+$/.test(k)).map((k) => j[k]).filter((e) => e && e.magnitude && e.time).map((e) => ({ id: "cenc" + e.EventID, src: "CENC", mag: +e.magnitude, place: cencPlace(e), time: Date.parse(e.time.replace(" ", "T") + "+08:00"), lat: +e.latitude, lon: +e.longitude, depth: +e.depth, url: "https://news.ceic.ac.cn/" }));
 }
 // One event can appear in several catalogues. Keep USGS details first, then EMSC, GEOFON, CENC, NCS and DMH, and remember which sources saw it.
 export function mergeQuakes(lists) {
@@ -311,9 +319,50 @@ async function donated(request, env, cors) {
   return new Response("Thanks", { headers: cors });
 }
 
+// Security headers for every page. The policy only allows scripts from this site (and Cloudflare's visitor counter),
+// stops other sites putting the page in a frame, and tells browsers to always use the secure address.
+const SECURITY = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "geolocation=(self), microphone=(), camera=(), payment=(), usb=()",
+  "Content-Security-Policy": "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https:; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+};
+function secure(res) {
+  const r = new Response(res.body, res);
+  for (const k in SECURITY) r.headers.set(k, SECURITY[k]);
+  return r;
+}
+// A light per-visitor limit on the forms that write data, kept in memory so it costs no storage writes.
+const HITS = new Map();
+function tooMany(ip, limit = 30, windowMs = 600e3) {
+  const now = Date.now(), h = HITS.get(ip);
+  if (!h || now - h.t > windowMs) { HITS.set(ip, { t: now, n: 1 }); if (HITS.size > 5000) HITS.clear(); return false; }
+  h.n++;
+  return h.n > limit;
+}
+// Five wrong owner keys in an hour locks that connection out of owner tools for an hour.
+async function lockKey(env, ip) { return "lock:" + b64u(await crypto.subtle.digest("SHA-256", enc.encode(ip + "|" + (env.ADMIN_KEY || "")))).slice(0, 20); }
+async function lockedOut(env, ip) { return +((await env.SEEN.get(await lockKey(env, ip))) || 0) >= 5; }
+async function wrongKey(env, ip) { const k = await lockKey(env, ip); await env.SEEN.put(k, String(+((await env.SEEN.get(k)) || 0) + 1), { expirationTtl: 3600 }); }
+// Weekly copy of the alert subscriber list, so an accidental deletion can be undone. Four weeks are kept.
+async function backupSubs(env, now = Date.now()) {
+  const last = +((await env.SEEN.get("backup:last")) || 0);
+  if (now - last < 7 * 864e5) return;
+  const { keys } = await env.SEEN.list({ prefix: "s:" }), all = {};
+  for (const k of keys) all[k.name] = await env.SEEN.get(k.name, "json");
+  const day = new Date(now).toISOString().slice(0, 10);
+  await env.SEEN.put("backup:" + day, JSON.stringify(all));
+  await env.SEEN.put("backup:last", String(now));
+  const old = (await env.SEEN.list({ prefix: "backup:20" })).keys.map((k) => k.name).sort().slice(0, -4);
+  for (const k of old) await env.SEEN.delete(k);
+  console.log("subscriber backup " + day + ": " + keys.length);
+}
+
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(event.cron === "*/30 * * * *" ? run30(env) : run(env));
+    ctx.waitUntil(event.cron === "*/30 * * * *" ? Promise.all([run30(env), backupSubs(env).catch((e) => console.log("backup failed " + e))]) : run(env));
   },
   async fetch(request, env) {
     const from = request.headers.get("Origin");
@@ -321,6 +370,9 @@ export default {
     const url = new URL(request.url), path = url.pathname;
     if (url.hostname === "www.parabaikdaily.com") return Response.redirect("https://parabaikdaily.com" + path + url.search, 301);
     if (request.method === "OPTIONS") return new Response(null, { headers: cors });
+    const ip = request.headers.get("CF-Connecting-IP") || "?";
+    if (request.method === "POST" && tooMany(ip)) return new Response("Too many requests. Try again in a few minutes.", { status: 429, headers: cors });
+    if (request.method === "POST" && (path === "/prices" || path === "/donations") && (await lockedOut(env, ip))) return new Response("Too many wrong keys. Try again in an hour.", { status: 429, headers: cors });
     if (request.method === "POST" && path === "/reminder") {
       const b = await request.json().catch(() => null);
       if (!b || !b.sub || !/^https:\/\//.test(b.sub.endpoint || "") || !b.sub.keys || !(b.at > Date.now()) || typeof b.text !== "string") return new Response("Invalid reminder", { status: 400, headers: cors });
@@ -364,6 +416,7 @@ export default {
       prefs.minMag = p.minMag === 5 ? 5 : 4;
       prefs.quiet = !!p.quiet;
       prefs.cities = Array.isArray(p.cities) ? p.cities.filter((x) => typeof x === "string").slice(0, 20) : [];
+      if (b.admin && env.ADMIN_KEY && b.admin !== env.ADMIN_KEY) { if (await lockedOut(env, ip)) return new Response("Too many wrong keys. Try again in an hour.", { status: 429, headers: cors }); await wrongKey(env, ip); }
       prefs.owner = !!(old.prefs && old.prefs.owner) || (!!env.ADMIN_KEY && b.admin === env.ADMIN_KEY);
       await env.SEEN.put(key, JSON.stringify({ endpoint: b.sub.endpoint, keys: b.sub.keys, prefs }));
       return new Response(JSON.stringify({ saved: true, owner: prefs.owner }), { headers: { ...cors, "Content-Type": "application/json" } });
@@ -371,7 +424,7 @@ export default {
     if (path === "/prices") {
       if (request.method === "POST") {
         const b = await request.json().catch(() => null);
-        if (!env.ADMIN_KEY || !b || b.key !== env.ADMIN_KEY) return new Response("Wrong key", { status: 403, headers: cors });
+        if (!env.ADMIN_KEY || !b || b.key !== env.ADMIN_KEY) { await wrongKey(env, ip); return new Response("Wrong key", { status: 403, headers: cors }); }
         // Keep earlier prices and only change what was sent. Gold and dollar, and fuel, each keep their own date.
         const v = (await env.SEEN.get("prices", "json")) || {}, at = new Date().toISOString();
         const GOLD = ["gold_ygea", "gold_15", "usd_market"], FUEL = ["octane92", "octane95", "octane97", "diesel", "premium_diesel"];
@@ -397,13 +450,13 @@ export default {
     }
     if (request.method === "POST" && path === "/donations") {
       const b = await request.json().catch(() => null);
-      if (!env.ADMIN_KEY || !b || b.key !== env.ADMIN_KEY) return new Response("Wrong key", { status: 403, headers: cors });
+      if (!env.ADMIN_KEY || !b || b.key !== env.ADMIN_KEY) { await wrongKey(env, ip); return new Response("Wrong key", { status: 403, headers: cors }); }
       let mail = null;
       if (b.testEmail) mail = await mailOwner(env, "Test email from Parabaik Daily", "Email alerts are working. Donation notes will arrive here.").catch((e) => "failed: " + e);
       return new Response(JSON.stringify({ mail, list: (await env.SEEN.get("donations", "json")) || [] }), { headers: { ...cors, "Content-Type": "application/json" } });
     }
     if (path === "/health") return new Response(JSON.stringify({ running: true, owner_key_set: !!env.ADMIN_KEY, github_token_set: !!env.GH_TOKEN, notifications_key_set: !!env.VAPID_PRIVATE, email_set: !!(env.MAIL && env.OWNER_EMAIL) }), { headers: { ...cors, "Content-Type": "application/json" } });
     if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405, headers: cors });
-    return fetch(ORIGIN + path + url.search, { method: request.method, headers: { "User-Agent": "ParabaikDaily/1.0" } });
+    return secure(await fetch(ORIGIN + path + url.search, { method: request.method, headers: { "User-Agent": "ParabaikDaily/1.0" } }));
   },
 };

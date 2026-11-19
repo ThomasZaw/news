@@ -167,11 +167,15 @@ def gnews_url(link):
     req = urllib.request.Request("https://news.google.com/_/DotsSplashUi/data/batchexecute", data=body, headers={"User-Agent": "Mozilla/5.0", "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"})
     with urllib.request.urlopen(req, timeout=12) as r:
         text = r.read().decode("utf-8", "replace")
+    # The answer is JSON inside JSON, so the quote marks around "garturlres" arrive escaped.
     for line in text.split("\n"):
-        if '"garturlres"' in line:
-            out = json.loads(json.loads(line)[0][2])[1]
-            return out if isinstance(out, str) and out.startswith("http") else None
-    return None
+        if "garturlres" in line and line.lstrip().startswith("["):
+            for row in json.loads(line):
+                if isinstance(row, list) and len(row) > 2 and isinstance(row[2], str) and "garturlres" in row[2]:
+                    out = json.loads(row[2])[1]
+                    return out if isinstance(out, str) and out.startswith("http") else None
+    m = re.search(r'garturlres\\",\\"(https?://[^"\\]+)', text)
+    return m.group(1) if m else None
 
 
 def og_images(items, limit=60):
