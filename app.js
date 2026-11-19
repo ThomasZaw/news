@@ -488,7 +488,7 @@ function renderPrivacy(){var b=$('privacy-box');if(!b||b.firstChild)return;var h
  ['Visitor counts','We may count visits with Cloudflare Web Analytics, which uses no cookies and does not identify you.'],
  ['News photos','Story photos are fetched through wsrv.nl, a free image service that makes them smaller. If that fails, the photo loads from the news outlet\'s own site. Either service can see your connection.'],
  ['Saved stories and your town','Stories you save, your town and low-data mode are kept in your browser on this device only.'],
- ['Services used','GitHub, Cloudflare, Open-Meteo, USGS, EMSC, GEOFON, CENC (through Wolfx), India's NCS, NASA, NOAA, Ogimet, the Central Bank of Myanmar, Yahoo Finance and news publishers. Fonts are served from this site. Each service may see basic connection details.'],
+ ['Services used','GitHub, Cloudflare, Open-Meteo, USGS, EMSC, GEOFON, CENC (through Wolfx), India\'s NCS, NASA, NOAA, Ogimet, the Central Bank of Myanmar, Yahoo Finance and news publishers. Fonts are served from this site. Each service may see basic connection details.'],
  ['No accounts','There is no login, and we do not sell personal data.']].forEach(function(r){var d=el('div');d.append(el('h3','sec',r[0]),el('p',null,r[1]));b.append(d)})}
 
 /* Daily edition */
