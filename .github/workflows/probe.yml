@@ -6,7 +6,6 @@ jobs:
     steps:
       - run: |
           UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124 Safari/537.36"
-          echo "=====CENC"; curl -sS -m 20 -A "$UA" https://api.wolfx.jp/cenc_eqlist.json | head -c 1500; echo
-          echo "=====DMH"; curl -sS -m 25 -A "$UA" -L https://www.moezala.gov.mm/earthquake-news -o dmh.html -w "%{http_code} %{size_download}\n"; grep -o '<a href="[^"]*"[^>]*>[^<]*ငလျင်[^<]*</a>' dmh.html | head -8; grep -n -i "views-row\|field-content\|<h2\|node/" dmh.html | head -30 | cut -c1-300
-          echo "=====DMHNODE"; N=$(grep -o 'href="/node/[0-9]*"' dmh.html | head -1 | grep -o '/node/[0-9]*'); echo $N; curl -sS -m 25 -A "$UA" -L "https://www.moezala.gov.mm$N" | sed 's/<[^>]*>/ /g' | tr -s ' \n' | grep -i -m 20 "ငလျင်\|magnitude\|Richter\|Lat\|Long\|ပြင်းအား\|ဗဟို" | cut -c1-400
-          echo "=====NCS"; curl -sS -m 25 -A "$UA" -L https://riseq.seismo.gov.in/riseq/earthquake/recent_earthquake -o ncs.html -w "%{http_code} %{size_download}\n"; grep -o -i "[a-z_/]*\(json\|ajax\|api\)[a-z_/?=.]*" ncs.html | sort -u | head -20; grep -n -i "myanmar\|data-\|var .* = \[" ncs.html | head -15 | cut -c1-400
+          echo "=====DMHNODE"; curl -sS -m 25 -A "$UA" -L https://www.moezala.gov.mm/my/news/135246 -o n.html -w "%{http_code}\n"; grep -n "field--name-body\|field-item\|<p" n.html | head -12 | cut -c1-900
+          echo "=====DMHNODE2"; curl -sS -m 25 -A "$UA" -L https://www.moezala.gov.mm/my/news/134834 | grep -n "<p\|<img" | head -8 | cut -c1-900
+          echo "=====NCS"; curl -sS -m 30 -A "$UA" -L https://riseq.seismo.gov.in/riseq/earthquake/recent_earthquake -o ncs.html -w "%{http_code} %{size_download}\n" || true; grep -o -i "[a-z_/.-]*\(json\|ajax\|api\)[a-z_/?=.-]*" ncs.html | sort -u | head -20; grep -n -i "myanmar" ncs.html | head -6 | cut -c1-600; grep -n -i "<tr\|data-json\|JSON.parse" ncs.html | head -6 | cut -c1-400
