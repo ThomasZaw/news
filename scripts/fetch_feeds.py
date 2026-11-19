@@ -829,6 +829,75 @@ def prices(path):
     print("PRICES", {k: v for k, v in out.items() if k != "updated"})
 
 
+MMD = str.maketrans("၀၁၂၃၄၅၆၇၈၉", "0123456789")
+MM_MONTHS = ["ဇန်နဝါရီ", "ဖေဖော်ဝါရီ", "မတ်", "ဧပြီ", "မေ", "ဇွန်", "ဇူလိုင်", "ဩဂုတ်", "စက်တင်ဘာ", "အောက်တိုဘာ", "နိုဝင်ဘာ", "ဒီဇင်ဘာ"]
+
+
+def parse_dmh(text, url):
+    """Read one DMH earthquake bulletin, written in Burmese. Returns None if the wording is not recognised."""
+    t = re.sub(r"\s+", " ", text.translate(MMD))
+    t = re.sub(r"(?<=\d) (?=\d)", "", t)
+    y = re.search(r"(20\d\d) ?ခု ?နှစ်", t)
+    mo = next((i + 1 for i, m in enumerate(MM_MONTHS) for v in {m, m.replace("ဩ", "ဪ")} if re.search(re.escape(v) + r" ?လ ?\d", t)), None)
+    d = re.search(r"လ ?(\d{1,2}) ?ရက်", t)
+    rest = t[d.end():] if d else t  # the time of the earthquake comes after the date, not the release time above it
+    hh = re.search(r"\(? ?(\d{1,2}) ?\)? ?နာရီ", rest)
+    mi = re.search(r"\(? ?(\d{1,2}) ?\)? ?မိနစ်", rest)
+    ss = re.search(r"\(? ?(\d{1,2}) ?\)? ?စက္ကန့်", rest)
+    la = re.search(r"လတ္တီ ?တွဒ် ?\(? ?([\d.]+)", t)
+    lo = re.search(r"လောင် ?ဂျီ ?တွဒ် ?\(? ?([\d.]+)", t)
+    dp = re.search(r"အနက် ?\(? ?([\d.]+) ?\)? ?ကီလို", t)
+    mg = re.search(r"ပမာဏ ?\(? ?([\d.]+)", t)
+    town = re.search(r"\( ?([^()]{2,30}?)မြို့၏", t)
+    if not (y and mo and d and hh and mi and la and lo and mg):
+        return None
+    when = datetime(int(y.group(1)), mo, int(d.group(1)), int(hh.group(1)), int(mi.group(1)), int(ss.group(1)) if ss else 0, tzinfo=timezone(timedelta(hours=6, minutes=30)))
+    return {"id": "dmh" + url.rstrip("/").split("/")[-1], "src": "DMH", "mag": float(mg.group(1).rstrip(".")), "lat": float(la.group(1)), "lon": float(lo.group(1)),
+            "depth": float(dp.group(1)) if dp else None, "time": int(when.timestamp() * 1000), "place": (town.group(1).strip() + "မြို့အနီး") if town else "မြန်မာနိုင်ငံ", "url": url}
+
+
+def quakes_extra(path):
+    """Earthquakes from India's National Center for Seismology and Myanmar's Department of Meteorology and
+    Hydrology. Both publish web pages, not data feeds, so they are read here every 15 minutes and the
+    alert service merges them with the faster feeds."""
+    import html as H
+    out, ok, cut = [], {}, datetime.now(timezone.utc) - timedelta(days=30)
+    try:
+        page = get("https://riseq.seismo.gov.in/riseq/earthquake/recent_earthquake")
+        for row in re.findall(r"<tr>(.*?)</tr>", page, re.S):
+            c = [H.unescape(re.sub(r"<[^>]+>", "", x)).strip() for x in re.findall(r"<td>(.*?)</td>", row, re.S)]
+            link = re.search(r'href="([^"]+/earthquake/event/[^"]+)"', row)
+            if len(c) < 7 or not re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d", c[0]):
+                continue
+            when = datetime.strptime(c[0][:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone(timedelta(hours=5, minutes=30)))
+            lat, lon = float(c[1]), float(c[2])
+            if when < cut or not (4 <= lat <= 32 and 86 <= lon <= 108):
+                continue
+            out.append({"id": "ncs" + c[0][:19].replace(" ", "T"), "src": "NCS", "mag": float(c[4]), "lat": lat, "lon": lon, "depth": float(c[3] or 0),
+                        "time": int(when.timestamp() * 1000), "place": c[6] or c[5], "url": link.group(1) if link else "https://riseq.seismo.gov.in/riseq/earthquake/recent_earthquake"})
+        ok["NCS"] = True
+    except Exception as e:
+        ok["NCS"] = False
+        print("NCS earthquakes skipped:", e, file=sys.stderr)
+    try:
+        page = get("https://www.moezala.gov.mm/my/earthquake-news")
+        links = list(dict.fromkeys(re.findall(r'href="(/my/news/\d+)"', page)))[:8]
+        for l in links:
+            u = "https://www.moezala.gov.mm" + l
+            body = get(u)
+            i = body.find("field-node--body")
+            q = parse_dmh(H.unescape(re.sub(r"<[^>]+>", " ", body[i:i + 30000])), u) if i >= 0 else None
+            if q and q["time"] >= cut.timestamp() * 1000:
+                out.append(q)
+        ok["DMH"] = True
+    except Exception as e:
+        ok["DMH"] = False
+        print("DMH earthquakes skipped:", e, file=sys.stderr)
+    print(sum(1 for q in out if q["src"] == "NCS"), "NCS and", sum(1 for q in out if q["src"] == "DMH"), "DMH earthquakes")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "sources": ok, "quakes": out}, f, ensure_ascii=False, separators=(",", ":"))
+
+
 def main(path="data/live.json"):
     jobs = [(t, s, u) for t, fs in FEEDS.items() for s, u in fs]
     with ThreadPoolExecutor(8) as pool:
@@ -890,7 +959,7 @@ def main(path="data/live.json"):
         hotspots("data/hotspots.json")
     except Exception as e:
         print("skipped hotspots:", e, file=sys.stderr)
-    for name, job in (("stations", lambda: stations("data/stations.json")), ("gpm", lambda: gpm("data/gpm.json")), ("prices", lambda: prices("data/prices.json"))):
+    for name, job in (("quakes_extra", lambda: quakes_extra("data/quakes_extra.json")), ("stations", lambda: stations("data/stations.json")), ("gpm", lambda: gpm("data/gpm.json")), ("prices", lambda: prices("data/prices.json"))):
         try:
             job()
         except Exception as e:

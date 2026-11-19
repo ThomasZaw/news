@@ -26,7 +26,11 @@ export function fromEmsc(j) {
 export function fromGeofon(t) {
   return t.split("\n").filter((l) => l && l[0] !== "#").map((l) => l.split("|")).filter((c) => c.length > 12 && c[10]).map((c) => ({ id: c[0], src: "GEOFON", mag: +c[10], place: c[12], time: Date.parse(c[1] + "Z"), lat: +c[2], lon: +c[3], depth: +c[4], url: "https://geofon.gfz.de/eqinfo/event.php?id=" + c[0] }));
 }
-// One event can appear in several catalogues. Keep USGS details first, then EMSC, then GEOFON, and remember which sources saw it.
+// China Earthquake Networks Center, through the Wolfx copy of its latest 50 reports. Times are Beijing time.
+export function fromCenc(j) {
+  return Object.keys(j || {}).filter((k) => /^No\d+$/.test(k)).map((k) => j[k]).filter((e) => e && e.magnitude && e.time).map((e) => ({ id: "cenc" + e.EventID, src: "CENC", mag: +e.magnitude, place: e.placeName || e.location || "", time: Date.parse(e.time.replace(" ", "T") + "+08:00"), lat: +e.latitude, lon: +e.longitude, depth: +e.depth, url: "https://news.ceic.ac.cn/" }));
+}
+// One event can appear in several catalogues. Keep USGS details first, then EMSC, GEOFON, CENC, NCS and DMH, and remember which sources saw it.
 export function mergeQuakes(lists) {
   const out = [];
   for (const q of lists.flat()) {
@@ -43,9 +47,17 @@ export async function getQuakes(days, now = Date.now()) {
     getJson("https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&" + BOX + "&minmagnitude=" + small + "&starttime=" + start + "&orderby=time&limit=500", opt).then(fromUsgs),
     getJson("https://www.seismicportal.eu/fdsnws/event/1/query?format=json&" + BOX + "&minmag=" + small + "&starttime=" + start + "&orderby=time&limit=500", opt).then(fromEmsc),
     fetch("https://geofon.gfz.de/fdsnws/event/1/query?format=text&" + BOX + "&starttime=" + start + "&orderby=time&limit=300", { headers: { "User-Agent": "ParabaikDaily/1.0" }, ...opt }).then((x) => { if (!x.ok) throw new Error("GEOFON " + x.status); return x.text(); }).then(fromGeofon),
+    getJson("https://api.wolfx.jp/cenc_eqlist.json", opt).then(fromCenc),
+    // India (NCS) and Myanmar (DMH) publish web pages, which the site's 15-minute build reads into one file.
+    getJson(ORIGIN + "/data/quakes_extra.json", { cf: { cacheTtl: 120, cacheEverything: true } }),
   ]);
-  r.forEach((x, i) => x.status === "rejected" && console.log(["USGS", "EMSC", "GEOFON"][i], String(x.reason)));
-  return { sources: r.map((x, i) => [["USGS", "EMSC", "GEOFON"][i], x.status === "fulfilled"]), quakes: mergeQuakes(r.map((x) => (x.status === "fulfilled" ? x.value : []))) };
+  const names = ["USGS", "EMSC", "GEOFON", "CENC"], extra = r[4].status === "fulfilled" ? r[4].value : null, since = now - days * 864e5;
+  r.slice(0, 4).forEach((x, i) => x.status === "rejected" && console.log(names[i], String(x.reason)));
+  const lists = r.slice(0, 4).map((x) => (x.status === "fulfilled" ? x.value : []));
+  const ex = extra && Array.isArray(extra.quakes) ? extra.quakes.filter((q) => q.time >= since) : [];
+  lists.push(ex.filter((q) => q.src === "NCS"), ex.filter((q) => q.src === "DMH"));
+  const ok = names.map((n, i) => [n, r[i].status === "fulfilled"]).concat([["NCS", !!(extra && extra.sources && extra.sources.NCS)], ["DMH", !!(extra && extra.sources && extra.sources.DMH)]]);
+  return { sources: ok, quakes: mergeQuakes(lists).filter((q) => q.time >= since) };
 }
 
 export async function quakeAlerts(env, quakes, now) {

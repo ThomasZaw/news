@@ -387,7 +387,7 @@ function renderQuakes(){
   var g4=el('button','btn','Send a test');g4.type='button';g4.hidden=true;g4.onclick=function(){g4.textContent='Sending…';testPush().then(function(){g4.textContent='Test sent'}).catch(function(){g4.textContent='Test failed'})};
   g3.onclick=function(){var v=!store('pd-qsound');store('pd-qsound',v);if(v)beep();g3.textContent=v?'Sound on':'Turn on sound'};
   act.append(g1,g2,g3,g4,pageShare(top?'Earthquake M '+top.mag.toFixed(1)+', '+top.where+', '+qAgo(top.time):'Myanmar earthquakes, live map','earthquakes/'));b.append(act);
-  b.append(el('p','small-note','Data from USGS, EMSC and GEOFON, checked every minute. Most quakes near Myanmar appear within 5 to 15 minutes, and the first magnitude can change. Alerts show for magnitude 4.0+ in or near Myanmar. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
+  b.append(el('p','small-note','Data from USGS, EMSC, GEOFON and China\'s CENC, checked every minute, plus India\'s NCS and Myanmar\'s Department of Meteorology and Hydrology (DMH), checked every 15 minutes. Most quakes near Myanmar appear within 5 to 15 minutes, and the first magnitude can change. Alerts show for magnitude 4.0+ in or near Myanmar. This reports earthquakes after they happen. It cannot warn before shaking starts. In an earthquake: drop, cover and hold on.'));
   if(QK_SRC)b.append(el('p','small-note',QK_SRC+' · The page checks every minute while open.'));
 }
 
@@ -488,7 +488,7 @@ function renderPrivacy(){var b=$('privacy-box');if(!b||b.firstChild)return;var h
  ['Visitor counts','We may count visits with Cloudflare Web Analytics, which uses no cookies and does not identify you.'],
  ['News photos','Story photos are fetched through wsrv.nl, a free image service that makes them smaller. If that fails, the photo loads from the news outlet\'s own site. Either service can see your connection.'],
  ['Saved stories and your town','Stories you save, your town and low-data mode are kept in your browser on this device only.'],
- ['Services used','GitHub, Cloudflare, Open-Meteo, USGS, EMSC, GEOFON, NASA, NOAA, Ogimet, the Central Bank of Myanmar, Yahoo Finance and news publishers. Fonts are served from this site. Each service may see basic connection details.'],
+ ['Services used','GitHub, Cloudflare, Open-Meteo, USGS, EMSC, GEOFON, CENC (through Wolfx), India's NCS, NASA, NOAA, Ogimet, the Central Bank of Myanmar, Yahoo Finance and news publishers. Fonts are served from this site. Each service may see basic connection details.'],
  ['No accounts','There is no login, and we do not sell personal data.']].forEach(function(r){var d=el('div');d.append(el('h3','sec',r[0]),el('p',null,r[1]));b.append(d)})}
 
 /* Daily edition */
@@ -765,7 +765,7 @@ function renderSaved(){
 }
 document.addEventListener('pd-saved',function(){if(view==='saved')renderSaved();if(view==='home')renderHome()});
 var SOURCES=[['Weather','ရာသီဥတု','Open-Meteo forecast for every town. Live readings from 57 Myanmar weather stations (Department of Meteorology and Hydrology, through Ogimet) and from airports. Official warnings from the Department of Meteorology and Hydrology. Satellite rain from NASA GPM. Storm alerts from GDACS.'],
- ['Earthquakes','ငလျင်','USGS, EMSC and GEOFON, checked every minute and merged, so one earthquake is shown once with the sources that reported it.'],
+ ['Earthquakes','ငလျင်','USGS, EMSC, GEOFON and the China Earthquake Networks Center (CENC, through Wolfx), checked every minute. India\'s National Center for Seismology and Myanmar\'s Department of Meteorology and Hydrology, checked every 15 minutes. All are merged, so one earthquake is shown once with every source that reported it.'],
  ['News','သတင်း','BBC, BBC News မြန်မာ, Reuters and AP through Google News, The Irrawaddy and ဧရာဝတီ, Myanmar Now, DVB, BNI, Shan News, Global New Light of Myanmar, Al Jazeera, The Guardian, NPR, DW, France 24, CNA, The Diplomat, CNBC, MarketWatch, Investing.com, Politico, The Hill, TechCrunch, The Verge, Wired, Ars Technica, Engadget, MIT Technology Review, BBC Sport, Sky Sports and CBS Sports.'],
  ['Prices','ဈေးနှုန်း','Central Bank of Myanmar reference rates, world gold and Brent oil prices, and Yangon market and fuel prices entered by hand each week.'],
  ['Fire and danger map','မီးနှင့် အန္တရာယ်မြေပုံ','NASA FIRMS heat detections. The danger map combines the forecast, earthquakes, official warnings, fire hotspots and disaster reports in the news.'],
