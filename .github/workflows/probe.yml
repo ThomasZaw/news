@@ -6,6 +6,5 @@ jobs:
     steps:
       - run: |
           UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124 Safari/537.36"
-          echo "=====DMHNODE"; curl -sS -m 25 -A "$UA" -L https://www.moezala.gov.mm/my/news/135246 -o n.html -w "%{http_code}\n"; grep -n "field--name-body\|field-item\|<p" n.html | head -12 | cut -c1-900
-          echo "=====DMHNODE2"; curl -sS -m 25 -A "$UA" -L https://www.moezala.gov.mm/my/news/134834 | grep -n "<p\|<img" | head -8 | cut -c1-900
-          echo "=====NCS"; curl -sS -m 30 -A "$UA" -L https://riseq.seismo.gov.in/riseq/earthquake/recent_earthquake -o ncs.html -w "%{http_code} %{size_download}\n" || true; grep -o -i "[a-z_/.-]*\(json\|ajax\|api\)[a-z_/?=.-]*" ncs.html | sort -u | head -20; grep -n -i "myanmar" ncs.html | head -6 | cut -c1-600; grep -n -i "<tr\|data-json\|JSON.parse" ncs.html | head -6 | cut -c1-400
+          echo "=====DMHTEXT"; for n in 135246 134834; do curl -sS -m 25 -A "$UA" -L https://www.moezala.gov.mm/my/news/$n | python3 -c "import sys,re,html;t=sys.stdin.read();i=t.find('field-node--body');t=t[i:i+20000];t=re.sub(r'<[^>]+>',' ',t);print(re.sub(r'\s+',' ',html.unescape(t))[:1500])"; echo; done
+          echo "=====NCSROWS"; curl -sS -m 30 -A "$UA" -L https://riseq.seismo.gov.in/riseq/earthquake/recent_earthquake -o ncs.html || true; sed -n '1025,1050p' ncs.html | cut -c1-300; grep -c "<td>Myanmar</td>" ncs.html
